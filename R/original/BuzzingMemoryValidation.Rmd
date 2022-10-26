@@ -44,7 +44,7 @@ ExposureFunction <- function(X){
 ```{r, warning=FALSE, echo = FALSE}
 # dataBioLet <- fread(file="data_BiolLet_Tervo_etal_2021.txt")
 
-dataAll <- fread("../data/subdb_narwhal_2018.txt")
+dataAll <- fread("../../data/subdb_narwhal_2018.txt")
 data <- dataAll
 
 

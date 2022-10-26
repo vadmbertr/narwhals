@@ -48,7 +48,7 @@ ExposureFunction <- function(X){
 #---------------------------------------------------------------------------------
 # Data importation; sub-sample seq(1,dim(data)[1], by = 60), only 2018
 #---------------------------------------------------------------------------------
-dataAll <- fread("../data/subdb_narwhal_2018.txt")
+dataAll <- fread("../../data/subdb_narwhal_2018.txt")
 data <- dataAll
 
 
