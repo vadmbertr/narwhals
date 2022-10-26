@@ -15,6 +15,7 @@ if (length(args)!=4) {
   print("arg2 : la borne inférieure de recherche du lag maximum")
   print("arg3 : la borne supérieure de recherche du lag maximum")
   print("arg4 : le nombre de lag à considérer entre les deux bornes")
+  print("arg5 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
 }
 
@@ -106,5 +107,5 @@ coeftable <- coefficients(summary(glmAllBuzzDepth))
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(dataBICDepth, "../data/glm_buzz_depth_maxlag_bic.rds")
-saveRDS(coeftable, "../data/glm_buzz_depth_bestmaxlag_coefs.rds")
+saveRDS(dataBICDepth, paste0(args[5], "/glm_buzz_depth_maxlag_bic.rds"))
+saveRDS(coeftable, paste0(args[5], "/glm_buzz_depth_bestmaxlag_coefs.rds"))
