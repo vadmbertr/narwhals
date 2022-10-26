@@ -10,7 +10,7 @@ source("0_data.R")
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
 if (length(args)!=4) {
-  print("Usage du script : Rscript 1_buzz_lag.R arg1 arg2 arg3 arg4")
+  print("Usage du script : Rscript 1_glm_buzz_depth_maxlag.R arg1 arg2 arg3 arg4")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : la borne inférieure de recherche du lag maximum")
   print("arg3 : la borne supérieure de recherche du lag maximum")
@@ -103,5 +103,5 @@ coeftable <- coefficients(summary(glmAllBuzzDepth))
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(dataBICDepth, "../data/lag_bic.rds")
+saveRDS(dataBICDepth, "../data/glm_buzz_depth_maxlag_bic.rds")
 saveRDS(coeftable, "../data/glm_buzz_depth_bestmaxlag_coefs.rds")
