@@ -30,25 +30,25 @@ ExposureFunction <- function(X){
 #---------------------------------------------------------------------------------
 # Data importation, total dataset
 #---------------------------------------------------------------------------------
-dataAll <- fread("~/Dropbox/Effect study EGRL 2018/Database/db_narwhal_2017_2018.txt")
-data <- dataAll
-
-## Time provides time since tagging
-data$Time <- numeric()
-for(ind in unique(data$Ind)){
-  indicator <- (data$Ind == ind)
-  data$Time[indicator] <- TimeFunction(n = sum(indicator))
-}
-## keep the 2018 data
-data = data[data$Year=="2018",]
-
-
-datasub = data[seq(1,dim(data)[1], by = 60),]
-fwrite(datasub, file="~/Dropbox/Adeline/Projet/Susanne Ditlevsen/Narval-Projet Tutore/subdb_narwhal_2018.txt")
+#dataAll <- fread("~/Dropbox/Effect study EGRL 2018/Database/db_narwhal_2017_2018.txt")
+#data <- dataAll
+#
+### Time provides time since tagging
+#data$Time <- numeric()
+#for(ind in unique(data$Ind)){
+#  indicator <- (data$Ind == ind)
+#  data$Time[indicator] <- TimeFunction(n = sum(indicator))
+#}
+### keep the 2018 data
+#data = data[data$Year=="2018",]
+#
+#
+#datasub = data[seq(1,dim(data)[1], by = 60),]
+#fwrite(datasub, file="~/Dropbox/Adeline/Projet/Susanne Ditlevsen/Narval-Projet Tutore/subdb_narwhal_2018.txt")
 #---------------------------------------------------------------------------------
 # Data importation; sub-sample seq(1,dim(data)[1], by = 60), only 2018
 #---------------------------------------------------------------------------------
-dataAll <- fread("~/Dropbox/Adeline/Projet/Susanne Ditlevsen/Narval-Projet Tutore/subdb_narwhal_2018.txt")
+dataAll <- fread("../data/subdb_narwhal_2018.txt")
 data <- dataAll
 
 
@@ -78,16 +78,18 @@ LagVariables <- names(data[,1:100])
 
 glmresultsDepth <- list(NULL)
 
-lagvector <- c(50,seq(55,65,1))
+lagvector <- c(50,seq(55,65,1)) # TODO: 1- élargir la plage de recherche
 
 n <- length(lagvector)
 AICvector <- numeric(n) 
-BICvector <- numeric(n) 
+BICvector <- numeric(n)
+# TODO: ? paraléliser ?
 for(i in 1:n){
   form <- paste("Buzz ~ Ind + ns(Depth, knots = c(-323, -158, -54)) + ",
                 paste(LagVariables[1:lagvector[i]], collapse = " + "))
-  
-  glmAllBuzzDepth <- glm(form, 
+
+  # TODO: 2- ajout effet aléatoire sur les individus
+  glmAllBuzzDepth <- glm(form,
                          data = data, 
                          family = poisson)
   
@@ -121,32 +123,33 @@ curvefit  <- data.frame(maxlag = as.factor(rep(lag, lag)), lag = 1:lag,
 for(i in kvector){
   temp    <- glmresultsDepth[[i]]
   lag     <- temp$lag
+  # TODO: 2- différent pour GLMER
   ARcoef  <- temp$coeftable[-(1:10), "Estimate"]
   std.err <- temp$coeftable[-(1:10),"Std. Error"]
   w       <- 1/std.err
   n       <- length(ARcoef)
 
-  fm <- nls(ARcoef ~ SSbiexp(1:n, A1, lrc1, A2, lrc2), weights = w)
-  b1 <- summary(fm)$coefficients[1,1]
-  b2 <- exp(summary(fm)$coefficients[2,1])
-  b3 <- summary(fm)$coefficients[3,1]
-  b4 <- exp(summary(fm)$coefficients[4,1])
+  # fm <- nls(ARcoef ~ SSbiexp(1:n, A1, lrc1, A2, lrc2), weights = w)
+  # b1 <- summary(fm)$coefficients[1,1]
+  # b2 <- exp(summary(fm)$coefficients[2,1])
+  # b3 <- summary(fm)$coefficients[3,1]
+  # b4 <- exp(summary(fm)$coefficients[4,1])
   fitresulti <- data.frame(maxlag = as.factor(rep(lag, lag)), lag = 1:lag,
                            estimate = ARcoef)
-  curvefiti  <- data.frame(maxlag = as.factor(rep(lag, lag)), lag = 1:lag,
-                           b1 = rep(b1, lag), b2 = rep(b2, lag),
-                           b3 = rep(b3, lag), b4 = rep(b4, lag))
+  # curvefiti  <- data.frame(maxlag = as.factor(rep(lag, lag)), lag = 1:lag,
+  #                          b1 = rep(b1, lag), b2 = rep(b2, lag),
+  #                          b3 = rep(b3, lag), b4 = rep(b4, lag))
   fitresult <- rbind(fitresult, fitresulti)
-  curvefit  <- rbind(curvefit, curvefiti)
+  # curvefit  <- rbind(curvefit, curvefiti)
 }
 
-curvefit$estimate <- curvefit$b1 * exp(-curvefit$b2 * curvefit$lag) +
-  curvefit$b3 * exp(-curvefit$b4 * curvefit$lag)
+# curvefit$estimate <- curvefit$b1 * exp(-curvefit$b2 * curvefit$lag) +
+#   curvefit$b3 * exp(-curvefit$b4 * curvefit$lag)
 
 ggplot(fitresult, aes(x = lag, y = estimate, color = maxlag)) +
   geom_point(alpha = 0.3) +
-  geom_line(aes(x = lag, y = estimate, color = maxlag), data = curvefit) +
-  geom_hline(yintercept = 0) +
+  # geom_line(aes(x = lag, y = estimate, color = maxlag), data = curvefit) +
+  # geom_hline(yintercept = 0) +
   theme(legend.position="top")
 
 
