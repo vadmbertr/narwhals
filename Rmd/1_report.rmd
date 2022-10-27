@@ -38,19 +38,18 @@ $$
 
 # Recherche de la mémoire optimale
 
-La première étape consiste à déterminer la mémoire maximum qu'il faut donner à notre modèle.
-
-## Sans effet aléatoire
-
-Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus.
-
-Nous avons repris la démarche suivante :
+La première étape consiste à déterminer la mémoire maximum qu'il faut donner à notre modèle. \newline
+Nous avons utilisé la démarche suivante :
 
 1. Utilisation des données de l'année 2018 des 6 baleines
 2. Estimation de la mémoire donnant le modèle de Poisson avec le BIC le plus faible
    1. Lags maximum considérés initialement considérés $ml^1_i \in [1, 300]$, avec un pas de 10
    2. Lags maximum considérés mis à jour $ml^k_i \in [ml^{k-1}_{i_{opt}-1}, ml^{k-1}_{i_{opt}+1}]$, avec un pas de 10
    3. Arrêt quand $ml^{k}_{i_{opt}-1} - ml^{k}_{i_{opt}+1} <= 2$
+
+## Sans effet aléatoire
+
+Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus.
 
 ```{r}
 maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag_bic.rds")
@@ -66,30 +65,29 @@ ggplot(maxlag_bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum")
 ```
 
-Nous utilisons une régression bi-exponentielle afin de réduire le nombre de variables de `r maxlag.opt` à 4. \newline
+Afin de réduire le nombre de variables, nous utilisons une régression bi-exponentielle. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
 La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
 ARcoef.fit <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
-```{r plot-AR-BiExp, fig.cap = "Régréssion bi-exponentielle des coefficients auto-régréssifs"}
-ggplot(ARcoef.fit, aes(x = lag, y = truth, color = maxlag)) +
-  geom_point(alpha = 0.3) +
-  geom_line(aes(x = lag, y = estimate, color = maxlag)) +
-  geom_hline(yintercept = 0) +
-  theme(legend.position="top") +
+```{r plot-AR-BiExp, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs"}
+ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = lag, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
   ylab("Coefficient") + xlab("Mémoire")
 ```
 
-Les coefficients obtenus suite à la régréssion bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
+Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
 
 ```{r}
 ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 ```
 
 ```{r tab-AR-BiExp}
-kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régréssion bi-exponentielle",
+kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-exponentielle",
       label="tab-AR-BiExp") %>%
   kable_styling(latex_options = "HOLD_position")
 ```

@@ -40,7 +40,7 @@ ARcoef.fit$estimate <- curvefit$b1 * exp(-curvefit$b2 * curvefit$lag) +
 saveRDS(ARcoef.fit,file="../data/glm_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
-```{r,echo=F,warning=F,fig.cap="Régréssion bi-exponentielle des coefficients auto-régréssifs"}
+```{r,echo=F,warning=F,fig.cap="Régression bi-exponentielle des coefficients auto-régressifs"}
 ggplot(ARcoef.fit, aes(x = lag, y = truth, color = maxlag)) +
   geom_point(alpha = 0.3) +
   geom_line(aes(x = lag, y = estimate, color = maxlag)) +
@@ -48,7 +48,7 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth, color = maxlag)) +
   theme(legend.position="top")
 ```
 
-Les coefficients obtenus suite à la régréssion bi-exponentielle sont présentés dans la table suivante :
+Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table suivante :
  
 ```{r,echo=F,warning=F}
 # Enregistrement des coefficients dans un fichier
@@ -59,6 +59,6 @@ saveRDS(glm_coefficients_RegBiExp,file= "../data/glm_buzz_depth_maxlag/ARcoef.Re
 ```
 
 ```{r,echo = F}
-knitr::kable(glm_coefficients_RegBiExp,caption="Coefficients obtenus par régréssion bi-exponentielle pour le modèle GLM prenant en compte les individus, la profondeur ainsi qu'un lag maximum de 60 pour la mémoire")
+knitr::kable(glm_coefficients_RegBiExp,caption="Coefficients obtenus par régression bi-exponentielle pour le modèle GLM prenant en compte les individus, la profondeur ainsi qu'un lag maximum de 60 pour la mémoire")
 ```
 
