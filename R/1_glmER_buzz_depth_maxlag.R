@@ -4,13 +4,14 @@
 
 library(data.table)
 library(splines)
+library(lme4)
 source("0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
 if (length(args)!=5) {
-  print("Usage du script : Rscript 1_glm_buzz_depth_maxlag.R arg1 arg2 arg3 arg4 arg5")
+  print("Usage du script : Rscript 1_glmER_buzz_depth_maxlag.R arg1 arg2 arg3 arg4 arg5")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : la borne inférieure de recherche du lag maximum")
   print("arg3 : la borne supérieure de recherche du lag maximum")
@@ -41,7 +42,7 @@ maxlag.to <- as.numeric(args[3])
 maxlag.n <- as.numeric(args[4])
 
 ## Define the first maxlag.n lags
-temp <- as.data.frame(shift(data$Buzz, n = maxlag.from:maxlag.to, give.names = TRUE))
+temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.to, give.names = TRUE))
 data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.to])
 
@@ -61,14 +62,13 @@ while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
   ### fit a glm for every maxlag in lagvector and compute its BIC
   temp <- sapply(lagvector, function (maxlag) {
     print(maxlag)
-    form <- paste("Buzz ~ (1 |Ind)  + splineDepth + ",
+    form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
                   paste(LagVariables[1:maxlag], collapse = " + "))
 
-    # TODO: 2- ajout effet aléatoire sur les individus
-    glmAllBuzzDepth <- glmer(form,
-                           data = data,
-                           family = poisson)
-    BIC(glmAllBuzzDepth)
+    glmERAllBuzzDepth <- glmer(form,
+                               data = data,
+                               family = poisson)
+    BIC(glmERAllBuzzDepth)
   })
   names(temp) <- lagvector
 
@@ -100,13 +100,12 @@ dataBICDepth <- data.frame(maxlag = as.numeric(names(BICvector)), BIC = as.numer
 ## Fit a glm with the best maxlag
 form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
               paste(LagVariables[1:maxlag.best], collapse = " + "))
-# TODO: 2- ajout effet aléatoire sur les individus
-glmAllBuzzDepth <- glmer(form,
-                       data = data,
-                       family = poisson)
-coeftable <- coefficients(summary(glmAllBuzzDepth))
+glmERAllBuzzDepth <- glmer(form,
+                           data = data,
+                           family = poisson)
+coeftable <- coefficients(summary(glmERAllBuzzDepth))
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(dataBICDepth, paste0(args[5], "/glm_buzz_depth_maxlag_bic.rds"))
-saveRDS(coeftable, paste0(args[5], "/glm_buzz_depth_bestmaxlag_coefs.rds"))
+saveRDS(dataBICDepth, paste0(args[5], "/glmer_buzz_depth_maxlag_bic.rds"))
+saveRDS(coeftable, paste0(args[5], "/glmer_buzz_depth_bestmaxlag_coefs.rds"))
