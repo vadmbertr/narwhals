@@ -9,7 +9,7 @@ source("0_data.R")
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
-if (length(args)!=4) {
+if (length(args)!=5) {
   print("Usage du script : Rscript 1_glm_buzz_depth_maxlag.R arg1 arg2 arg3 arg4 arg5")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : la borne inférieure de recherche du lag maximum")
