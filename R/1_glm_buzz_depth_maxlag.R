@@ -41,7 +41,7 @@ maxlag.to <- as.numeric(args[3])
 maxlag.n <- as.numeric(args[4])
 
 ## Define the first maxlag.n lags
-temp <- as.data.frame(shift(data$Buzz, n = maxlag.from:maxlag.to, give.names = TRUE))
+temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.to, give.names = TRUE))
 data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.to])
 
