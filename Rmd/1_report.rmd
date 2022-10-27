@@ -1,0 +1,68 @@
+---
+title: "Rapport 28/10/2022"
+output:
+   bookdown::pdf_document2: default
+urlcolor: blue
+linkcolor: blue
+header-includes:
+    \usepackage{float}
+    \makeatletter\renewcommand*{\fps@figure}{H}\makeatother
+---
+
+```{r setup, echo=FALSE, eval=TRUE}
+knitr::opts_chunk$set(echo=FALSE, eval=TRUE,
+                      comment=NA, warning=FALSE,
+                      message=FALSE)
+knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
+```
+
+```{r}
+library(ggplot2)
+
+set.seed(15)
+```
+
+\newpage
+
+Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations (présence de bateaux) sur leur émission de sons. L'émission de sons correspond à la survenue d'un certain nombre d'événements pendant une période de temps et peut donc être modélisée par un modèle de Poisson. \newline
+Les sons auxquels nous nous intéressons sont émis par ces baleines quand elles se nourrissent (buzz), et pour se nourrir les narvals doivent plonger profondément (alors que le reste du temps, ils restent "proche" de la surface). Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. \newline
+De plus, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit également être ajouté au modèle.
+$$
+Buzz \sim Ind + spline(Depth) + Lag_1 + ... + Lag_n
+$$
+Enfin, nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous utiliserons des modèles intégrant un effet aléatoire sur les individus.
+$$
+Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_n
+$$
+
+# Recherche de la mémoire optimale
+
+La première étape consiste à déterminer la mémoire maximum qu'il faut donner à notre modèle.
+
+## Sans effet aléatoire
+
+Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus.
+
+Nous avons repris la démarche suivante :
+
+1. Utilisation des données de l'année 2018 des 6 baleines
+2. Estimation de la mémoire donnant le modèle de Poisson avec le BIC le plus faible
+   1. Lags maximum considérés initialement considérés $ml^1_i \in [1, 300]$, avec un pas de 10
+   2. Lags maximum considérés mis à jour $ml^k_i \in [ml^{k-1}_{i_{opt}-1}, ml^{k-1}_{i_{opt}+1}]$, avec un pas de 10
+   3. Arrêt quand $ml^{k}_{i_{opt}-1} - ml^{k}_{i_{opt}+1} <= 2$
+
+```{r}
+maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag_bic.rds")
+maxlag.opt <- as.integer(maxlag_bic[which.min(maxlag_bic[, 2]), 1])
+```
+
+Nous obtenons une mémoire optimale de `r maxlag.opt` secondes. La figure \@ref(fig:plot-glm-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
+
+```{r plot-glm-bic, fig.cap = "BIC en fonction de la mémoire maximum"}
+ggplot(maxlag_bic, aes(x = maxlag, y = BIC)) +
+  geom_line() +
+  geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
+  xlab("Mémoire maximum")
+```
+
+
