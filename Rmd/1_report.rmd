@@ -18,6 +18,7 @@ knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
 
 ```{r}
 library(ggplot2)
+library(kableExtra)
 
 set.seed(15)
 ```
@@ -52,7 +53,7 @@ Nous avons repris la démarche suivante :
    3. Arrêt quand $ml^{k}_{i_{opt}-1} - ml^{k}_{i_{opt}+1} <= 2$
 
 ```{r}
-maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag_bic.rds")
+maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag_bic.rds")
 maxlag.opt <- as.integer(maxlag_bic[which.min(maxlag_bic[, 2]), 1])
 ```
 
@@ -65,4 +66,30 @@ ggplot(maxlag_bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum")
 ```
 
+Nous utilisons une régression bi-exponentielle afin de réduire le nombre de variables de `r maxlag.opt` à 4. \newline
+La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
+```{r}
+ARcoef.fit <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.fit.rds")
+```
+
+```{r plot-AR-BiExp, fig.cap = "Régréssion bi-exponentielle des coefficients auto-régréssifs"}
+ggplot(ARcoef.fit, aes(x = lag, y = truth, color = maxlag)) +
+  geom_point(alpha = 0.3) +
+  geom_line(aes(x = lag, y = estimate, color = maxlag)) +
+  geom_hline(yintercept = 0) +
+  theme(legend.position="top") +
+  ylab("Coefficient") + xlab("Mémoire")
+```
+
+Les coefficients obtenus suite à la régréssion bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
+
+```{r}
+ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+```
+
+```{r tab-AR-BiExp}
+kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régréssion bi-exponentielle",
+      label="tab-AR-BiExp") %>%
+  kable_styling(latex_options = "HOLD_position")
+```
