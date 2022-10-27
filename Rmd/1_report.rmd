@@ -25,31 +25,35 @@ set.seed(15)
 
 \newpage
 
-Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations (présence de bateaux) sur leur émission de sons. L'émission de sons correspond à la survenue d'un certain nombre d'événements pendant une période de temps et peut donc être modélisée par un modèle de Poisson. \newline
-Les sons auxquels nous nous intéressons sont émis par ces baleines quand elles se nourrissent (buzz), et pour se nourrir les narvals doivent plonger profondément (alors que le reste du temps, ils restent "proche" de la surface). Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. \newline
-De plus, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit également être ajouté au modèle.
+Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations humaines sur leur capacité à se nourrir. Lorsqu'elles se nourissent, ces baleines émettent des sons spécifiques (buzz). Nous nous intéresserons donc à la fréquence d'émission de ces buzz (buzz/min), ce qui peut être modélisé par un modèle de Poisson.
+
+# Sans perturbations
+
+## Estimation de l'effet de la profondeur
+
+Pour se nourrir, les narvals doivent plonger profondément alors que le reste du temps, ils restent "proche" de la surface. Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une variable explicative la décrivant par un polynôme de degré 3.
+
+## Recherche de la mémoire optimale
+
+L'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit donc être ajouté au modèle et pour cela nous devons déterminer la mémoire maximum qu'il faut autoriser au modèle.
+
+Afin de trouver la mémoire optimale, nous avons utilisé la démarche suivante :
+
+1. $from.ml = 1,\ to.ml = N$
+2. Tant que $(to.ml - from.ml > 2)$ :
+   1. Pour $ml^k_i \in [from.ml, to.ml],\ i = 1...M$ :
+      1. ajustement d'un modèle de Poisson
+      2. calcul du BIC
+   2. $i_{opt} = argmin\ BIC_i$
+   3. $from.ml = ml^{k}_{i_{opt}-1},\ to.ml = ml^{k}_{i_{opt}+1}$
+
+### Sans effets aléatoires
+
+Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus pour estimer la mémoire optimale :
 $$
-Buzz \sim Ind + spline(Depth) + Lag_1 + ... + Lag_n
+Buzz \sim Ind + spline(Depth) + Lag_1 + ... + Lag_N
 $$
-Enfin, nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous utiliserons des modèles intégrant un effet aléatoire sur les individus.
-$$
-Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_n
-$$
-
-# Recherche de la mémoire optimale
-
-La première étape consiste à déterminer la mémoire maximum qu'il faut donner à notre modèle. \newline
-Nous avons utilisé la démarche suivante :
-
-1. Utilisation des données de l'année 2018 des 6 baleines
-2. Estimation de la mémoire donnant le modèle de Poisson avec le BIC le plus faible
-   1. Lags maximum considérés initialement considérés $ml^1_i \in [1, 300]$, avec un pas de 10
-   2. Lags maximum considérés mis à jour $ml^k_i \in [ml^{k-1}_{i_{opt}-1}, ml^{k-1}_{i_{opt}+1}]$, avec un pas de 10
-   3. Arrêt quand $ml^{k}_{i_{opt}-1} - ml^{k}_{i_{opt}+1} <= 2$
-
-## Sans effet aléatoire
-
-Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus.
+Nous avons fixé $N = 300$ et $M = 10$.
 
 ```{r}
 maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag_bic.rds")
@@ -65,7 +69,19 @@ ggplot(maxlag_bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum")
 ```
 
-Afin de réduire le nombre de variables, nous utilisons une régression bi-exponentielle. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
+### Avec effets aléatoires
+
+Nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous avons tenté d'inclure un effet aléatoire sur les individus :
+$$
+Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_N
+$$
+Nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
+
+Malheureusement le temps d'ajustement des modèles mixtes s'est avéré trop long (environ 1h30) pour nous permettre de mener à bien cette approche.
+
+## Régression bi-exponentielle
+
+Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles "classiques", aussi, afin de réduire le nombre de variables, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
 La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
@@ -91,3 +107,7 @@ kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-expone
       label="tab-AR-BiExp") %>%
   kable_styling(latex_options = "HOLD_position")
 ```
+
+# Estimation de l'effet de l'exposition
+
+L'exposition aux perturbations est représentée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
