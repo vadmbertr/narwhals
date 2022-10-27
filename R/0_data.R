@@ -25,3 +25,34 @@ BeforeExposure <- function (data) {
   }
   return(data)
 }
+
+AfterExposure <- function (data, no_stress = TRUE) {
+  if (no_stress) {
+    ## We cut the first 24 hours of all individuals to avoid
+    ## the effect of tagging
+    data <- data[data$Time > 24,]
+  } else {
+    data <- data[data$Time > 0,]
+  }
+  return(data)
+}
+
+ExposureFunction <- function(X){
+  ## X: Distance to ship in meters measured each second. Supposed to be positive
+
+  ## Exposure variable
+  Xtilde <- 1000/X ## Inverse of distance to ship in kilometers
+  Xtilde[is.na(Xtilde)] <- 0 ## If not in line of sight, exposure is zero
+  Xtilde
+}
+
+AddExposure <- function (data) {
+  data$Xtilde <- ExposureFunction(X = data$Dist_Ship) ## Exposure variable based on 1/distance in km
+  data$X <- data$Xtilde*(data$Seismik == 1)
+  data$P <- data$Xtilde*(data$Seismik == 0)
+  return(data)
+}
+
+OnlyAirgun <- function (data) {
+  return(subset(data, P == 0))
+}

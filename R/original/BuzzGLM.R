@@ -203,7 +203,7 @@ dataAR  <- data[,LagVariables]
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 ## Depth coefficients for offset
 Depthcoeff <- temp$coeftable[7:10,"Estimate"]
-data$ARDepth <- data$ARDepth +as.matrix(ns(data$Depth, knots = c(-323, -158, -54)))%*% Depthcoeff
+data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54)))%*% Depthcoeff
 
 ## Weights for the glmer analysis
 data$n <- rep(0, length(data$Ind))
@@ -211,7 +211,7 @@ for(k in unique(data$Ind)){
   data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
 }
 
-glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + #ns(Depth, knots = c(-323, -158, -54)) + 
+glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + #ns(Depth, knots = c(-323, -158, -54)) +
                              ns(X, knots = quantile(data$X[data$X > 0],c(1:2)/3)) +
                              (1 | Ind),
                            data = data,

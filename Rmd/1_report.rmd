@@ -56,14 +56,14 @@ $$
 Nous avons fixé $N = 300$ et $M = 10$.
 
 ```{r}
-maxlag_bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag_bic.rds")
-maxlag.opt <- as.integer(maxlag_bic[which.min(maxlag_bic[, 2]), 1])
+maxlag.bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 ```
 
 Nous obtenons une mémoire optimale de `r maxlag.opt` secondes. La figure \@ref(fig:plot-glm-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
 
 ```{r plot-glm-bic, fig.cap = "BIC en fonction de la mémoire maximum"}
-ggplot(maxlag_bic, aes(x = maxlag, y = BIC)) +
+ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   geom_line() +
   geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
   xlab("Mémoire maximum")

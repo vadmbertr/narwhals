@@ -4,8 +4,8 @@ output: pdf_document
 ```{r,echo=F,warning=F}
 library(ggplot2)
 library(readr)
-coeff<-read_rds("../data/glm_buzz_depth_maxlag/ARcoefs.best.rds")
-BIC<-read_rds("../data/glm_buzz_depth_maxlag/maxlag_bic.rds")
+coeff<-read_rds("../data/glm_buzz_depth_maxlag/ARcoef.best.rds")
+BIC<-read_rds("../data/glm_buzz_depth_maxlag/maxlag.bic.rds")
 ```
 
 La figure suivante montre les composantes de la mémoire ajustées pour chaque décalage pour un décalage maximum de 60. Les points sont les estimations individuelles pour chaque décalage, la courbe correspond à la fonction bi-exponentielle ajustée utilisée pour la détermination finale de la composante mémoire.
