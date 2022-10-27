@@ -15,6 +15,7 @@ if (length(args)!=4) {
   print("arg2 : la borne inférieure de recherche du lag maximum")
   print("arg3 : la borne supérieure de recherche du lag maximum")
   print("arg4 : le nombre de lag à considérer entre les deux bornes")
+  print("arg5 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
 }
 
@@ -39,11 +40,12 @@ maxlag.from <- as.numeric(args[2])
 maxlag.to <- as.numeric(args[3])
 maxlag.n <- as.numeric(args[4])
 
-
 ## Define the first maxlag.n lags
 temp <- as.data.frame(shift(data$Buzz, n = maxlag.from:maxlag.to, give.names = TRUE))
 data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.to])
+
+splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 ## Search
 BICvector <- NULL
@@ -53,10 +55,12 @@ BIC.best.idx <- NULL
 while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
   ### maxlag.n integers between maxlag.from and maxlag.to
   lagvector <- unique(round(seq(from = maxlag.from, to = maxlag.to, length.out = maxlag.n)))
+  lagvector <- setdiff(lagvector, as.numeric(names(BICvector)))
+  print(lagvector)
 
   ### fit a glm for every maxlag in lagvector and compute its BIC
   temp <- sapply(lagvector, function (maxlag) {
-    form <- paste("Buzz ~ Ind + ns(Depth, knots = c(-323, -158, -54)) + ", # TODO: compute spline only once?
+    form <- paste("Buzz ~ Ind + splineDepth + ",
                   paste(LagVariables[1:maxlag], collapse = " + "))
 
     # TODO: 2- ajout effet aléatoire sur les individus
@@ -93,7 +97,7 @@ while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
 dataBICDepth <- data.frame(maxlag = as.numeric(names(BICvector)), BIC = as.numeric(BICvector))
 
 ## Fit a glm with the best maxlag
-form <- paste("Buzz ~ Ind + ns(Depth, knots = c(-323, -158, -54)) + ",
+form <- paste("Buzz ~ Ind + splineDepth + ",
               paste(LagVariables[1:maxlag.best], collapse = " + "))
 # TODO: 2- ajout effet aléatoire sur les individus
 glmAllBuzzDepth <- glm(form,
@@ -103,5 +107,5 @@ coeftable <- coefficients(summary(glmAllBuzzDepth))
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(dataBICDepth, "../data/glm_buzz_depth_maxlag_bic.rds")
-saveRDS(coeftable, "../data/glm_buzz_depth_bestmaxlag_coefs.rds")
+saveRDS(dataBICDepth, paste0(args[5], "/glm_buzz_depth_maxlag_bic.rds"))
+saveRDS(coeftable, paste0(args[5], "/glm_buzz_depth_bestmaxlag_coefs.rds"))
