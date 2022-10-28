@@ -124,23 +124,23 @@ z.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/z.plot.data.rds")
 ```
 
 ```{r}
-# ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
-#   geom_col(size = 0.2) + coord_fixed(36) +
-#   ylab("Autocorrelation of uniform residuals") +
-#   xlab("Lag")
+ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
+  geom_col(size = 0.2) + coord_fixed(36) +
+  ylab("Autocorrelation of uniform residuals") +
+  xlab("Lag")
 ```
 
 ```{r}
-# ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
-#   geom_point(size = 0.5) + coord_fixed(1) +
-#   xlab(expression(Z[i-1])) +
-#   ylab(expression(Z[i])) +
-#   geom_abline(slope = 1, intercept = 0, size = 1)
+ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
+  geom_point(size = 0.5) + coord_fixed(1) +
+  xlab(expression(Z[i-1])) +
+  ylab(expression(Z[i])) +
+  geom_abline(slope = 1, intercept = 0, size = 1)
 ```
 
 ```{r}
-# ggplot(QQ.plot.data, aes(x=qunif, y=Zorder))+
-#   geom_point()+
-#   xlab("Uniform theoretical quantiles")+
-#   ylab("Empirical quantiles")
+ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
+  geom_point() +
+  xlab("Uniform theoretical quantiles") +
+  ylab("Empirical quantiles")
 ```
