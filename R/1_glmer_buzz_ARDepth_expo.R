@@ -85,8 +85,6 @@ summary(glmerAllBuzzDepth)
 
 ## Model control for model with offset including AR + Depth
 predictDepth <- predict(glmerAllBuzzDepth, type = "response")
-print(head(predictDepth))
-print(names(predictDepth))
 data$predictDepth <- data$Depth
 data$predictDepth[as.numeric(names(predictDepth))] <- predictDepth
 ### Uniform residuals
