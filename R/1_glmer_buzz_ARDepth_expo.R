@@ -21,21 +21,19 @@ if (length(args) != 2) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
-print(nrow(data))
 ## keep the 2018 data
 data <- data[data$Year == "2018", ]
-print(nrow(data))
 ## Add time since tagging
 data <- AddTime(data)
-print(nrow(data))
 ## We restrict the data to be after exposure and 24 hours after tagging
 data <- AfterExposure(data, no_stress = TRUE)
-print(nrow(data))
 ## We add exposure
 data <- AddExposure(data)
-print(nrow(data))
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
+print(nrow(data))
+### Remove NA
+data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
 print(nrow(data))
 
 #---------------------------------------------------------------------------------
@@ -88,7 +86,9 @@ summary(glmerAllBuzzDepth)
 ## Model control for model with offset including AR + Depth
 predictDepth <- predict(glmerAllBuzzDepth, type = "response")
 print(head(predictDepth))
-data$predictDepth <- predictDepth
+print(names(predictDepth))
+data$predictDepth <- data$Depth
+data$predictDepth[as.numeric(names(predictDepth))] <- predictDepth
 ### Uniform residuals
 Zall <- list(NULL)
 m <- 1
