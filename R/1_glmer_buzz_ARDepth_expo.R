@@ -2,6 +2,7 @@
 ## Objective : find the optimal (BIC wise) memory lag
 #---------------------------------------------------------------------------------
 
+library(broom)
 library(data.table)
 library(splines)
 library(lme4)
@@ -76,7 +77,8 @@ glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$
                            nAGQ = 0,
                            weights = n,
                            family = poisson)
-glmerAllBuzzDepth.sum <- summary(glmerAllBuzzDepth) # to save
+glmerAllBuzzDepth.tidy <- tidy(glmerAllBuzzDepth) # to save
+glmerAllBuzzDepth.glance <- glance(glmerAllBuzzDepth) # to save
 
 #---------------------------------------------------------------------------------
 # For visual model validation
@@ -159,7 +161,8 @@ QQ.plot.data <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(glmerAllBuzzDepth.sum, paste0(args[2], "/glmerAllBuzzDepth.sum.rds"))
+saveRDS(glmerAllBuzzDepth.tidy, paste0(args[2], "/glmerAllBuzzDepth.tidy.rds"))
+saveRDS(glmerAllBuzzDepth.glance, paste0(args[2], "/glmerAllBuzzDepth.glance.rds"))
 saveRDS(acf.plot.data, paste0(args[2], "/acf.plot.data.rds"))
 saveRDS(z.plot.data, paste0(args[2], "/z.plot.data.rds"))
 saveRDS(QQ.plot.data, paste0(args[2], "/QQ.plot.data.rds"))
