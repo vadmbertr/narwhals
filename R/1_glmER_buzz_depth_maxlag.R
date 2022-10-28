@@ -24,7 +24,7 @@ if (length(args)!=5) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
-## keep the 2018 data TODO: why?
+## keep the 2018 data
 data <- data[data$Year == "2018", ]
 ## Add time since tagging
 data <- AddTime(data)

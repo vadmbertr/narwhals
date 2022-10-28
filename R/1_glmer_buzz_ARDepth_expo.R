@@ -21,6 +21,8 @@ if (length(args) != 2) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
+## keep the 2018 data
+data <- data[data$Year == "2018", ]
 ## Add time since tagging
 data <- AddTime(data)
 ## We restrict the data to be after exposure and 24 hours after tagging
@@ -72,6 +74,7 @@ glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$
                            nAGQ = 0,
                            weights = n,
                            family = poisson)
+summary(glmerAllBuzzDepth)
 
 #---------------------------------------------------------------------------------
 # For visual model validation
