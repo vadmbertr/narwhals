@@ -77,7 +77,7 @@ Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_N
 $$
 Compte tenu du résultat obtenu précédemment, nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
 
-Malheureusement le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats pour le moment.
+Malheureusement le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats pour le moment, la tâche tourne sur le cluster du Gricad.
 
 ## Régression bi-exponentielle
 
