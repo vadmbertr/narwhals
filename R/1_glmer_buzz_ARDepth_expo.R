@@ -9,14 +9,11 @@ source("0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
-args <- commandArgs(trailingOnly = TRUE) # read db path from command line
-if (length(args) != 5) {
-  print("Usage du script : Rscript 2_glmer_buzz_expo.R arg1 arg2 arg3 arg4 arg5")
+args <- commandArgs(trailingOnly = TRUE) # read args from command line
+if (length(args) != 2) {
+  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
-  print("arg2 : la borne inférieure de recherche du lag maximum")
-  print("arg3 : la borne supérieure de recherche du lag maximum")
-  print("arg4 : le nombre de lag à considérer entre les deux bornes")
-  print("arg5 : le chemin vers le dossier de sauvegarde des objets R")
+  print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
 }
 
@@ -41,19 +38,26 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag.bic.rds")
+ARcoef.best <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.best.rds")
 ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+
+## Set ARcoef using optimal lag
+### Define the first maxlag.n lags
+temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.opt, give.names = TRUE))
+data <- cbind(temp, data)
+
 ARvec <- ARcoef.RegBiExp$b1 * exp(-ARcoef.RegBiExp$b2 * (1:maxlag.opt)) +
   ARcoef.RegBiExp$b3 * exp(-ARcoef.RegBiExp$b4 * (1:maxlag.opt))
 LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
-## Autoregressive component for offset in later analyses
+### Autoregressive component for offset in later analyses
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
-## Depth coefficients for offset
-Depthcoeff <- temp$coeftable[7:10, "Estimate"]
+### Depth coefficients for offset
+Depthcoeff <- ARcoef.best[7:10, "Estimate"]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis
@@ -62,9 +66,7 @@ for (k in unique(data$Ind)) {
   data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
 }
 
-glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) +
-  ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) +
-  (1 | Ind),
+glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
                            data = data,
                            nAGQ = 0,
                            weights = n,
@@ -73,7 +75,7 @@ glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) +
 #---------------------------------------------------------------------------------
 # For visual model validation
 
-## Model control for model with offset including AR +Depth
+## Model control for model with offset including AR + Depth
 predictDepth <- predict(glmerAllBuzzDepth, type = "response")
 ### Uniform residuals
 Zall <- list(NULL)
@@ -102,9 +104,10 @@ for (i in 2:6) {
                  data.frame(Z = Zall[[i]]$Z, Ind = Zall[[i]]$Ind,
                             n = length(Zall[[i]]$Z)))
 }
+nn <- length(Zdata$Z)
 temp <- acf(Zdata$Z, plot = FALSE)
-acfplotdata <- data.frame(acf = temp$acf, lag = temp$lag) # to save
-zplotdata <- data.frame(Zlow = Zdata$Z[1:(nn - 1)], Zupp = Zdata$Z[2:nn]) # to save
+acf.plot.data <- data.frame(acf = temp$acf, lag = temp$lag) # to save
+z.plot.data <- data.frame(Zlow = Zdata$Z[1:(nn - 1)], Zupp = Zdata$Z[2:nn]) # to save
 
 # QQplot for a given depth
 Zall <- list(NULL)
@@ -144,10 +147,10 @@ for (i in 2:6) {
 ZdataDepthbt <- Zdata[-Zdata$Depth > 400 & Zdata$X == 0 & Zdata$P == 0,]
 nresid <- length(ZdataDepthbt$Z)
 Zorder <- ZdataDepthbt$Z[order(ZdataDepthbt$Z)]
-df <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
+QQ.plot.data <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
 
 #---------------------------------------------------------------------------------
 # Save R objects
-# TODO
-saveRDS(dataBICDepth, paste0(args[5], "/glmer_buzz_depth_maxlag_bic.rds"))
-saveRDS(coeftable, paste0(args[5], "/glmer_buzz_depth_bestmaxlag_coefs.rds"))
+saveRDS(acf.plot.data, paste0(args[2], "/acf.plot.data.rds"))
+saveRDS(z.plot.data, paste0(args[2], "/z.plot.data.rds"))
+saveRDS(QQ.plot.data, paste0(args[2], "/QQ.plot.data.rds"))
