@@ -56,3 +56,7 @@ AddExposure <- function (data) {
 OnlyAirgun <- function (data) {
   return(subset(data, P == 0))
 }
+
+RemoveNA <- function (data, cols) {
+  return(data[complete.cases(data[, ..cols])])
+}

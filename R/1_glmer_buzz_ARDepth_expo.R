@@ -21,6 +21,8 @@ if (length(args) != 2) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
+## keep the 2018 data
+data <- data[data$Year == "2018", ]
 ## Add time since tagging
 data <- AddTime(data)
 ## We restrict the data to be after exposure and 24 hours after tagging
@@ -29,6 +31,8 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
+### Remove NA
+# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
@@ -72,12 +76,15 @@ glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$
                            nAGQ = 0,
                            weights = n,
                            family = poisson)
+summary(glmerAllBuzzDepth)
 
 #---------------------------------------------------------------------------------
 # For visual model validation
 
 ## Model control for model with offset including AR + Depth
 predictDepth <- predict(glmerAllBuzzDepth, type = "response")
+data$predictDepth <- data$Depth
+data$predictDepth[as.numeric(names(predictDepth))] <- predictDepth
 ### Uniform residuals
 Zall <- list(NULL)
 m <- 1

@@ -123,22 +123,32 @@ QQ.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
 z.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/z.plot.data.rds")
 ```
 
-```{r}
+Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants. Nous avons tout de même remarqué une valeur franchement aberrante.
+
+```{r, fig.cap = "Auto-corrélation des résidues"}
 ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
-  geom_col(size = 0.2) + coord_fixed(36) +
+  geom_col(size = 0.2) + #coord_fixed(36) +
   ylab("Autocorrelation of uniform residuals") +
   xlab("Lag")
 ```
 
-```{r}
+```{r, fig.cap = "Résidue selon le précédent. Avec la valeur aberrante"}
 ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
-  geom_point(size = 0.5) + coord_fixed(1) +
+  geom_point(size = 0.5) + #coord_fixed(1) +
+  xlab(expression(Z[i-1])) +
+  ylab(expression(Z[i])) #+
+  #geom_abline(slope = 1, intercept = 0, size = 1)
+```
+
+```{r, fig.cap = "Résidue selon le précédent"}
+ggplot(data = z.plot.data[2:nrow(z.plot.data), ], aes(x = Zlow, y = Zupp)) +
+  geom_point(size = 0.5) + #coord_fixed(1) +
   xlab(expression(Z[i-1])) +
   ylab(expression(Z[i])) +
   geom_abline(slope = 1, intercept = 0, size = 1)
 ```
 
-```{r}
+```{r, fig.cap = "Quantiles-Quantiles"}
 ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
   geom_point() +
   xlab("Uniform theoretical quantiles") +
