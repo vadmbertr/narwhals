@@ -21,16 +21,22 @@ if (length(args) != 2) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
+print(nrow(data))
 ## keep the 2018 data
 data <- data[data$Year == "2018", ]
+print(nrow(data))
 ## Add time since tagging
 data <- AddTime(data)
+print(nrow(data))
 ## We restrict the data to be after exposure and 24 hours after tagging
 data <- AfterExposure(data, no_stress = TRUE)
+print(nrow(data))
 ## We add exposure
 data <- AddExposure(data)
+print(nrow(data))
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
+print(nrow(data))
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
