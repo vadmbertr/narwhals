@@ -75,9 +75,9 @@ Nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont
 $$
 Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_N
 $$
-Nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
+Compte tenu du résultat obtenu précédemment, nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
 
-Malheureusement le temps d'ajustement des modèles mixtes s'est avéré trop long (environ 1h30) pour nous permettre de mener à bien cette approche.
+Malheureusement le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats pour le moment.
 
 ## Régression bi-exponentielle
 
