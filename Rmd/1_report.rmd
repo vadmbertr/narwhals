@@ -110,4 +110,37 @@ kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-expone
 
 # Estimation de l'effet de l'exposition
 
-L'exposition aux perturbations est représentée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
+L'exposition aux perturbations est exprimée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
+
+Nous avons ajusté le modèle mixte suivant :
+$$
+Buzz \sim (1 | Ind) + offset(ARDepth) + spline(Expo)
+$$
+
+```{r}
+acf.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/acf.plot.data.rds")
+QQ.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
+z.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/z.plot.data.rds")
+```
+
+```{r}
+# ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
+#   geom_col(size = 0.2) + coord_fixed(36) +
+#   ylab("Autocorrelation of uniform residuals") +
+#   xlab("Lag")
+```
+
+```{r}
+# ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
+#   geom_point(size = 0.5) + coord_fixed(1) +
+#   xlab(expression(Z[i-1])) +
+#   ylab(expression(Z[i])) +
+#   geom_abline(slope = 1, intercept = 0, size = 1)
+```
+
+```{r}
+# ggplot(QQ.plot.data, aes(x=qunif, y=Zorder))+
+#   geom_point()+
+#   xlab("Uniform theoretical quantiles")+
+#   ylab("Empirical quantiles")
+```
