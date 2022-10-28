@@ -2,7 +2,7 @@
 ## Objective : find the optimal (BIC wise) memory lag
 #---------------------------------------------------------------------------------
 
-library(broom)
+library(broom.mixed)
 library(data.table)
 library(splines)
 library(lme4)
