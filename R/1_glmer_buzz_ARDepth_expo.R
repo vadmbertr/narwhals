@@ -21,6 +21,8 @@ if (length(args) != 2) {
 # Data preparation
 dataAll <- fread(args[1])
 data <- dataAll
+## Add time since tagging
+data <- AddTime(data)
 ## We restrict the data to be after exposure and 24 hours after tagging
 data <- AfterExposure(data, no_stress = TRUE)
 ## We add exposure
@@ -43,17 +45,16 @@ ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 
-## Set ARcoef using optimal lag
-### Define the first maxlag.n lags
+## Set ARcoef using optimal max lag
+### Define the first maxlag.opt lags
 temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.opt, give.names = TRUE))
 data <- cbind(temp, data)
-
-ARvec <- ARcoef.RegBiExp$b1 * exp(-ARcoef.RegBiExp$b2 * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$b3 * exp(-ARcoef.RegBiExp$b4 * (1:maxlag.opt))
 LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset in later analyses
+ARvec <- ARcoef.RegBiExp$b1 * exp(-ARcoef.RegBiExp$b2 * (1:maxlag.opt)) +
+  ARcoef.RegBiExp$b3 * exp(-ARcoef.RegBiExp$b4 * (1:maxlag.opt))
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset
