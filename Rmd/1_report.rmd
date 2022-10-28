@@ -118,9 +118,14 @@ Buzz \sim (1 | Ind) + offset(ARDepth) + spline(Expo)
 $$
 
 ```{r}
+#glmerAllBuzzDepth <- readRDS("../data/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.rds")
 acf.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/acf.plot.data.rds")
 QQ.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
 z.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/z.plot.data.rds")
+```
+
+```{r, echo = TRUE}
+#summary(glmerAllBuzzDepth)
 ```
 
 Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants. Nous avons tout de même remarqué une valeur franchement aberrante.
