@@ -125,13 +125,14 @@ QQ.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
 z.plot.data <- readRDS("../data/glmer_buzz_ARDepth_expo/z.plot.data.rds")
 ```
 
-```{r, echo = TRUE}
-kable(glmerAllBuzzDepth.tidy, caption = "Coefficients du modèle mixte incluant l'exposition",
+```{r tab-coef-glmer-expo}
+kable(glmerAllBuzzDepth.tidy, "latex",
+      caption = "Coefficients du modèle mixte incluant l'exposition",
       label="tab-coef-glmer-expo") %>%
-  kable_styling(latex_options = "HOLD_position")
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r, echo = TRUE}
+```{r tab-stat-glmer-expo}
 kable(glmerAllBuzzDepth.glance, caption = "Statistiques du modèle mixte incluant l'exposition",
       label="tab-stat-glmer-expo") %>%
   kable_styling(latex_options = "HOLD_position")
