@@ -77,8 +77,11 @@ glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$
                            nAGQ = 0,
                            weights = n,
                            family = poisson)
+
 glmerAllBuzzDepth.tidy <- tidy(glmerAllBuzzDepth) # to save
 glmerAllBuzzDepth.glance <- glance(glmerAllBuzzDepth) # to save
+
+summary(glmerAllBuzzDepth)
 
 #---------------------------------------------------------------------------------
 # For visual model validation
