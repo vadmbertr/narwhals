@@ -86,7 +86,9 @@ summary(glmerAllBuzzDepth)
 # For visual model validation
 
 ## Model control for model with offset including AR + Depth
-data$predictDepth <- predict(glmerAllBuzzDepth, type = "response")
+predictDepth <- predict(glmerAllBuzzDepth, type = "response")
+print(head(predictDepth))
+data$predictDepth <- predictDepth
 ### Uniform residuals
 Zall <- list(NULL)
 m <- 1
