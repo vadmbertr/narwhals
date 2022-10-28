@@ -58,5 +58,5 @@ OnlyAirgun <- function (data) {
 }
 
 RemoveNA <- function (data, cols) {
-  return(data[complete.cases(dataAll[, cols])])
+  return(data[complete.cases(dataAll[, ..cols])])
 }
