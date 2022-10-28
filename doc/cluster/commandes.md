@@ -22,3 +22,9 @@ Depuis sa machine
 ``` 
 scp dahu:file_location_on_dahu/file_name file_location_on_local
 ```
+
+##### Récupérer un dossier présent sur le cluster
+Depuis sa machine
+``` 
+scp -r dahu:folder_location_on_dahu location_on_local
+```
