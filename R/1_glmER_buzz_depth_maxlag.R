@@ -2,6 +2,7 @@
 ## Objective : find the optimal (BIC wise) memory lag
 #---------------------------------------------------------------------------------
 
+library(broom.mixed)
 library(data.table)
 library(splines)
 library(lme4)
@@ -50,27 +51,45 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 ## Search
 BICvector <- NULL
-maxlag.best <- Inf
+if (maxlag.to == 0) { # allow to bypass search
+  maxlag.best <- maxlag.from
+} else {
+  maxlag.best <- Inf
+}
 BIC.best.idx <- NULL
 ### We stop when the interval range indicates a sufficiently small search step
 while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
   ### maxlag.n integers between maxlag.from and maxlag.to
-  lagvector <- unique(round(seq(from = maxlag.from, to = maxlag.to, length.out = maxlag.n)))
+  lagvector.sort <- unique(round(seq(from = maxlag.from, to = maxlag.to, length.out = maxlag.n)))
+  ### reorder as [first, last, second, second.last, ..., middle]
+  lagvector <- lagvector.sort
+  for (i in 0:(as.integer(length(lagvector.sort)/2)-1)) {
+    lagvector[1+2*i] <- lagvector.sort[1+i]
+    lagvector[2*(i+1)] <- lagvector.sort[length(lagvector.sort)-i]
+  }
   lagvector <- setdiff(lagvector, as.numeric(names(BICvector)))
   print(lagvector)
 
   ### fit a glm for every maxlag in lagvector and compute its BIC
-  temp <- sapply(lagvector, function (maxlag) {
-    print(maxlag)
+  temp <- NULL
+  for (maxlag in lagvector) {
     form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
                   paste(LagVariables[1:maxlag], collapse = " + "))
 
     glmERAllBuzzDepth <- glmer(form,
                                data = data,
                                family = poisson)
-    BIC(glmERAllBuzzDepth)
-  })
-  names(temp) <- lagvector
+    bic <- BIC(glmERAllBuzzDepth)
+    print(paste0(maxlag, ": ", bic))
+
+    #### online save, not really nice
+    temp <- c(temp, bic)
+    names(temp) <- lagvector[1:length(temp)]
+    BICvector <- c(BICvector, temp)
+    BICvector <- BICvector[as.character(sort(as.numeric(unique(names(BICvector)))))]
+    saveRDS(data.frame(maxlag = as.numeric(names(BICvector)), BIC = as.numeric(BICvector)),
+            paste0(args[5], "/maxlag.bic.rds"))
+  }
 
   ### concatenate, ensure uniqueness and sort on the maxlags values
   BICvector <- c(BICvector, temp)
@@ -93,6 +112,8 @@ while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
   }
 }
 
+print(paste0("maxlag.best: ", maxlag.best))
+
 #---------------------------------------------------------------------------------
 # Build results objects
 dataBICDepth <- data.frame(maxlag = as.numeric(names(BICvector)), BIC = as.numeric(BICvector))
@@ -103,9 +124,14 @@ form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
 glmERAllBuzzDepth <- glmer(form,
                            data = data,
                            family = poisson)
-coeftable <- coefficients(summary(glmERAllBuzzDepth))
+
+glmERAllBuzzDepth.tidy <- tidy(glmERAllBuzzDepth) # to save
+glmERAllBuzzDepth.glance <- glance(glmERAllBuzzDepth) # to save
+
+summary(glmERAllBuzzDepth)
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(dataBICDepth, paste0(args[5], "/glmer_buzz_depth_maxlag_bic.rds"))
-saveRDS(coeftable, paste0(args[5], "/glmer_buzz_depth_bestmaxlag_coefs.rds"))
+saveRDS(glmERAllBuzzDepth.tidy, paste0(args[5], "/glmERAllBuzzDepth.tidy.rds"))
+saveRDS(glmERAllBuzzDepth.glance, paste0(args[5], "/glmERAllBuzzDepth.glance.rds"))
+saveRDS(dataBICDepth, paste0(args[5], "/maxlag.bic.rds"))
