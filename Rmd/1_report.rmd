@@ -39,13 +39,14 @@ L'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de b
 
 Afin de trouver la mémoire optimale, nous avons utilisé la démarche suivante :
 
-1. $from.ml = 1,\ to.ml = N$
+1. $from.ml = 1\ ;\ to.ml = N$
 2. Tant que $(to.ml - from.ml > 2)$ :
-   1. Pour $ml^k_i \in [from.ml, to.ml],\ i = 1...M$ :
-      1. ajustement d'un modèle de Poisson
+   1. Pour $ml^k_i = from.ml + (i-1) * \lfloor\frac{to.ml-from.ml}{M-1}\rceil,\ i = 1...M$ :
+      1. ajustement d'un modèle de Poisson avec $ml^k_i$ éléments mémoire
       2. calcul du BIC
    2. $i_{opt} = argmin\ BIC_i$
-   3. $from.ml = ml^{k}_{i_{opt}-1},\ to.ml = ml^{k}_{i_{opt}+1}$
+   3. $ml_{opt} = ml^{k}_{i_{opt}}$
+   4. $from.ml = ml^{k}_{i_{opt}-1}\ ;\ to.ml = ml^{k}_{i_{opt}+1}$
 
 ### Sans effets aléatoires
 
@@ -66,7 +67,7 @@ Nous obtenons une mémoire optimale de `r maxlag.opt` secondes. La figure \@ref(
 ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   geom_line() +
   geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
-  xlab("Mémoire maximum")
+  xlab("Mémoire maximum [secondes]")
 ```
 
 ### Avec effets aléatoires
@@ -93,7 +94,7 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  ylab("Coefficient") + xlab("Mémoire")
+  ylab("Coefficient") + xlab("Mémoire [secondes]")
 ```
 
 Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
