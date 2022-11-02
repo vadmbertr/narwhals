@@ -87,9 +87,9 @@ summary(glmerAllBuzzDepth)
 # For visual model validation
 
 ## Model control for model with offset including AR + Depth
-predictDepth <- predict(glmerAllBuzzDepth, type = "response")
-data$predictDepth <- data$Depth
-data$predictDepth[as.numeric(names(predictDepth))] <- predictDepth
+pred <- predict(glmerAllBuzzDepth, type = "response")
+data$pred <- data$Buzz
+data$pred[as.numeric(names(pred))] <- pred
 ### Uniform residuals
 Zall <- list(NULL)
 m <- 1
@@ -99,14 +99,14 @@ for (k in unique(data$Ind)) {
   Z <- NULL  ## Uniform residuals
   Buzzindices <- (1:n)[datak$Buzz == 1]
   nB <- length(Buzzindices)
-  dataki <- datak[1:Buzzindices[1],]
-  Z <- c(Z, (exp(-sum(dataki$predictDepth))))
+  dataki <- datak[1:Buzzindices[1], ]
+  Z <- c(Z, (exp(-sum(dataki$pred))))
   for (i in 2:nB) {
-    dataki <- datak[(Buzzindices[i - 1] + 1):(Buzzindices[i]),]
-    Z <- c(Z, (1 - exp(-sum(dataki$predictDepth))))
+    dataki <- datak[(Buzzindices[i - 1] + 1):(Buzzindices[i]), ]
+    Z <- c(Z, (1 - exp(-sum(dataki$pred))))
   }
   dataki <- datak[Buzzindices[nB]:n,]
-  Z <- c(Z, (exp(-sum(dataki$predictDepth))))
+  Z <- c(Z, (exp(-sum(dataki$pred))))
   Zall[[m]] <- list(Z = Z, Ind = k)
   m <- m + 1
 }
@@ -136,7 +136,7 @@ for (k in unique(data$Ind)) {
   nB <- length(Buzzindices)
   for (i in 2:nB) {
     dataki <- datak[(Buzzindices[i - 1] + 1):(Buzzindices[i]),]
-    Z <- c(Z, (1 - exp(-sum(dataki$predictDepth))))
+    Z <- c(Z, (1 - exp(-sum(dataki$pred)))) # TODO: 1- ?
     Depthk <- c(Depthk, dataki$Depth[1])
     Xk <- c(Xk, dataki$X[1])
     Pk <- c(Pk, dataki$P[1])
