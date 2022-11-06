@@ -42,6 +42,15 @@ maxlag.from <- as.numeric(args[2])
 maxlag.to <- as.numeric(args[3])
 maxlag.n <- as.numeric(args[4])
 
+maxlag.bic.path <- paste0(args[5], "/maxlag.bic.rds")
+if (file.exists(maxlag.bic.path)) {
+  maxlag.bic <- readRDS(maxlag.bic.path)
+  BICvector <- maxlag.bic$BIC
+  names(BICvector) <- maxlag.bic$maxlag
+} else {
+  BICvector <- NULL
+}
+
 ## Define the first maxlag.n lags
 temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.to, give.names = TRUE))
 data <- cbind(temp, data)
@@ -50,7 +59,6 @@ LagVariables <- names(data[, 1:maxlag.to])
 splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 ## Search
-BICvector <- NULL
 if (maxlag.to == 0) { # allow to bypass search
   maxlag.best <- maxlag.from
 } else {
@@ -60,13 +68,7 @@ BIC.best.idx <- NULL
 ### We stop when the interval range indicates a sufficiently small search step
 while (maxlag.to - maxlag.from > 2 | is.infinite(maxlag.best)) {
   ### maxlag.n integers between maxlag.from and maxlag.to
-  lagvector.sort <- unique(round(seq(from = maxlag.from, to = maxlag.to, length.out = maxlag.n)))
-  ### reorder as [first, last, second, second.last, ..., middle]
-  lagvector <- lagvector.sort
-  for (i in 0:(as.integer(length(lagvector.sort)/2)-1)) {
-    lagvector[1+2*i] <- lagvector.sort[1+i]
-    lagvector[2*(i+1)] <- lagvector.sort[length(lagvector.sort)-i]
-  }
+  lagvector <- unique(round(seq(from = maxlag.from, to = maxlag.to, length.out = maxlag.n)))
   lagvector <- setdiff(lagvector, as.numeric(names(BICvector)))
   print(lagvector)
 
