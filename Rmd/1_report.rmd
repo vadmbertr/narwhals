@@ -66,6 +66,7 @@ Nous obtenons une mémoire optimale de `r maxlag.opt` secondes. La figure \@ref(
 ```{r plot-glm-bic, fig.cap = "BIC en fonction de la mémoire maximum"}
 ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   geom_line() +
+  geom_point() +
   geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
   xlab("Mémoire maximum [secondes]")
 ```
@@ -78,7 +79,21 @@ Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_N
 $$
 Compte tenu du résultat obtenu précédemment, nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
 
-Malheureusement le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats pour le moment, la tâche tourne sur le cluster du Gricad.
+```{r}
+maxlag.glmer.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.glmer.opt <- as.integer(maxlag.glmer.bic[which.min(maxlag.glmer.bic[, 2]), 1])
+```
+
+Le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats définitifs pour le moment, la tâche tourne encore sur le cluster du Gricad. \newline
+La figure \@ref(fig:plot-glmer-bic) présente les résultats temporaires. La courbe semble pour le moment similaire à celle obtenue sans l'ajout d'effets aléatoires.
+
+```{r plot-glmer-bic, fig.cap = "BIC en fonction de la mémoire maximum - modèle mixte"}
+ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = maxlag.glmer.opt, col = "blue", lty = 2) +
+  xlab("Mémoire maximum [secondes]")
+```
 
 ## Régression bi-exponentielle
 
