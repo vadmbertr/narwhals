@@ -2,6 +2,7 @@
 ## Objective : keep the time and memory information for GLM with 1:90 lag (by=10)
 #---------------------------------------------------------------------------------
 
+library(bench)
 library(data.table)
 library(splines)
 source("0_data.R")
