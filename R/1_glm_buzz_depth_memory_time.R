@@ -60,38 +60,14 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 lagvector <- c(1, seq(10, 90, by = 10))
 
-times <- c()
-memory <- c()
-
-for (maxlag in lagvector){
+glm_maxlag_memory_time <- do.call(rbind, lapply(lagvector, function (maxlag) {
   form <- paste("Buzz ~ Ind + splineDepth + ",
                 paste(LagVariables[1:maxlag], collapse = " + "))
-  
-  T1 <- Sys.time()
-  # TODO: 2- ajout effet aléatoire sur les individus
-  glmAllBuzzDepth <- glm(form,
-                         data = data,
-                         family = poisson)
-  #Recuperation du mark 
-  sortie_mark <- mark(
-    glm = glm(form,
-              data = data,
-              family = poisson)
-  )
-  
-  mem <- print_bench_mark(sortie_mark)$mem_alloc
-  T2 <- Sys.time()
-  td <- T2-T1
-  times <- c(times, td)
-  memory <- c(memory, mem)
-}
-
-t_m_df <- data.frame(lagvector, times, memory)
-
-#---------------------------------------------------------------------------------
-# Build results objects
-memory_time_ByLag_GLM <- t_m_df
+  mark(glm = glm(form, data = data, family = poisson),
+       iterations = 1, memory = TRUE)
+}))
+rownames(glm_maxlag_memory_time) <- lagvector
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(memory_time_ByLag_GLM, paste0(args[2], "/glm_maxlag_memory_time.rds"))
+saveRDS(glm_maxlag_memory_time, paste0(args[2], "/glm_maxlag_memory_time.rds"))
