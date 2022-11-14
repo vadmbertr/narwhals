@@ -87,7 +87,6 @@ for (maxlag in lagvector){
 
 t_m_df <- data.frame(lagvector, times, memory)
 
-
 #---------------------------------------------------------------------------------
 # Build results objects
 memory_time_ByLag_GLM <- t_m_df
