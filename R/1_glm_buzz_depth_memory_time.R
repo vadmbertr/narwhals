@@ -28,21 +28,6 @@ data <- AddTime(data)
 ## We restrict the data to be before exposure
 data <- BeforeExposure(data)
 
-#---------------------------------------------------------------------------------
-#Fonction used to print mark results
-print_bench_mark <- function(x){
-  if (!inherits(x, what = "bench_mark")) {
-    stop("'x' n'est pas une sortie de bench::mark")
-  }
-  df <- data.frame(
-    expression = as.character(x$expression),
-    mem_alloc = as.character(x$mem_alloc),
-    stringsAsFactors = FALSE
-  )
-  print(df)
-  invisible(df)
-}
-
 #-------------------------------------------------------------------------------------
 # Estimation of the model
 # We fit a memory component to buzzes with lags from 1 to $k$, where we varied $k$ between 1 and maxlag.to,
@@ -64,7 +49,7 @@ glm_maxlag_memory_time <- do.call(rbind, lapply(lagvector, function (maxlag) {
   form <- paste("Buzz ~ Ind + splineDepth + ",
                 paste(LagVariables[1:maxlag], collapse = " + "))
   mark(glm = glm(form, data = data, family = poisson),
-       iterations = 1, memory = TRUE)
+       iterations = 1)
 }))
 rownames(glm_maxlag_memory_time) <- lagvector
 
