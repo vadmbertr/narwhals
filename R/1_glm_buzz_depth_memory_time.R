@@ -53,7 +53,7 @@ glm_maxlag_memory_time <- do.call(rbind, lapply(lagvector, function (maxlag) {
   as.matrix(bench_res[, c("total_time", "mem_alloc")])
 }))
 rownames(glm_maxlag_memory_time) <- lagvector
-g
+
 #---------------------------------------------------------------------------------
 # Save R objects
 saveRDS(glm_maxlag_memory_time, paste0(args[2], "/glm_maxlag_memory_time.rds"))
