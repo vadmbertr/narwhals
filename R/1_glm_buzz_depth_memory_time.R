@@ -9,8 +9,8 @@ source("0_data.R")
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
-if (length(args)!=2) {
-  print("Usage du script : Rscript 1_glm_buzz_depth_memory_times.R arg1 arg2")
+if (length(args) != 2) {
+  print("Usage du script : Rscript 1_glm_buzz_depth_memory_time.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
@@ -42,7 +42,6 @@ print_bench_mark <- function(x){
   invisible(df)
 }
 
-
 #-------------------------------------------------------------------------------------
 # Estimation of the model
 # We fit a memory component to buzzes with lags from 1 to $k$, where we varied $k$ between 1 and maxlag.to,
@@ -58,16 +57,16 @@ LagVariables <- names(data[, 1:maxlag.to])
 
 splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
-lagvector <- c(1,seq(10,90,by=10))
+lagvector <- c(1, seq(10, 90, by = 10))
 
-times<-c()
-memory<-c()
+times <- c()
+memory <- c()
 
 for (maxlag in lagvector){
   form <- paste("Buzz ~ Ind + splineDepth + ",
                 paste(LagVariables[1:maxlag], collapse = " + "))
   
-  T1<-Sys.time()
+  T1 <- Sys.time()
   # TODO: 2- ajout effet aléatoire sur les individus
   glmAllBuzzDepth <- glm(form,
                          data = data,
@@ -79,20 +78,20 @@ for (maxlag in lagvector){
               family = poisson)
   )
   
-  mem<-print_bench_mark(sortie_mark)$mem_alloc
-  T2<-Sys.time()
-  td<-T2-T1
-  times<-c(times,td)
-  memory<-c(memory,mem)
+  mem <- print_bench_mark(sortie_mark)$mem_alloc
+  T2 <- Sys.time()
+  td <- T2-T1
+  times <- c(times, td)
+  memory <- c(memory, mem)
 }
 
-t_m_df<-data.frame(lagvector,times,memory)
+t_m_df <- data.frame(lagvector, times, memory)
 
 
 #---------------------------------------------------------------------------------
 # Build results objects
-times_memory_ByLag_GLM <- t_m_df
+memory_time_ByLag_GLM <- t_m_df
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(times_memory_ByLag_GLM, paste0(args[2], "/glm_maxlag_memory_times.rds"))
+saveRDS(memory_time_ByLag_GLM, paste0(args[2], "/glm_maxlag_memory_time.rds"))
