@@ -48,7 +48,7 @@ lagvector <- c(1, seq(10, 90, by = 10))
 
 # retrieve previous runs
 maxlag.memory.time.path <- paste0(args[2], "/glmer_maxlag_memory_time.rds")
-if (file.exists(maxlag.bic.path)) {
+if (file.exists(maxlag.memory.time.path)) {
   glmer.maxlag.memory.time <- readRDS(maxlag.memory.time.path)
   lagvector <- setdiff(lagvector,
                        as.numeric(rownames(glmer.maxlag.memory.time)))
