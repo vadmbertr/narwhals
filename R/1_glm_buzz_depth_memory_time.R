@@ -45,17 +45,15 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 lagvector <- c(1, seq(10, 90, by = 10))
 
-glm_maxlag_memory_time <- NULL
-for (maxlag in lagvector) {
+glm_maxlag_memory_time <- do.call(rbind, lapply(lagvector, function (maxlag) {
   form <- paste("Buzz ~ Ind + splineDepth + ",
                 paste(LagVariables[1:maxlag], collapse = " + "))
   bench_res <- mark(glm = glm(form, data = data, family = poisson),
                     iterations = 1, time_unit = "s")
-  glm_maxlag_memory_time <- rbind(glm_maxlag_memory_time,
-                                  as.matrix(bench_res[, c("total_time", "mem_alloc")]))
-}
+  as.matrix(bench_res[, c("total_time", "mem_alloc")])
+}))
 rownames(glm_maxlag_memory_time) <- lagvector
-
+g
 #---------------------------------------------------------------------------------
 # Save R objects
 saveRDS(glm_maxlag_memory_time, paste0(args[2], "/glm_maxlag_memory_time.rds"))
