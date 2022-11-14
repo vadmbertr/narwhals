@@ -66,7 +66,7 @@ for (maxlag in lagvector) {
                     iterations = 1, time_unit = "s")
   temp <- as.matrix(bench_res[, c("total_time", "mem_alloc")])
   rownames(temp) <- maxlag
-  glmer_maxlag_memory_time <- rbind(glmer_maxlag_memory_time, temp)
+  glmer.maxlag.memory.time <- rbind(glmer.maxlag.memory.time, temp)
   # online save
-  saveRDS(glmer_maxlag_memory_time, maxlag.memory.time.path)
+  saveRDS(glmer.maxlag.memory.time, maxlag.memory.time.path)
 }
