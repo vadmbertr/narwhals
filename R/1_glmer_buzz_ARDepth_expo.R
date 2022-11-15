@@ -58,12 +58,12 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-ARcoef.RegBiExp$estimate[2] * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-ARcoef.RegBiExp$estimate[4] * (1:maxlag.opt))
+ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
+  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset
-Depthcoeff <- ARcoef.best[2:5, "estimate"]
+Depthcoeff <- ARcoef.best$estimate[2:5]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis
