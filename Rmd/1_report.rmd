@@ -184,3 +184,29 @@ ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
   xlab("Uniform theoretical quantiles") +
   ylab("Empirical quantiles")
 ```
+
+## Intervalle de confiance
+
+### Coefficients autorégressifs
+
+```{r}
+B <- 1000
+A1 <- rnorm(B, ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$std.error[1])
+lrc1 <- rnorm(B, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
+A2 <- rnorm(B, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
+lrc2 <- rnorm(B, ARcoef.RegBiExp$estimate[4], ARcoef.RegBiExp$std.error[4])
+ARcoef.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- A1[[b]] * exp(-exp(lrc1[[b]]) * ARcoef.fit$lag) + A2[[b]] * exp(-exp(lrc2[[b]]) * ARcoef.fit$lag)
+    data.frame(lag = ARcoef.fit$lag, estimate = estimate, b = as.factor(b)
+    )
+}))
+```
+
+```{r}
+ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
+  geom_line(data = ARcoef.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = lag, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
+  ylab("Coefficient") + xlab("Mémoire [secondes]")
+```
