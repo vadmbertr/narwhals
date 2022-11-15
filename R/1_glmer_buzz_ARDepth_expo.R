@@ -44,9 +44,9 @@ data <- OnlyAirgun(data)
 # To obtain convergence the optimization is done by Adaptive Gauss-Hermite Quadrature, which is obtained by the option nAGQ = 0 in the glmer-call.
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
-maxlag.bic <- readRDS("../data/glm_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.best <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.best.rds")
-ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
+ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 
@@ -58,12 +58,12 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$b1 * exp(-ARcoef.RegBiExp$b2 * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$b3 * exp(-ARcoef.RegBiExp$b4 * (1:maxlag.opt))
+ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-ARcoef.RegBiExp$estimate[2] * (1:maxlag.opt)) +
+  ARcoef.RegBiExp$estimate[3] * exp(-ARcoef.RegBiExp$estimate[4] * (1:maxlag.opt))
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset
-Depthcoeff <- ARcoef.best[7:10, "Estimate"]
+Depthcoeff <- ARcoef.best[2:5, "estimate"]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis

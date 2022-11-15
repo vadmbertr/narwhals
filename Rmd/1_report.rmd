@@ -84,8 +84,7 @@ maxlag.glmer.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
 maxlag.glmer.opt <- as.integer(maxlag.glmer.bic[which.min(maxlag.glmer.bic[, 2]), 1])
 ```
 
-Le temps d'ajustement des modèles mixtes (environ 1h30) ne nous a pas permis d'obtenir de résultats définitifs pour le moment, la tâche tourne encore sur le cluster du Gricad. \newline
-La figure \@ref(fig:plot-glmer-bic) présente les résultats temporaires. La courbe semble pour le moment similaire à celle obtenue sans l'ajout d'effets aléatoires.
+La figure \@ref(fig:plot-glmer-bic) présente les résultats obtenus. La courbe est similaire à celle obtenue sans l'ajout d'effets aléatoires.
 
 ```{r plot-glmer-bic, fig.cap = "BIC en fonction de la mémoire maximum - modèle mixte"}
 ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
@@ -101,7 +100,7 @@ Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les mo
 La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
-ARcoef.fit <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.fit.rds")
+ARcoef.fit <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
 ```{r plot-AR-BiExp, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs"}
@@ -115,7 +114,7 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
 Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
 
 ```{r}
-ARcoef.RegBiExp <- readRDS("../data/glm_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 ```
 
 ```{r tab-AR-BiExp}
