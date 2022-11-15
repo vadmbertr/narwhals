@@ -63,7 +63,7 @@ ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-ARcoef.RegBiExp$estimate[2] * (1:max
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset
-Depthcoeff <- ARcoef.best[2:5, "estimate"]
+Depthcoeff <- ARcoef.best$estimate[2:5]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis
