@@ -58,8 +58,8 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-ARcoef.RegBiExp$estimate[2] * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-ARcoef.RegBiExp$estimate[4] * (1:maxlag.opt))
+ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
+  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset
