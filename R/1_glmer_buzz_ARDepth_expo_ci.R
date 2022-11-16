@@ -7,6 +7,7 @@ library(data.table)
 library(lme4)
 library(splines)
 library(parallel)
+library(RhpcBLASctl)
 source("0_data.R")
 
 #---------------------------------------------------------------------------------
@@ -94,6 +95,7 @@ if (file.exists(expo.coef.path)) {
 }
 
 ## Parallelism
+blas_set_num_threads(1)
 ### allocated RAM = RAM total * allocated cores / total cores
 ### n glmer // = min(allocated cores, allocated RAM / RAM per glmer)
 ram.total <- 192
