@@ -107,11 +107,11 @@ ram.alloc <- ram.total * n.cores.alloc / n.cores
 n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - nrow(expo.coef.all))
 
 while (n.jobs > 0) {
+  print(nrow(expo.coef.all))
   runif(1) # to change children seeds between while iteration
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer,
                                        mc.cores = n.jobs, mc.set.seed = TRUE))
   expo.coef.all <- rbind(expo.coef.all, expo.coef)
   saveRDS(expo.coef.all, expo.coef.path)
   n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
-  print(nrow(expo.coef.all))
 }
