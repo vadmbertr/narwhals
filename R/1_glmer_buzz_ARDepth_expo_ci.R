@@ -105,4 +105,5 @@ while (n.jobs > 0) {
   expo.coef.all <- do.call(c, mclapply(fit.glmer, mc.cores = n.jobs))
   saveRDS(expo.coef.all, expo.coef.path)
   n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
+  print(length(expo.coef.all))
 }
