@@ -96,6 +96,7 @@ if (file.exists(expo.coef.path)) {
 
 ## Parallelism
 blas_set_num_threads(1)
+RNGkind("L'Ecuyer-CMRG") # to have different seeds among children
 ### allocated RAM = RAM total * allocated cores / total cores
 ### n glmer // = min(allocated cores, allocated RAM / RAM per glmer)
 ram.total <- 192
@@ -103,11 +104,14 @@ ram.per.job <- 7.5
 n.cores <- detectCores()
 n.cores.alloc <- as.numeric(args[4])
 ram.alloc <- ram.total * n.cores.alloc / n.cores
-n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
+n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - nrow(expo.coef.all))
 
 while (n.jobs > 0) {
-  expo.coef.all <- do.call(c, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
+  runif(1) # to change children seeds between while iteration
+  expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer,
+                                       mc.cores = n.jobs, mc.set.seed = TRUE))
+  expo.coef.all <- rbind(expo.coef.all, expo.coef)
   saveRDS(expo.coef.all, expo.coef.path)
   n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
-  print(length(expo.coef.all))
+  print(nrow(expo.coef.all))
 }
