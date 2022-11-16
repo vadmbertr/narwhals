@@ -12,7 +12,7 @@ source("0_data.R")
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read args from command line
-if (length(args) != 3) {
+if (length(args) != 4) {
   print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
@@ -81,7 +81,7 @@ fit.glmer <- function () {
                              nAGQ = 0,
                              weights = n,
                              family = poisson)
-  tidy(glmerAllBuzzDepth)$estimate
+  return(tidy(glmerAllBuzzDepth)$estimate)
 }
 
 expo.coef.path <- paste0(args[2], "/expo.coef.rds")
