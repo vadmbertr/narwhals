@@ -75,7 +75,7 @@ for (k in unique(data$Ind)) {
   data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
 }
 
-fit.glmer <- function () {
+fit.glmer <- function (i) {
   glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
                              data = data,
                              nAGQ = 0,
@@ -102,7 +102,7 @@ ram.alloc <- ram.total * n.cores.alloc / n.cores
 n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
 
 while (n.jobs > 0) {
-  expo.coef.all <- do.call(c, mclapply(fit.glmer, mc.cores = n.jobs))
+  expo.coef.all <- do.call(c, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
   saveRDS(expo.coef.all, expo.coef.path)
   n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
   print(length(expo.coef.all))
