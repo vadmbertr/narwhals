@@ -76,6 +76,7 @@ for (k in unique(data$Ind)) {
 }
 
 fit.glmer <- function (i) {
+  print(i)
   glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
                              data = data,
                              nAGQ = 0,
