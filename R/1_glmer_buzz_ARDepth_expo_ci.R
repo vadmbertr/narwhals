@@ -61,30 +61,33 @@ data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
-### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
-data$ARDepth <- as.matrix(dataAR) %*% ARvec
-
-### Depth coefficients for offset
-Depthcoeff <- ARcoef.best$estimate[2:5]
-data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
-
-## Weights for the glmer analysis
-data$n <- rep(0, length(data$Ind))
-for (k in unique(data$Ind)) {
-  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
-}
-
 fit.glmer <- function (i) {
+  ### Autoregressive component for offset in later analyses
+  A1 <- rnorm(1, ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$std.error[1])
+  lrc1 <- rnorm(1, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
+  A2 <- rnorm(1, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
+  lrc2 <- rnorm(1, ARcoef.RegBiExp$estimate[4], ARcoef.RegBiExp$std.error[4])
+  print(c(A1, lrc1, A2, lrc2))
+  ARvec <- A1 * exp(-exp(lrc1) * (1:maxlag.opt)) + A2 * exp(-exp(lrc2) * (1:maxlag.opt))
+  data$ARDepth <- as.matrix(dataAR) %*% ARvec
+
+  ### Depth coefficients for offset
+  Depthcoeff <- ARcoef.best$estimate[2:5]
+  data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
+
+  ## Weights for the glmer analysis
+  data$n <- rep(0, length(data$Ind))
+  for (k in unique(data$Ind)) {
+    data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+  }
+
   glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
                              data = data,
                              nAGQ = 0,
                              weights = n,
                              family = poisson)
-  c <- tidy(glmerAllBuzzDepth)$estimate
-  print(c)
-  return(c)
+  print(tidy(glmerAllBuzzDepth)$estimate)
+  return(tidy(glmerAllBuzzDepth)$estimate)
 }
 
 expo.coef.path <- paste0(args[2], "/expo.coef.rds")
@@ -96,7 +99,6 @@ if (file.exists(expo.coef.path)) {
 
 ## Parallelism
 blas_set_num_threads(1)
-RNGkind("L'Ecuyer-CMRG") # to have different seeds among children
 ### allocated RAM = RAM total * allocated cores / total cores
 ### n glmer // = min(allocated cores, allocated RAM / RAM per glmer)
 ram.total <- 192
@@ -108,9 +110,7 @@ n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3])
 
 while (n.jobs > 0) {
   print(nrow(expo.coef.all))
-  runif(1) # to change children seeds between while iteration
-  expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer,
-                                       mc.cores = n.jobs, mc.set.seed = TRUE))
+  expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
   expo.coef.all <- rbind(expo.coef.all, expo.coef)
   saveRDS(expo.coef.all, expo.coef.path)
   n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
