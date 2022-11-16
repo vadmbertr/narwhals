@@ -101,10 +101,8 @@ n.cores.alloc <- as.numeric(args[4])
 ram.alloc <- ram.total * n.cores.alloc / n.cores
 n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
 
-if (n.jobs > 0) {
+while (n.jobs > 0) {
   expo.coef.all <- do.call(c, mclapply(fit.glmer, mc.cores = n.jobs))
+  saveRDS(expo.coef.all, expo.coef.path)
+  n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
 }
-
-#---------------------------------------------------------------------------------
-# Save R objects
-saveRDS(expo.coef.all, expo.coef.path)
