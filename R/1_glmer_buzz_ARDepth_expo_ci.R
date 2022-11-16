@@ -77,14 +77,14 @@ for (k in unique(data$Ind)) {
 }
 
 fit.glmer <- function (i) {
-  print(paste0("start ", i))
   glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
                              data = data,
                              nAGQ = 0,
                              weights = n,
                              family = poisson)
-  print(paste0("end ", i))
-  return(tidy(glmerAllBuzzDepth)$estimate)
+  c <- tidy(glmerAllBuzzDepth)$estimate
+  print(c)
+  return(c)
 }
 
 expo.coef.path <- paste0(args[2], "/expo.coef.rds")
