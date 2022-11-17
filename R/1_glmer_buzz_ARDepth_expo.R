@@ -9,6 +9,7 @@ library(lme4)
 library(RhpcBLASctl)
 blas_set_num_threads(1)
 source("0_data.R")
+source("0_biexp.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -60,8 +61,8 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
+ARvec <- BiExp(ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$estimate[2],
+               ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$estimate[4], maxlag = maxlag.opt)
 data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
 ### Depth coefficients for offset

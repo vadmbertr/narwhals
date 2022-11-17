@@ -19,5 +19,5 @@ lrc1 <- summary(biexp.reg)$coefficients[2,1]
 A2 <- summary(biexp.reg)$coefficients[3,1]
 lrc2 <- summary(biexp.reg)$coefficients[4,1]
 ARcoef.fit <- data.frame(maxlag = as.factor(rep(maxlag.opt, maxlag.opt)), lag = 1:maxlag.opt, truth = ARcoef.est)
-ARcoef.fit$estimate <- A1 * exp(-exp(lrc1) * ARcoef.fit$lag) + A2 * exp(-exp(lrc2) * ARcoef.fit$lag)
+ARcoef.fit$estimate <- BiExp(A1, lrc1, A2, lrc2, lag = ARcoef.fit$lag)
 saveRDS(ARcoef.fit, file = "../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")

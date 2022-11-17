@@ -9,6 +9,7 @@ library(splines)
 library(parallel)
 library(RhpcBLASctl)
 source("0_data.R")
+source("0_biexp.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -67,7 +68,7 @@ fit.glmer <- function (i) {
   lrc1 <- rnorm(1, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
   A2 <- rnorm(1, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
   lrc2 <- rnorm(1, ARcoef.RegBiExp$estimate[4], ARcoef.RegBiExp$std.error[4])
-  ARvec <- A1 * exp(-exp(lrc1) * (1:maxlag.opt)) + A2 * exp(-exp(lrc2) * (1:maxlag.opt))
+  ARvec <- BiExp(A1, lrc1, A2, lrc2, , maxlag = maxlag.opt)
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
