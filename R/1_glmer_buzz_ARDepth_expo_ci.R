@@ -106,7 +106,7 @@ n.cores.alloc <- as.numeric(args[4])
 ram.alloc <- ram.total * n.cores.alloc / n.cores
 n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - nrow(expo.coef.all))
 
-while (n.jobs > 0) {
+while (as.numeric(args[3]) - nrow(expo.coef.all)) {
   print(nrow(expo.coef.all))
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
   expo.coef.all <- rbind(expo.coef.all, expo.coef)
