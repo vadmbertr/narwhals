@@ -111,5 +111,5 @@ while (as.numeric(args[3]) - nrow(expo.coef.all)) {
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
   expo.coef.all <- rbind(expo.coef.all, expo.coef)
   saveRDS(expo.coef.all, expo.coef.path)
-  n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - length(expo.coef.all))
+  n.jobs <- min(n.jobs, as.numeric(args[3]) - nrow(expo.coef.all))
 }
