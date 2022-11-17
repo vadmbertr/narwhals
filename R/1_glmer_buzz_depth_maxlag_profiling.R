@@ -1,17 +1,18 @@
 #--------------------------------------------------------------------------------
-## Objective : keep the time and memory information for GLM with 1:90 lag (by=10)
+## Objective : keep the time and memory information for GLMER with 1:90 lag (by=10)
 #---------------------------------------------------------------------------------
 
 library(bench)
 library(data.table)
 library(splines)
+library(lme4)
 source("0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
 if (length(args) != 2) {
-  print("Usage du script : Rscript 1_glm_buzz_depth_memory_time.R arg1 arg2")
+  print("Usage du script : Rscript 1_glmer_buzz_depth_memory_time.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
@@ -45,15 +46,27 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 lagvector <- c(1, seq(10, 90, by = 10))
 
-glm_maxlag_memory_time <- do.call(rbind, lapply(lagvector, function (maxlag) {
-  form <- paste("Buzz ~ Ind + splineDepth + ",
-                paste(LagVariables[1:maxlag], collapse = " + "))
-  bench_res <- mark(glm = glm(form, data = data, family = poisson),
-                    iterations = 1, time_unit = "s")
-  as.matrix(bench_res[, c("total_time", "mem_alloc")])
-}))
-rownames(glm_maxlag_memory_time) <- lagvector
+# retrieve previous runs
+maxlag.memory.time.path <- paste0(args[2], "/profiling.rds")
+if (file.exists(maxlag.memory.time.path)) {
+  glmer.maxlag.memory.time <- readRDS(maxlag.memory.time.path)
+  lagvector <- setdiff(lagvector,
+                       as.numeric(rownames(glmer.maxlag.memory.time)))
+} else {
+  glmer.maxlag.memory.time <- NULL
+}
 
-#---------------------------------------------------------------------------------
-# Save R objects
-saveRDS(glm_maxlag_memory_time, paste0(args[2], "/glm_maxlag_memory_time.rds"))
+print(lagvector)
+
+for (maxlag in lagvector) {
+  print(maxlag)
+  form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
+                  paste(LagVariables[1:maxlag], collapse = " + "))
+  bench_res <- mark(glmer = glmer(form, data = data, family = poisson),
+                    iterations = 1, time_unit = "s")
+  temp <- as.matrix(bench_res[, c("total_time", "mem_alloc")])
+  rownames(temp) <- maxlag
+  glmer.maxlag.memory.time <- rbind(glmer.maxlag.memory.time, temp)
+  # online save
+  saveRDS(glmer.maxlag.memory.time, maxlag.memory.time.path)
+}

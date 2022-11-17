@@ -1,5 +1,5 @@
 ---
-title: "Rapport 28/10/2022"
+title: "Rapport d'avancement"
 output:
    bookdown::pdf_document2: default
 urlcolor: blue
@@ -27,7 +27,7 @@ set.seed(15)
 
 Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations humaines sur leur capacité à se nourrir. Lorsqu'elles se nourissent, ces baleines émettent des sons spécifiques (buzz). Nous nous intéresserons donc à la fréquence d'émission de ces buzz (buzz/min), ce qui peut être modélisé par un modèle de Poisson.
 
-# Sans perturbations
+# Sans exposition
 
 ## Estimation de l'effet de la profondeur
 
@@ -94,10 +94,41 @@ ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum [secondes]")
 ```
 
+### Note sur le temps d'ajustement des modèles
+
+Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
+Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que la figure \@ref(fig:plot-glmer-time) montre que pour les modèles mixtes celle-ci est quadratique.
+
+```{r}
+glm.profiling <- as.data.frame(readRDS("../data/glm_buzz_depth_maxlag_profiling/profiling.rds"))
+glm.profiling$maxlag <- rownames(glm.profiling)
+```
+
+```{r plot-glm-time, fig.cap = "Temps d'ajustement (en secondes) des modèles classiques en fonction de la mémoire maximum"}
+ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+  geom_line() +
+  geom_point() +
+  xlab("Mémoire maximum") +
+  ylab("Temps d'ajustement [secondes]")
+```
+
+```{r}
+glmer.profiling <- as.data.frame(readRDS("../data/glmer_buzz_depth_maxlag_profiling/profiling.rds"))
+glmer.profiling$maxlag <- rownames(glmer.profiling)
+```
+
+```{r plot-glmer-time, fig.cap = "Temps d'ajustement (en secondes) des modèles mixtes en fonction de la mémoire maximum"}
+ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+  geom_line() +
+  geom_point() +
+  xlab("Mémoire maximum") +
+  ylab("Temps d'ajustement [secondes]")
+```
+
 ## Régression bi-exponentielle
 
-Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles "classiques", aussi, afin de réduire le nombre de variables, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
-La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
+Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles classiques, aussi, afin de réduire le nombre de variables et le temps d'ajustement, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
+La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
 ARcoef.fit <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
@@ -132,6 +163,8 @@ $$
 Buzz \sim (1 | Ind) + offset(ARDepth) + spline(Expo)
 $$
 
+Les coefficients estimés par le modèle mixte sans exposition sont fixés dans celui-ci afin que les coefficients ajustés pour la variable d'exposition s'interprètent comme un effet par rapport au comportement normal (sans exposition). De plus, cela permet de réduire sensiblement le coût calculatoire d'ajustement.
+
 ```{r}
 glmerAllBuzzDepth.tidy <- readRDS("../data/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.tidy.rds")
 glmerAllBuzzDepth.glance <- readRDS("../data/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.glance.rds")
@@ -153,21 +186,13 @@ kable(glmerAllBuzzDepth.glance, caption = "Statistiques du modèle mixte incluan
   kable_styling(latex_options = "HOLD_position")
 ```
 
-Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants. Nous avons tout de même remarqué une valeur franchement aberrante.
+Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants.
 
 ```{r, fig.cap = "Auto-corrélation des résidues"}
 ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
   geom_col(size = 0.2) + #coord_fixed(36) +
   ylab("Autocorrelation of uniform residuals") +
   xlab("Lag")
-```
-
-```{r, fig.cap = "Résidue selon le précédent. Avec la valeur aberrante"}
-ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
-  geom_point(size = 0.5) + #coord_fixed(1) +
-  xlab(expression(Z[i-1])) +
-  ylab(expression(Z[i])) #+
-  #geom_abline(slope = 1, intercept = 0, size = 1)
 ```
 
 ```{r, fig.cap = "Résidue selon le précédent"}
