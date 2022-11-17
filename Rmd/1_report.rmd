@@ -1,7 +1,10 @@
 ---
-title: "Rapport d'avancement"
+title: "Buzzing - Rapport d'avancement"
 output:
-   bookdown::pdf_document2: default
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+toc-title: "Sommaire"
 urlcolor: blue
 linkcolor: blue
 header-includes:
@@ -27,13 +30,15 @@ set.seed(15)
 
 Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations humaines sur leur capacité à se nourrir. Lorsqu'elles se nourissent, ces baleines émettent des sons spécifiques (buzz). Nous nous intéresserons donc à la fréquence d'émission de ces buzz (buzz/min), ce qui peut être modélisé par un modèle de Poisson.
 
-# Sans exposition
+# Modélisation du buzzing chez les narvals sans exposition
 
 ## Estimation de l'effet de la profondeur
 
 Pour se nourrir, les narvals doivent plonger profondément alors que le reste du temps, ils restent "proche" de la surface. Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une variable explicative la décrivant par un polynôme de degré 3.
 
-## Recherche de la mémoire optimale
+## Estimation de l'autocorrélation dans l'émission de buzz
+
+### Recherche de la mémoire optimale
 
 L'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit donc être ajouté au modèle et pour cela nous devons déterminer la mémoire maximum qu'il faut autoriser au modèle.
 
@@ -48,7 +53,7 @@ Afin de trouver la mémoire optimale, nous avons utilisé la démarche suivante 
    3. $ml_{opt} = ml^{k}_{i_{opt}}$
    4. $from.ml = ml^{k}_{i_{opt}-1}\ ;\ to.ml = ml^{k}_{i_{opt}+1}$
 
-### Sans effets aléatoires
+#### Sans effets aléatoires
 
 Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus pour estimer la mémoire optimale :
 $$
@@ -71,7 +76,7 @@ ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum [secondes]")
 ```
 
-### Avec effets aléatoires
+#### Avec effets aléatoires
 
 Nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous avons tenté d'inclure un effet aléatoire sur les individus :
 $$
@@ -125,7 +130,7 @@ ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
   ylab("Temps d'ajustement [secondes]")
 ```
 
-## Régression bi-exponentielle
+### Régression bi-exponentielle
 
 Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles classiques, aussi, afin de réduire le nombre de variables et le temps d'ajustement, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
 La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
@@ -154,7 +159,9 @@ kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-expone
   kable_styling(latex_options = "HOLD_position")
 ```
 
-# Estimation de l'effet de l'exposition
+# Estimation de l'effet de l'exposition sur le buzzing
+
+## Modélisation
 
 L'exposition aux perturbations est exprimée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
 
@@ -210,9 +217,9 @@ ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
   ylab("Empirical quantiles")
 ```
 
-## Intervalle de confiance
+## Intervalles de confiance
 
-### Coefficients autorégressifs
+### Variation des coefficients autorégressifs
 
 ```{r}
 B <- 1000
@@ -234,4 +241,44 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
   ylab("Coefficient") + xlab("Mémoire [secondes]")
+```
+
+### Intervalles de confiance des coefficients d'exposition
+
+```{r}
+source("../R/1_monte_carlo_conf_int.R")
+expo.coef <- t(readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.rds"))
+expo.coef.confint <- t(apply(expo.coef, 1, percentile_conf_int))
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = expo.coef[1, ]), aes(x = coef), position = "identity") +
+  geom_vline(xintercept = expo.coef.confint[1, 1], lty = 2) +
+  geom_vline(xintercept = expo.coef.confint[1, 2], lty = 2) +
+  ylab("Effectif") + xlab("Coefficient 1")
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = expo.coef[2, ]), aes(x = coef), position = "identity") +
+  geom_vline(xintercept = expo.coef.confint[2, 1], lty = 2) +
+  geom_vline(xintercept = expo.coef.confint[2, 2], lty = 2) +
+  ylab("Effectif") + xlab("Coefficient 2")
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = expo.coef[3, ]), aes(x = coef), position = "identity") +
+  geom_vline(xintercept = expo.coef.confint[3, 1], lty = 2) +
+  geom_vline(xintercept = expo.coef.confint[3, 2], lty = 2) +
+  ylab("Effectif") + xlab("Coefficient 3")
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = expo.coef[4, ]), aes(x = coef), position = "identity") +
+  geom_vline(xintercept = expo.coef.confint[4, 1], lty = 2) +
+  geom_vline(xintercept = expo.coef.confint[4, 2], lty = 2) +
+  ylab("Effectif") + xlab("Coefficient 4")
 ```
