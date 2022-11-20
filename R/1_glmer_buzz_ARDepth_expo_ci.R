@@ -62,7 +62,7 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
-  ### Autoregressive component for offset in later analyses
+  ### Autoregressive component for offset
   A1 <- rnorm(1, ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$std.error[1])
   lrc1 <- rnorm(1, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
   A2 <- rnorm(1, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
@@ -71,7 +71,11 @@ fit.glmer <- function (i) {
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
-  Depthcoeff <- ARcoef.best$estimate[2:5]
+  D1 <- rnorm(1, ARcoef.best$estimate[2], ARcoef.best$std.error[2])
+  D2 <- rnorm(1, ARcoef.best$estimate[3], ARcoef.best$std.error[3])
+  D3 <- rnorm(1, ARcoef.best$estimate[4], ARcoef.best$std.error[4])
+  D4 <- rnorm(1, ARcoef.best$estimate[5], ARcoef.best$std.error[5])
+  Depthcoeff <- c(D1, D2, D3, D4)
   data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
   ## Weights for the glmer analysis
