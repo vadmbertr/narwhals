@@ -22,6 +22,7 @@ knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
 ```{r}
 library(ggplot2)
 library(kableExtra)
+library(latex2exp)
 
 set.seed(15)
 ```
@@ -249,8 +250,12 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
 
 ```{r}
 source("../R/1_monte_carlo_conf_int.R")
-expo.coef <- t(readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.rds"))
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.rds")
+expo.coef <- as.data.frame(t(expo.coef))
+expo.coef[, 1:ncol(expo.coef)] <- sapply(expo.coef[, 1:ncol(expo.coef)], as.numeric)
+expo.coef <- expo.coef[ , colSums(is.na(expo.coef))==0]
 expo.coef.confint <- t(apply(expo.coef, 1, percentile_conf_int))
+expo.coef <- as.matrix(expo.coef)
 ```
 
 ```{r}
@@ -258,7 +263,7 @@ ggplot() +
   geom_histogram(data = data.frame(coef = expo.coef[1, ]), aes(x = coef), position = "identity") +
   geom_vline(xintercept = expo.coef.confint[1, 1], lty = 2) +
   geom_vline(xintercept = expo.coef.confint[1, 2], lty = 2) +
-  ylab("Effectif") + xlab("Coefficient 1")
+  ylab("Effectif") + xlab(TeX("Intercept $\\beta_0$"))
 ```
 
 ```{r}
@@ -266,7 +271,7 @@ ggplot() +
   geom_histogram(data = data.frame(coef = expo.coef[2, ]), aes(x = coef), position = "identity") +
   geom_vline(xintercept = expo.coef.confint[2, 1], lty = 2) +
   geom_vline(xintercept = expo.coef.confint[2, 2], lty = 2) +
-  ylab("Effectif") + xlab("Coefficient 2")
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_1$"))
 ```
 
 ```{r}
@@ -274,7 +279,7 @@ ggplot() +
   geom_histogram(data = data.frame(coef = expo.coef[3, ]), aes(x = coef), position = "identity") +
   geom_vline(xintercept = expo.coef.confint[3, 1], lty = 2) +
   geom_vline(xintercept = expo.coef.confint[3, 2], lty = 2) +
-  ylab("Effectif") + xlab("Coefficient 3")
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_2$"))
 ```
 
 ```{r}
@@ -282,5 +287,5 @@ ggplot() +
   geom_histogram(data = data.frame(coef = expo.coef[4, ]), aes(x = coef), position = "identity") +
   geom_vline(xintercept = expo.coef.confint[4, 1], lty = 2) +
   geom_vline(xintercept = expo.coef.confint[4, 2], lty = 2) +
-  ylab("Effectif") + xlab("Coefficient 4")
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_3$"))
 ```
