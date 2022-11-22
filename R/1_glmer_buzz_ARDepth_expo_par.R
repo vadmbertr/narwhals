@@ -97,7 +97,7 @@ expo.coef.path <- paste0(args[2], "/expo.coef.rds")
 if (file.exists(expo.coef.path)) {
   expo.coef.all <- readRDS(expo.coef.path)
 } else {
-  expo.coef.all <- NULL
+  expo.coef.all <- data.frame()
 }
 
 ## Parallelism
