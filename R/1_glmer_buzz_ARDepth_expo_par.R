@@ -89,7 +89,14 @@ fit.glmer <- function (i) {
                              nAGQ = 0,
                              weights = n,
                              family = poisson)
-  return(tidy(glmerAllBuzzDepth)$estimate)
+  coefs <- tidy(glmerAllBuzzDepth)
+  if (!is.numeric(coefs$estimate)) {
+    coefs$estimate <- NA
+    coef$estimate <- as.numeric(coefs$estimate)
+    coefs$std.error <- NA
+    coef$std.error <- as.numeric(coefs$std.error)
+  }
+  return(coefs[, c("term", "estimate", "std.error")])
 }
 
 expo.coef.path <- paste0(args[2], "/expo.coef.rds")
