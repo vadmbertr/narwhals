@@ -127,6 +127,7 @@ n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3])
 while (as.numeric(args[3]) - n.done(expo.coef.all, n.coefs) > 0) {
   print(n.done(expo.coef.all, n.coefs))
   n.jobs <- min(n.jobs, as.numeric(args[3]) - n.done(expo.coef.all, n.coefs))
+  print(n.jobs)
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
   if (is.na(n.coefs)) {
     n.coefs <- as.integer(nrow(expo.coef) / n.jobs)
