@@ -99,11 +99,18 @@ fit.glmer <- function (i) {
   return(coefs[, c("term", "estimate", "std.error")])
 }
 
+n.done <- function (df, nc) {
+  if (is.na(nc)) return(0)
+  else return(round(nrow(df) / nc))
+}
+
 expo.coef.path <- paste0(args[2], "/expo.coef.rds")
 if (file.exists(expo.coef.path)) {
   expo.coef.all <- readRDS(expo.coef.path)
+  n.coefs <- length(unique(expo.coef.all$term))
 } else {
   expo.coef.all <- data.frame()
+  n.coefs <- NA
 }
 
 ## Parallelism
@@ -117,10 +124,13 @@ n.cores.alloc <- as.numeric(args[4])
 ram.alloc <- ram.total * n.cores.alloc / n.cores
 n.jobs <- min(n.cores.alloc, floor(ram.alloc / ram.per.job), as.numeric(args[3]) - nrow(expo.coef.all))
 
-while (as.numeric(args[3]) - nrow(expo.coef.all)) {
-  print(nrow(expo.coef.all))
+while (as.numeric(args[3]) - n.done(expo.coef.all, n.coefs) > 0) {
+  print(n.done(expo.coef.all, n.coefs))
+  n.jobs <- min(n.jobs, as.numeric(args[3]) - n.done(expo.coef.all, n.coefs))
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
+  if (is.na(n.coefs)) {
+    n.coefs <- as.integer(nrow(expo.coef) / n.jobs)
+  }
   expo.coef.all <- rbind(expo.coef.all, expo.coef)
   saveRDS(expo.coef.all, expo.coef.path)
-  n.jobs <- min(n.jobs, as.numeric(args[3]) - nrow(expo.coef.all))
 }
