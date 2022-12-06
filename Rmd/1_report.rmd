@@ -23,6 +23,7 @@ knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
 library(ggplot2)
 library(kableExtra)
 library(latex2exp)
+library(reshape2)
 
 set.seed(15)
 ```
@@ -251,41 +252,78 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
 ```{r}
 source("../R/1_monte_carlo_conf_int.R")
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.rds")
-expo.coef <- as.data.frame(t(expo.coef))
-expo.coef[, 1:ncol(expo.coef)] <- sapply(expo.coef[, 1:ncol(expo.coef)], as.numeric)
-expo.coef <- expo.coef[ , colSums(is.na(expo.coef))==0]
-expo.coef.confint <- t(apply(expo.coef, 1, percentile_conf_int))
-expo.coef <- as.matrix(expo.coef)
+expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
+expo.coef$estimate <- as.numeric(expo.coef$estimate)
+expo.coef$std.error <- as.numeric(expo.coef$std.error)
+
+expo.coef.estimate <- expo.coef[, c("term", "estimate")]
+expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
+expo.coef.estimate <- t(dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:5])
+expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, percentile_conf_int))
+
+alpha <- .05
+expo.coef.std.error <- expo.coef
+expo.coef.std.error$seq <- with(expo.coef.std.error, ave(std.error, term, FUN = seq_along))
+expo.coef.std.error$lower <-
+  expo.coef.std.error$estimate - qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error$upper <-
+  expo.coef.std.error$estimate + qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error.lower <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "lower")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "upper")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
+```
+
+```{r}
+kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
+      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      caption = "Intervalles de confiance",
+      label="tab-coef-glmer-expo-ci") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
 ```{r}
 ggplot() +
-  geom_histogram(data = data.frame(coef = expo.coef[1, ]), aes(x = coef), position = "identity") +
-  geom_vline(xintercept = expo.coef.confint[1, 1], lty = 2) +
-  geom_vline(xintercept = expo.coef.confint[1, 2], lty = 2) +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
   ylab("Effectif") + xlab(TeX("Intercept $\\beta_0$"))
 ```
 
 ```{r}
 ggplot() +
-  geom_histogram(data = data.frame(coef = expo.coef[2, ]), aes(x = coef), position = "identity") +
-  geom_vline(xintercept = expo.coef.confint[2, 1], lty = 2) +
-  geom_vline(xintercept = expo.coef.confint[2, 2], lty = 2) +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[2, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
   ylab("Effectif") + xlab(TeX("Exposition $\\beta_1$"))
 ```
 
 ```{r}
 ggplot() +
-  geom_histogram(data = data.frame(coef = expo.coef[3, ]), aes(x = coef), position = "identity") +
-  geom_vline(xintercept = expo.coef.confint[3, 1], lty = 2) +
-  geom_vline(xintercept = expo.coef.confint[3, 2], lty = 2) +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[3, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
   ylab("Effectif") + xlab(TeX("Exposition $\\beta_2$"))
 ```
 
 ```{r}
 ggplot() +
-  geom_histogram(data = data.frame(coef = expo.coef[4, ]), aes(x = coef), position = "identity") +
-  geom_vline(xintercept = expo.coef.confint[4, 1], lty = 2) +
-  geom_vline(xintercept = expo.coef.confint[4, 2], lty = 2) +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[4, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
   ylab("Effectif") + xlab(TeX("Exposition $\\beta_3$"))
 ```
