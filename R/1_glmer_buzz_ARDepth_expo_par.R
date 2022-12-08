@@ -5,6 +5,7 @@
 library(broom.mixed)
 library(data.table)
 library(lme4)
+library(mvtnorm)
 library(splines)
 library(parallel)
 library(RhpcBLASctl)
@@ -50,8 +51,10 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+glmer.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+RegBiExp.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
+Depth.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 
@@ -64,20 +67,13 @@ dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
   ### Autoregressive component for offset
-  A1 <- rnorm(1, ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$std.error[1])
-  lrc1 <- rnorm(1, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
-  A2 <- rnorm(1, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
-  lrc2 <- rnorm(1, ARcoef.RegBiExp$estimate[4], ARcoef.RegBiExp$std.error[4])
-  ARvec <- BiExp(A1, lrc1, A2, lrc2, , maxlag = maxlag.opt)
+  ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov))
+  ARvec <- BiExp(ARcoefs[[1]], ARcoefs[[2]], ARcoefs[[3]], ARcoefs[[4]], , maxlag = maxlag.opt)
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
-  D1 <- rnorm(1, ARcoef.best$estimate[2], ARcoef.best$std.error[2])
-  D2 <- rnorm(1, ARcoef.best$estimate[3], ARcoef.best$std.error[3])
-  D3 <- rnorm(1, ARcoef.best$estimate[4], ARcoef.best$std.error[4])
-  D4 <- rnorm(1, ARcoef.best$estimate[5], ARcoef.best$std.error[5])
-  Depthcoeff <- c(D1, D2, D3, D4)
-  data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
+  Depthcoefs <- as.numeric(rmvnorm(1, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov))
+  data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoefs
 
   ## Weights for the glmer analysis
   data$n <- rep(0, length(data$Ind))
@@ -91,13 +87,9 @@ fit.glmer <- function (i) {
                              weights = n,
                              family = poisson)
   coefs <- tidy(glmerAllBuzzDepth)
-  if (!is.numeric(coefs$estimate)) {
-    coefs$estimate <- NA
-    coef$estimate <- as.numeric(coefs$estimate)
-    coefs$std.error <- NA
-    coef$std.error <- as.numeric(coefs$std.error)
+  if (!any(grepl("Error", coefs$term, fixed = T))) {
+    return(coefs[, c("term", "estimate", "std.error")])
   }
-  return(coefs[, c("term", "estimate", "std.error")])
 }
 
 n.done <- function (df, nc) {
