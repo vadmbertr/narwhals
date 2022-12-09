@@ -23,7 +23,13 @@ knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
 library(ggplot2)
 library(kableExtra)
 library(latex2exp)
+library(mvtnorm)
+library(patchwork)
 library(reshape2)
+library(splines)
+
+source("../R/0_biexp.R")
+source("../R/1_conf_int.R")
 
 set.seed(15)
 ```
@@ -104,47 +110,50 @@ ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
 ### Note sur le temps d'ajustement des modèles
 
 Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
-Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que la figure \@ref(fig:plot-glmer-time) montre que pour les modèles mixtes celle-ci est quadratique.
+Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que pour les modèles mixtes celle-ci est quadratique.
 
 ```{r}
 glm.profiling <- as.data.frame(readRDS("../data/glm_buzz_depth_maxlag_profiling/profiling.rds"))
 glm.profiling$maxlag <- as.numeric(rownames(glm.profiling))
-```
 
-```{r plot-glm-time, fig.cap = "Temps d'ajustement (en secondes) des modèles classiques en fonction de la mémoire maximum"}
-ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
-  geom_line() +
-  geom_point() +
-  geom_function(fun = function (x) { x }, linetype = "dashed") +
-  xlab("Composants mémoire") +
-  ylab("Temps d'ajustement [secondes]")
-```
-
-```{r}
 glmer.profiling <- as.data.frame(readRDS("../data/glmer_buzz_depth_maxlag_profiling/profiling.rds"))
 glmer.profiling$maxlag <- as.numeric(rownames(glmer.profiling))
 ```
 
-```{r plot-glmer-time, fig.cap = "Temps d'ajustement (en secondes) des modèles mixtes en fonction de la mémoire maximum"}
-ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+```{r plot-glm-time, fig.cap = "Temps d'ajustement (en secondes) des modèles en fonction de la mémoire maximum"}
+g1 <- ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+  geom_line() +
+  geom_point() +
+  geom_function(fun = function (x) { x }, linetype = "dashed") +
+  labs(x = "Composants mémoire",
+       y = "Temps d'ajustement [secondes]",
+       caption = "Modèles classiques") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g2 <- ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
   geom_line() +
   geom_point() +
   geom_function(fun = function (x) { x^2.5 }, linetype = "dashed") +
-  xlab("Composants mémoire") +
-  ylab("Temps d'ajustement [secondes]")
+  labs(x = "Composants mémoire",
+       y = "Temps d'ajustement [secondes]",
+       caption = "Modèles mixtes") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g1 + g2
 ```
 
-### Régression bi-exponentielle
+### Régression bi-exponentielle sur les coefficients autorégressifs
 
 Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles classiques, aussi, afin de réduire le nombre de variables et le temps d'ajustement, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
 La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
-ARcoef.fit <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
+ARcoefs.fit <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
 ```{r plot-AR-BiExp, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs"}
-ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
+ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
@@ -154,12 +163,27 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
 Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
 
 ```{r}
-ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+RegBiExp.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 ```
 
 ```{r tab-AR-BiExp}
-kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-exponentielle",
+kable(RegBiExp.coefs, caption = "Coefficients autorégressifs obtenus par régression bi-exponentielle",
       label="tab-AR-BiExp") %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+### Coefficients de profondeur
+
+Les coefficients de profondeur du modèle linéaire mixte sans exposition sont proposés table \@ref(tab:tab-depth).
+
+```{r}
+glmer.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+```
+
+```{r tab-depth}
+kable(glmer.coefs[2:5, c("term", "estimate", "std.error", "statistic", "p.value")],
+      caption = "Coefficients de profondeur",
+      label="tab-depth") %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
@@ -197,61 +221,85 @@ kable(glmerAllBuzzDepth.glance, caption = "Statistiques du modèle mixte incluan
   kable_styling(latex_options = "HOLD_position")
 ```
 
-Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants.
+La figure \@ref(fig:mod-expo-val) présente plusieurs graphiques utiles pour valider visuellement le modèle : nous sommes satisfaits de l'absence de corrélation entre les résidus constatée sur les deux premiers et du comportement gaussien visible sur le dernier.
 
-```{r, fig.cap = "Auto-corrélation des résidues"}
-ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
-  geom_col(size = 0.2) + #coord_fixed(36) +
-  ylab("Autocorrelation of uniform residuals") +
-  xlab("Lag")
-```
+```{r mod-expo-val, fig.height = 8, fig.cap = "Validation graphique du modèle"}
+g1 <- ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
+  geom_col(size = .2) +
+  labs(x = "Lag", y = "Autocorrelation of uniform residuals",
+       caption = "Auto-corrélation des résidues") +
+  theme(plot.margin = margin(0, 0, 1, 0, "pt"))
 
-```{r, fig.cap = "Résidue selon le précédent"}
-ggplot(data = z.plot.data[2:nrow(z.plot.data), ], aes(x = Zlow, y = Zupp)) +
-  geom_point(size = 0.5) + #coord_fixed(1) +
-  xlab(expression(Z[i-1])) +
-  ylab(expression(Z[i])) +
-  geom_abline(slope = 1, intercept = 0, size = 1)
-```
+g2 <- ggplot(data = z.plot.data[2:nrow(z.plot.data), ], aes(x = Zlow, y = Zupp)) +
+  geom_point(size = .5) +
+  labs(x = TeX("Z_{i+1}"), y = TeX("Z_{i}"),
+       caption = "Résidue selon le précédent") +
+  coord_fixed() +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
-```{r, fig.cap = "Quantiles-Quantiles"}
-ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
+g3 <- ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
   geom_point() +
-  xlab("Uniform theoretical quantiles") +
-  ylab("Empirical quantiles")
+  geom_abline(slope = 1, intercept = 0, size = 1, linetype = "dashed") +
+  labs(x = "Uniform theoretical quantiles", y = "Empirical quantiles",
+       caption = "Q-Q plot") +
+  coord_fixed() +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g1 / (g2 + g3)
 ```
 
-## Intervalles de confiance
+## Intervalles de confiance des coefficients d'exposition
 
-### Variation des coefficients autorégressifs
+### Variation des coefficients selon des lois normales univariées
 
 ```{r}
 B <- 1000
-A1 <- rnorm(B, ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$std.error[1])
-lrc1 <- rnorm(B, ARcoef.RegBiExp$estimate[2], ARcoef.RegBiExp$std.error[2])
-A2 <- rnorm(B, ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$std.error[3])
-lrc2 <- rnorm(B, ARcoef.RegBiExp$estimate[4], ARcoef.RegBiExp$std.error[4])
-ARcoef.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
-    estimate <- A1[[b]] * exp(-exp(lrc1[[b]]) * ARcoef.fit$lag) + A2[[b]] * exp(-exp(lrc2[[b]]) * ARcoef.fit$lag)
-    data.frame(lag = ARcoef.fit$lag, estimate = estimate, b = as.factor(b)
-    )
+A1 <- rnorm(B, RegBiExp.coefs$estimate[1], RegBiExp.coefs$std.error[1])
+lrc1 <- rnorm(B, RegBiExp.coefs$estimate[2], RegBiExp.coefs$std.error[2])
+A2 <- rnorm(B, RegBiExp.coefs$estimate[3], RegBiExp.coefs$std.error[3])
+lrc2 <- rnorm(B, RegBiExp.coefs$estimate[4], RegBiExp.coefs$std.error[4])
+ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- BiExp(A1[[b]], lrc1[[b]], A2[[b]], lrc2[[b]], lag = ARcoefs.fit$lag)
+    data.frame(lag = ARcoefs.fit$lag, estimate = estimate, b = as.factor(b))
+}))
+
+estimate <- as.matrix(ns(-1000:0, knots = c(-323, -158, -54))) %*%
+  glmer.coefs$estimate[2:5]
+Depthcoefs.fit <- data.frame(depth = -1000:0, estimate = estimate)
+d1 <- rnorm(B, glmer.coefs$estimate[2], glmer.coefs$std.error[2])
+d2 <- rnorm(B, glmer.coefs$estimate[3], glmer.coefs$std.error[3])
+d3 <- rnorm(B, glmer.coefs$estimate[4], glmer.coefs$std.error[4])
+d4 <- rnorm(B, glmer.coefs$estimate[5], glmer.coefs$std.error[5])
+Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- as.matrix(ns(-1000:0, knots = c(-323, -158, -54))) %*%
+      c(d1[[b]], d2[[b]], d3[[b]], d4[[b]])
+    data.frame(depth = -1000:0, estimate = estimate, b = as.factor(b))
 }))
 ```
 
-```{r}
-ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
-  geom_line(data = ARcoef.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
+```{r, fig.height = 3, fig.cap = "Variation des coefficients selon des lois normales univariées"}
+g1 <- ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
+  geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  ylab("Coefficient") + xlab("Mémoire [secondes]")
+  labs(x = "Mémoire [secondes]", y = "Coefficient",
+       caption = "Autorégressif") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot(Depthcoefs.fit) +
+  geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
+  geom_line(aes(x = depth, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
+  labs(x = "Profondeur [mètres]", y = "ns",
+       caption = "Profondeur") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g1 + g2
 ```
 
-### Intervalles de confiance des coefficients d'exposition
-
 ```{r}
-source("../R/1_monte_carlo_conf_int.R")
-expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.rds")
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.norm.rds")
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
 expo.coef$estimate <- as.numeric(expo.coef$estimate)
@@ -260,7 +308,7 @@ expo.coef$std.error <- as.numeric(expo.coef$std.error)
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
 expo.coef.estimate <- t(dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:5])
-expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, percentile_conf_int))
+expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, mc_percentile))
 
 alpha <- .05
 expo.coef.std.error <- expo.coef
@@ -279,51 +327,179 @@ expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.er
 ```{r}
 kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
       col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
-      caption = "Intervalles de confiance",
-      label="tab-coef-glmer-expo-ci") %>%
+      caption = "Intervalles de confiance dans le cas de normales univariées",
+      label="coef-expo-ci-norm") %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r}
-ggplot() +
+```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales univariées"}
+g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
                  aes(x = coef), position = "identity", col = "grey") +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 1], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
-  ylab("Effectif") + xlab(TeX("Intercept $\\beta_0$"))
-```
+  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 1, 0, "pt"))
 
-```{r}
-ggplot() +
+g2 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[2, ])),
                  aes(x = coef), position = "identity", col = "grey") +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 1], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
-  ylab("Effectif") + xlab(TeX("Exposition $\\beta_1$"))
-```
+  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
 
-```{r}
-ggplot() +
+g3 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[3, ])),
                  aes(x = coef), position = "identity", col = "grey") +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 1], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
-  ylab("Effectif") + xlab(TeX("Exposition $\\beta_2$"))
-```
+  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
-```{r}
-ggplot() +
+g4 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[4, ])),
                  aes(x = coef), position = "identity", col = "grey") +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 1], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
-  ylab("Effectif") + xlab(TeX("Exposition $\\beta_3$"))
+  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+
+### Variation des coefficients selon une loi normale multivariée
+
+```{r}
+RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
+ARcoefs <- rmvnorm(B, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
+                   checkSymmetry = FALSE)
+ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- BiExp(ARcoefs[b, 1], ARcoefs[b, 2], ARcoefs[b, 3], ARcoefs[b, 4],
+                      lag = ARcoefs.fit$lag)
+    data.frame(lag = ARcoefs.fit$lag, estimate = estimate, b = as.factor(b))
+}))
+
+estimate <- as.matrix(ns(-1000:0, knots = c(-323, -158, -54))) %*%
+  glmer.coefs$estimate[2:5]
+Depthcoefs.fit <- data.frame(depth = -1000:0, estimate = estimate)
+Depth.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
+Depthcoefs <- rmvnorm(B, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov,
+                      checkSymmetry = FALSE)
+Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- as.matrix(ns(-1000:0, knots = c(-323, -158, -54))) %*%
+      c(Depthcoefs[b, 1], Depthcoefs[b, 2], Depthcoefs[b, 3], Depthcoefs[b, 4])
+    data.frame(depth = -1000:0, estimate = estimate, b = as.factor(b))
+}))
+```
+
+```{r, fig.height = 3, fig.cap = "Variation des coefficients selon une loi normale multivariée"}
+g1 <- ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
+  geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = lag, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
+  labs(x = "Mémoire [secondes]", y = "Coefficient",
+       caption = "Autorégressif") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot(Depthcoefs.fit) +
+  geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
+  geom_line(aes(x = depth, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
+  labs(x = "Profondeur [mètres]", y = "ns",
+       caption = "Profondeur") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g1 + g2
+```
+
+```{r}
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
+expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
+expo.coef$estimate <- as.numeric(expo.coef$estimate)
+expo.coef$std.error <- as.numeric(expo.coef$std.error)
+
+expo.coef.estimate <- expo.coef[, c("term", "estimate")]
+expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
+expo.coef.estimate <- t(dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:5])
+expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, mc_percentile))
+
+expo.coef.std.error <- expo.coef
+expo.coef.std.error$seq <- with(expo.coef.std.error, ave(std.error, term, FUN = seq_along))
+expo.coef.std.error$lower <-
+  expo.coef.std.error$estimate - qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error$upper <-
+  expo.coef.std.error$estimate + qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error.lower <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "lower")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "upper")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
+```
+
+```{r}
+kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
+      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      caption = "Intervalles de confiance dans le cas de normales multivariées",
+      label="coef-expo-ci-mvnorm") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+```
+
+```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+g1 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[2, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[3, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g4 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[4, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
 ```
