@@ -1,7 +1,10 @@
 ---
-title: "Rapport 28/10/2022"
+title: "Buzzing - Rapport d'avancement"
 output:
-   bookdown::pdf_document2: default
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+toc-title: "Sommaire"
 urlcolor: blue
 linkcolor: blue
 header-includes:
@@ -19,6 +22,8 @@ knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
 ```{r}
 library(ggplot2)
 library(kableExtra)
+library(latex2exp)
+library(reshape2)
 
 set.seed(15)
 ```
@@ -27,13 +32,15 @@ set.seed(15)
 
 Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations humaines sur leur capacité à se nourrir. Lorsqu'elles se nourissent, ces baleines émettent des sons spécifiques (buzz). Nous nous intéresserons donc à la fréquence d'émission de ces buzz (buzz/min), ce qui peut être modélisé par un modèle de Poisson.
 
-# Sans perturbations
+# Modélisation du buzzing chez les narvals sans exposition
 
 ## Estimation de l'effet de la profondeur
 
 Pour se nourrir, les narvals doivent plonger profondément alors que le reste du temps, ils restent "proche" de la surface. Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une variable explicative la décrivant par un polynôme de degré 3.
 
-## Recherche de la mémoire optimale
+## Estimation de l'autocorrélation dans l'émission de buzz
+
+### Recherche de la mémoire optimale
 
 L'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit donc être ajouté au modèle et pour cela nous devons déterminer la mémoire maximum qu'il faut autoriser au modèle.
 
@@ -48,7 +55,7 @@ Afin de trouver la mémoire optimale, nous avons utilisé la démarche suivante 
    3. $ml_{opt} = ml^{k}_{i_{opt}}$
    4. $from.ml = ml^{k}_{i_{opt}-1}\ ;\ to.ml = ml^{k}_{i_{opt}+1}$
 
-### Sans effets aléatoires
+#### Sans effets aléatoires
 
 Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus pour estimer la mémoire optimale :
 $$
@@ -71,7 +78,7 @@ ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum [secondes]")
 ```
 
-### Avec effets aléatoires
+#### Avec effets aléatoires
 
 Nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous avons tenté d'inclure un effet aléatoire sur les individus :
 $$
@@ -94,10 +101,43 @@ ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
   xlab("Mémoire maximum [secondes]")
 ```
 
-## Régression bi-exponentielle
+### Note sur le temps d'ajustement des modèles
 
-Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles "classiques", aussi, afin de réduire le nombre de variables, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
-La figure \@ref(fig:plot-AR-BiExp) montre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
+Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
+Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que la figure \@ref(fig:plot-glmer-time) montre que pour les modèles mixtes celle-ci est quadratique.
+
+```{r}
+glm.profiling <- as.data.frame(readRDS("../data/glm_buzz_depth_maxlag_profiling/profiling.rds"))
+glm.profiling$maxlag <- as.numeric(rownames(glm.profiling))
+```
+
+```{r plot-glm-time, fig.cap = "Temps d'ajustement (en secondes) des modèles classiques en fonction de la mémoire maximum"}
+ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+  geom_line() +
+  geom_point() +
+  geom_function(fun = function (x) { x }, linetype = "dashed") +
+  xlab("Composants mémoire") +
+  ylab("Temps d'ajustement [secondes]")
+```
+
+```{r}
+glmer.profiling <- as.data.frame(readRDS("../data/glmer_buzz_depth_maxlag_profiling/profiling.rds"))
+glmer.profiling$maxlag <- as.numeric(rownames(glmer.profiling))
+```
+
+```{r plot-glmer-time, fig.cap = "Temps d'ajustement (en secondes) des modèles mixtes en fonction de la mémoire maximum"}
+ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
+  geom_line() +
+  geom_point() +
+  geom_function(fun = function (x) { x^2.5 }, linetype = "dashed") +
+  xlab("Composants mémoire") +
+  ylab("Temps d'ajustement [secondes]")
+```
+
+### Régression bi-exponentielle
+
+Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles classiques, aussi, afin de réduire le nombre de variables et le temps d'ajustement, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
+La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
 ARcoef.fit <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
@@ -123,7 +163,9 @@ kable(ARcoef.RegBiExp, caption = "Coefficients obtenus par régression bi-expone
   kable_styling(latex_options = "HOLD_position")
 ```
 
-# Estimation de l'effet de l'exposition
+# Estimation de l'effet de l'exposition sur le buzzing
+
+## Modélisation
 
 L'exposition aux perturbations est exprimée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
 
@@ -131,6 +173,8 @@ Nous avons ajusté le modèle mixte suivant :
 $$
 Buzz \sim (1 | Ind) + offset(ARDepth) + spline(Expo)
 $$
+
+Les coefficients estimés par le modèle mixte sans exposition sont fixés dans celui-ci afin que les coefficients ajustés pour la variable d'exposition s'interprètent comme un effet par rapport au comportement normal (sans exposition). De plus, cela permet de réduire sensiblement le coût calculatoire d'ajustement.
 
 ```{r}
 glmerAllBuzzDepth.tidy <- readRDS("../data/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.tidy.rds")
@@ -153,21 +197,13 @@ kable(glmerAllBuzzDepth.glance, caption = "Statistiques du modèle mixte incluan
   kable_styling(latex_options = "HOLD_position")
 ```
 
-Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants. Nous avons tout de même remarqué une valeur franchement aberrante.
+Ci-dessous, plusieurs graphiques utiles pour valider visuellement le modèle. Nous n'avons pas eu trop le temps de les discuter, mais ils semblent encourageants.
 
 ```{r, fig.cap = "Auto-corrélation des résidues"}
 ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
   geom_col(size = 0.2) + #coord_fixed(36) +
   ylab("Autocorrelation of uniform residuals") +
   xlab("Lag")
-```
-
-```{r, fig.cap = "Résidue selon le précédent. Avec la valeur aberrante"}
-ggplot(data = z.plot.data, aes(x = Zlow, y = Zupp)) +
-  geom_point(size = 0.5) + #coord_fixed(1) +
-  xlab(expression(Z[i-1])) +
-  ylab(expression(Z[i])) #+
-  #geom_abline(slope = 1, intercept = 0, size = 1)
 ```
 
 ```{r, fig.cap = "Résidue selon le précédent"}
@@ -185,9 +221,9 @@ ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
   ylab("Empirical quantiles")
 ```
 
-## Intervalle de confiance
+## Intervalles de confiance
 
-### Coefficients autorégressifs
+### Variation des coefficients selon plusieurs lois normales univariées
 
 ```{r}
 B <- 1000
@@ -209,4 +245,85 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
   ylab("Coefficient") + xlab("Mémoire [secondes]")
+```
+
+### Intervalles de confiance des coefficients d'exposition
+
+```{r}
+source("../R/1_monte_carlo_conf_int.R")
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
+expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
+expo.coef$estimate <- as.numeric(expo.coef$estimate)
+expo.coef$std.error <- as.numeric(expo.coef$std.error)
+
+expo.coef.estimate <- expo.coef[, c("term", "estimate")]
+expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
+expo.coef.estimate <- t(dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:5])
+expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, percentile_conf_int))
+
+alpha <- .05
+expo.coef.std.error <- expo.coef
+expo.coef.std.error$seq <- with(expo.coef.std.error, ave(std.error, term, FUN = seq_along))
+expo.coef.std.error$lower <-
+  expo.coef.std.error$estimate - qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error$upper <-
+  expo.coef.std.error$estimate + qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error.lower <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "lower")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "upper")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
+```
+
+```{r}
+kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
+      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      caption = "Intervalles de confiance",
+      label="tab-coef-glmer-expo-ci") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
+  ylab("Effectif") + xlab(TeX("Intercept $\\beta_0$"))
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[2, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_1$"))
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[3, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_2$"))
+```
+
+```{r}
+ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[4, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
+  ylab("Effectif") + xlab(TeX("Exposition $\\beta_3$"))
 ```

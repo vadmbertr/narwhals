@@ -67,12 +67,14 @@ dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
   ### Autoregressive component for offset
-  ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov))
+  ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
+                                checkSymmetry = FALSE))
   ARvec <- BiExp(ARcoefs[[1]], ARcoefs[[2]], ARcoefs[[3]], ARcoefs[[4]], , maxlag = maxlag.opt)
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
-  Depthcoefs <- as.numeric(rmvnorm(1, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov))
+  Depthcoefs <- as.numeric(rmvnorm(1, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov,
+                                   checkSymmetry = FALSE))
   data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoefs
 
   ## Weights for the glmer analysis
