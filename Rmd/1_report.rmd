@@ -29,7 +29,7 @@ library(reshape2)
 library(splines)
 
 source("../R/0_biexp.R")
-source("../R/1_conf_int.R")
+source("../R/0_conf_int.R")
 
 set.seed(15)
 ```
