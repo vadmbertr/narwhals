@@ -1,5 +1,5 @@
 #--------------------------------------------------------------------------------
-## Objective : retrieve covariance matrix of the Depth coefficients
+## Objective : retrieve covariance matrix of the AR and Depth coefficients
 #---------------------------------------------------------------------------------
 
 library(broom.mixed)
@@ -43,14 +43,13 @@ maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.opt, give.names = TRUE))
 data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.opt])
-dataAR <- data[, LagVariables]
-
-ARvec <- BiExp(ARcoef.RegBiExp$estimate[1], ARcoef.RegBiExp$estimate[2],
-               ARcoef.RegBiExp$estimate[3], ARcoef.RegBiExp$estimate[4], maxlag = maxlag.opt)
-data$AR <- as.matrix(dataAR) %*% ARvec
+### Use spline
+splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 ## Fit a glmer
-glmERBuzzARDepth <- glmer(Buzz ~ offset(AR) + ns(Depth, knots = c(-323, -158, -54)) + (1 | Ind),
+form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
+              paste(LagVariables[1:maxlag.opt], collapse = " + "))
+glmERBuzzARDepth <- glmer(form,
                            data = data,
                            family = poisson)
 
