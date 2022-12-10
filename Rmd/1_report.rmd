@@ -81,7 +81,7 @@ ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   geom_line() +
   geom_point() +
   geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
-  xlab("Mémoire maximum [secondes]")
+  labs(x = "Mémoire maximum [secondes]")
 ```
 
 #### Avec effets aléatoires
@@ -104,7 +104,7 @@ ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
   geom_line() +
   geom_point() +
   geom_vline(xintercept = maxlag.glmer.opt, col = "blue", lty = 2) +
-  xlab("Mémoire maximum [secondes]")
+  labs(x = "Mémoire maximum [secondes]")
 ```
 
 ### Note sur le temps d'ajustement des modèles
@@ -157,7 +157,7 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  ylab("Coefficient") + xlab("Mémoire [secondes]")
+  labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
 
 Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
