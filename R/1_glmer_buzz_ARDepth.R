@@ -48,10 +48,8 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 
 ## Fit a glmer
 form <- paste("Buzz ~ (1 | Ind) + splineDepth + ",
-              paste(LagVariables[1:maxlag.opt], collapse = " + "))
-glmERBuzzARDepth <- glmer(form,
-                           data = data,
-                           family = poisson)
+              paste(LagVariables, collapse = " + "))
+glmERBuzzARDepth <- glmer(form, data = data, family = poisson)
 
 summary(glmERBuzzARDepth)
 
