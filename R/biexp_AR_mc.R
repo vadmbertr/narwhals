@@ -4,6 +4,7 @@
 
 library(broom)
 library(mvtnorm)
+library(reshape2)
 source("0_biexp.R")
 
 #---------------------------------------------------------------------------------
@@ -41,4 +42,13 @@ biexp.coef <- replicate(args[2], {
 }, simplify = FALSE)
 biexp.coef <- do.call(rbind, biexp.coef)
 
-saveRDS(biexp.coef, paste0(args[1], "/biexp.AR.est.rds"))
+biexp.coef.estimate <- as.data.frame(biexp.coef)
+biexp.coef.estimate$seq <- with(biexp.coef.estimate,
+                                ave(std.error, term, FUN = seq_along))
+biexp.coef.estimate <- apply(dcast(biexp.coef.estimate, seq ~ term, value.var = "estimate")[2:5],
+                             2, as.numeric)
+biexp.coef.cov <- cov(biexp.coef.estimate)
+
+saveRDS(biexp.coef, paste0(args[1], "/biexp.coef.rds"))
+saveRDS(biexp.coef.estimate, paste0(args[1], "/biexp.coef.estimate.rds"))
+saveRDS(biexp.coef.cov, paste0(args[1], "/biexp.coef.cov.rds"))
