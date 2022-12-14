@@ -52,11 +52,12 @@ data <- OnlyAirgun(data)
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
 glmer.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-RegBiExp.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
-RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
+biexp.coef.estimate <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
 Depth.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+biexp.coef.estimate <- apply(biexp.coef.estimate, 2, mean)
 
 ## Set ARcoef using optimal max lag
 ### Define the first maxlag.opt lags
@@ -67,9 +68,9 @@ dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
   ### Autoregressive component for offset
-  ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
+  ARcoefs <- as.numeric(rmvnorm(1, mean = biexp.coef.estimate, sigma = biexp.coef.cov,
                                 checkSymmetry = FALSE))
-  ARvec <- BiExp(ARcoefs[[1]], ARcoefs[[2]], ARcoefs[[3]], ARcoefs[[4]], , maxlag = maxlag.opt)
+  ARvec <- BiExp(ARcoefs[[1]], ARcoefs[[3]], ARcoefs[[2]], ARcoefs[[4]], , maxlag = maxlag.opt)
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
