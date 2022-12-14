@@ -277,25 +277,21 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
 }))
 ```
 
-```{r, fig.height = 3, fig.cap = "Variation des coefficients selon des lois normales univariées"}
-g1 <- ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
+```{r, fig.cap = "Variation des coefficients autorégressif selon des lois normales univariées"}
+ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  labs(x = "Mémoire [secondes]", y = "Coefficient",
-       caption = "Autorégressif") +
-  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+  labs(x = "Mémoire [secondes]", y = "Coefficient")
+```
 
-g2 <- ggplot(Depthcoefs.fit) +
+```{r, fig.cap = "Variation des coefficients de profondeur selon des lois normales univariées"}
+ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  labs(x = "Profondeur [mètres]", y = "ns",
-       caption = "Profondeur") +
-  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
-
-g1 + g2
+  labs(x = "Profondeur [mètres]", y = "ns")
 ```
 
 ```{r}
@@ -403,25 +399,21 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
 }))
 ```
 
-```{r, fig.height = 3, fig.cap = "Variation des coefficients selon une loi normale multivariée"}
-g1 <- ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
+```{r, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée"}
+ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  labs(x = "Mémoire [secondes]", y = "Coefficient",
-       caption = "Autorégressif") +
-  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+  labs(x = "Mémoire [secondes]", y = "Coefficient")
+```
 
-g2 <- ggplot(Depthcoefs.fit) +
+```{r, fig.cap = "Variation des coefficients de profondeur selon une loi normale multivariée"}
+ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
   geom_hline(yintercept = 0, alpha = .5, lty = 2) +
-  labs(x = "Profondeur [mètres]", y = "ns",
-       caption = "Profondeur") +
-  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
-
-g1 + g2
+  labs(x = "Profondeur [mètres]", y = "ns")
 ```
 
 ```{r}
@@ -503,7 +495,7 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Variance / covariance des coefficients autorégressifs et non des coefficients de la biexponentielle
+#### Covariance des coefficients autorégressifs et non des coefficients de la biexponentielle
 
 ```{r}
 biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
