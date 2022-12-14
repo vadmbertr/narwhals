@@ -378,7 +378,6 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-
 ### Variation des coefficients selon une loi normale multivariée
 
 ```{r}
@@ -502,4 +501,28 @@ g4 <- ggplot() +
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
 (g1 + g2) / (g3 + g4)
+```
+
+#### Variance / covariance des coefficients autorégressifs et non des coefficients de la biexponentielle
+
+```{r}
+biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
+biexp.coef.estimate <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+ARcoefs <- rmvnorm(B, mean = apply(biexp.coef.estimate, 2, mean),
+                   sigma = biexp.coef.cov,
+                   checkSymmetry = FALSE)
+ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
+    estimate <- BiExp(ARcoefs[b, 1], ARcoefs[b, 3], ARcoefs[b, 2], ARcoefs[b, 4],
+                      lag = ARcoefs.fit$lag)
+    data.frame(lag = ARcoefs.fit$lag, estimate = estimate, b = as.factor(b))
+}))
+```
+
+```{r, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée"}
+ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
+  geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
+  geom_point(alpha = 0.5) +
+  geom_line(aes(x = lag, y = estimate)) +
+  geom_hline(yintercept = 0, alpha = .5, lty = 2) +
+  labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
