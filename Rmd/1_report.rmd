@@ -252,6 +252,8 @@ g1 / (g2 + g3)
 
 ### Variation des coefficients selon des lois normales univariées
 
+A expliquer.
+
 ```{r}
 B <- 1000
 A1 <- rnorm(B, RegBiExp.coefs$estimate[1], RegBiExp.coefs$std.error[1])
@@ -376,6 +378,8 @@ g4 <- ggplot() +
 
 ### Variation des coefficients selon une loi normale multivariée
 
+A expliquer.
+
 ```{r}
 RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
 ARcoefs <- rmvnorm(B, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
@@ -417,7 +421,7 @@ ggplot(Depthcoefs.fit) +
 ```
 
 ```{r}
-expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.biexp.rds")
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
 expo.coef$estimate <- as.numeric(expo.coef$estimate)
@@ -497,6 +501,8 @@ g4 <- ggplot() +
 
 #### Covariance des coefficients autorégressifs et non des coefficients de la biexponentielle
 
+A expliquer.
+
 ```{r}
 biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
 biexp.coef.estimate <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
@@ -521,6 +527,89 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
+expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
+expo.coef$estimate <- as.numeric(expo.coef$estimate)
+expo.coef$std.error <- as.numeric(expo.coef$std.error)
+
+expo.coef.estimate <- expo.coef[, c("term", "estimate")]
+expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
+expo.coef.estimate <- t(dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:5])
+expo.coef.estimate.confint <- t(apply(expo.coef.estimate, 1, mc_percentile))
+
+expo.coef.std.error <- expo.coef
+expo.coef.std.error$seq <- with(expo.coef.std.error, ave(std.error, term, FUN = seq_along))
+expo.coef.std.error$lower <-
+  expo.coef.std.error$estimate - qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error$upper <-
+  expo.coef.std.error$estimate + qnorm(1 - alpha / 2) * expo.coef.std.error$std.error
+expo.coef.std.error.lower <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "lower")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, value.var = "upper")[, 2:5]),
+                                   1, median)
+expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
+```
+
+```{r}
+kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
+      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      caption = "Intervalles de confiance dans le cas de normales multivariées",
+      label="coef-expo-ci-mvnorm-mc") %>%
+  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+```
+
+```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+g1 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[2, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[3, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g4 <- ggplot() +
+  geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[4, ])),
+                 aes(x = coef), position = "identity", col = "grey") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 1], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
+  geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
+  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+#### Sans passer par la régression biexponentielle
+
+A expliquer.
+
+```{r}
+expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
 expo.coef$estimate <- as.numeric(expo.coef$estimate)
