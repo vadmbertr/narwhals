@@ -250,9 +250,11 @@ g1 / (g2 + g3)
 
 ## Intervalles de confiance des coefficients d'exposition
 
+Etant donné que nous avons fixé les coefficients associés à la profondeur et à l'effet mémoire aux valeurs obtenues sans exposition, l'estimation des intervalles de confiance des coefficients d'exposition ne peuvent être construits directement à partir de leurs erreurs standards, car la variabilité des coefficients de profondeur et d'effet mémoire ne serait pas prise en compte. Nous avons donc mis en place une approche Monte Carlo ajustant 1000 fois le modèle avec exposition tout en faisant varier les coefficients fixés, et permettant finalement d'estimer les intervalles de confiance des coefficients d'exposition via les quantiles des distributions obtenues.
+
 ### Variation des coefficients selon des lois normales univariées
 
-A expliquer.
+Dans un premier temps, nous avons considéré que les coefficients suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard. Nous avons donc 4 lois normales univariées pour les coefficients de la régression biexponentille et 4 autres pour l'interpolation polynomiale par morceaux sur la profondeur.
 
 ```{r}
 B <- 1000
@@ -279,7 +281,9 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
 }))
 ```
 
-```{r, fig.cap = "Variation des coefficients autorégressif selon des lois normales univariées"}
+Sur la figure \@ref(fig:coef-ar-norm) nous avons représenté les courbes des fonctions biexponentielles ainsi générées. Nous pouvons voir que leurs allures semblent toujours suivre celle de la régression initiale.
+
+```{r coef-ar-norm, fig.cap = "Variation des coefficients autorégressif selon des lois normales univariées"}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -288,7 +292,9 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
 
-```{r, fig.cap = "Variation des coefficients de profondeur selon des lois normales univariées"}
+Nous avons fait de même avec les coefficients de profondeur, et nous pouvons remarquer sur la figure \@ref(fig:coef-depth-norm) que cette fois-ci l'allure de certaines courbes s'éloignent sensiblement de l'interpolation polynomiale moyenne.
+
+```{r coef-depth-norm, fig.cap = "Variation des coefficients de profondeur selon des lois normales univariées"}
 ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
@@ -322,15 +328,19 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-```{r}
+Les intervalles de confiance calculés avec la procédure Monte Carlo sont donnés sur la table \@ref(tab:coef-expo-ci-norm) (colonnes préfixées par "MC"). Nous avons également affiché les valeurs médianes des intervalles de confiance calculés à chaque répétition sur la base de la variation des coefficients d'exposition uniquement (colonne préfixées par "SE"). Il est flagrant que les intervalles Monte Carlo sont bien plus larges et ne permettent en aucun cas de conclure sur un effet de l'exposition sur l'émission de buzz.
+
+```{r coef-expo-ci-norm}
 kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
       caption = "Intervalles de confiance dans le cas de normales univariées",
       label="coef-expo-ci-norm") %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales univariées"}
+La figure \@ref(fig:coef-expo-ci-norm-dist) donne une représentation graphique de ces intervalles (en rouge les "MC" et en bleu les "SE"), ainsi que des distributions des coefficients.
+
+```{r coef-expo-ci-norm-dist, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales univariées"}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -376,9 +386,9 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-### Variation des coefficients selon une loi normale multivariée
+### Variation des coefficients selon une loi normale multivariée {#mvnorm}
 
-A expliquer.
+L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients. Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans des lois normales multivariées (une pour les coefficients de la régression biexponentielle et une pour les coefficients de l'interpolation polynomiale) toujours centrées sur les estimations moyennes, mais ayant des matrices de variance-covariance non diagonales. Dorénavant nous avons donc une loi normale multivariée pour les coefficients de la régression biexponentielle et une autre pour la profondeur, les 2 étant de dimension 4.
 
 ```{r}
 RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
@@ -403,7 +413,9 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
 }))
 ```
 
-```{r, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée"}
+La figure \@ref(fig:coef-ar-mvnorm) montre que la régression biexponentielle initiale est encore plus fidèlement suivie qu'auparavant.
+
+```{r coef-ar-mvnorm, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée"}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -412,7 +424,9 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
 
-```{r, fig.cap = "Variation des coefficients de profondeur selon une loi normale multivariée"}
+Et surtout, comme nous pouvons le voir sur la figure \@ref(fig:coef-depth-mvnorm), il en va de même pour la profondeur, alors que précédemment les tirages donnaient des courbes fortement éloignées de celle attendue.
+
+```{r coef-depth-mvnorm, fig.cap = "Variation des coefficients de profondeur selon une loi normale multivariée"}
 ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
@@ -445,15 +459,19 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-```{r}
+Sur la table \@ref(tab:coef-expo-ci-mvnorm) nous pouvons constater que les intervalles de confiance estimés en utilisant des lois normales multivariées sont nettement plus petits et peuvent conduire à conclure sur un effet de l'exposition sur l'émission de buzz.
+
+```{r coef-expo-ci-mvnorm}
 kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
       caption = "Intervalles de confiance dans le cas de normales multivariées",
       label="coef-expo-ci-mvnorm") %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+Nous pouvons également voir sur la figure \@ref(fig:coef-expo-ci-mvnorm-dist) que les distributions semblent normales, contrairement à celles observées avec les lois univariées.
+
+```{r coef-expo-ci-mvnorm-dist, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -499,9 +517,9 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Covariance des coefficients autorégressifs et non des coefficients de la biexponentielle
+#### Variance-covariance des coefficients autorégressifs et non des coefficients de la régression biexponentielle \newline
 
-A expliquer.
+Bien que plus intéressante, la procédure que nous avons mise en place se base sur la matrice de variance-covariance des coefficients de la régression biexponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression biexponentielle. Pour palier cette approximation nous avons tenté d'estimer la matrice de variance-covariance des coefficients autorégressifs, à nouveau par une procédure Monte Carlo. Cette fois-ci nous répétons 1000 fois le tirage des 60 coefficients de mémoire à partir d'une loi normale multivariée et à chaque fois nous ajustons une régression biexponentielle sur les 60 coefficients tirés ; finalement nous pouvons obtenir les estimations moyennes des coefficients de la biexponentielle, ainsi que la matrice de variance-covariance associée. Nous reprenons enfin la procédure Monte Carlo employée dans la section précédente avec le vecteur de moyennes et la matrice de variance-covariance obtenus.
 
 ```{r}
 biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
@@ -516,7 +534,9 @@ ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function (b) {
 }))
 ```
 
-```{r, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée"}
+Nous pouvons contrôler sur la figure \@ref(fig:coef-ar-mvnorm-mc) que les régressions biexponentielles obtenues sont cohérentes.
+
+```{r coef-ar-mvnorm-mc, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée estimée par Monte Carlo"}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -550,15 +570,17 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-```{r}
+La table \@ref(tab:coef-expo-ci-mvnorm-mc) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-mc) permettent de vérifier que bien que les intervalles calculés ainsi sont légèrement plus grands que les précédents, ils permettent toujours d'interpréter les coefficients d'exposition ajustés par le modèle.
+
+```{r coef-expo-ci-mvnorm-mc}
 kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
       caption = "Intervalles de confiance dans le cas de normales multivariées",
       label="coef-expo-ci-mvnorm-mc") %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+```{r coef-expo-ci-mvnorm-dist-mc, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -604,9 +626,14 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Sans passer par la régression biexponentielle
+#### Sans passer par la régression biexponentielle \newline
 
-A expliquer.
+L'intérêt de la régression biexponentielle était de :
+
+1. réduire le temps d'ajustement des modèles linéaires,
+2. éviter d'accumuler les variances des 60 coefficients de mémoire.
+
+En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients. Ainsi, nous avons tenté de nous passer de la régression biexponentielle, et donc de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée.
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
@@ -633,15 +660,17 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-```{r}
+Nous pouvons voir sur la table \@ref(tab:coef-expo-ci-mvnorm-full) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section \@ref(mvnorm), et même plus petit pour l'intercept.
+
+```{r coef-expo-ci-mvnorm-full}
 kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - lower", "MC - upper", "SE - lower", "SE - upper"),
+      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
       caption = "Intervalles de confiance dans le cas de normales multivariées",
-      label="coef-expo-ci-mvnorm-mc") %>%
+      label="coef-expo-ci-mvnorm-full") %>%
   kable_styling(latex_options = c("HOLD_position", "scale_down"))
 ```
 
-```{r, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+```{r coef-expo-ci-mvnorm-dist-full, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1, ])),
                  aes(x = coef), position = "identity", col = "grey") +
