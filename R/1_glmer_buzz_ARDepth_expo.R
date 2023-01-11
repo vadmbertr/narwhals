@@ -47,10 +47,11 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+coefs.estimate <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+coefs.idx <- 1:(4 + maxlag.opt) + 1
+coefs.estimate <- coefs.estimate$estimate[coefs.idx]
 
 ## Set ARcoef using optimal max lag
 ### Define the first maxlag.opt lags
@@ -59,13 +60,12 @@ data <- cbind(temp, data)
 LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
-### Autoregressive component for offset in later analyses
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
-data$ARDepth <- as.matrix(dataAR) %*% ARvec
+### Autoregressive component for offset
+ARcoefs <- coefs.estimate[1:maxlag.opt + 4]
+data$ARDepth <- as.matrix(dataAR) %*% ARcoefs
 
 ### Depth coefficients for offset
-Depthcoeff <- ARcoef.best$estimate[2:5]
+Depthcoeff <- coefs.estimate[1:4]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis
@@ -138,7 +138,7 @@ for (k in unique(data$Ind)) {
   nB <- length(Buzzindices)
   for (i in 2:nB) {
     dataki <- datak[(Buzzindices[i - 1] + 1):(Buzzindices[i]),]
-    Z <- c(Z, (1 - exp(-sum(dataki$pred)))) # TODO: 1- ?
+    Z <- c(Z, (1 - exp(-sum(dataki$pred))))
     Depthk <- c(Depthk, dataki$Depth[1])
     Xk <- c(Xk, dataki$X[1])
     Pk <- c(Pk, dataki$P[1])
@@ -166,8 +166,4 @@ QQ.plot.data <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(glmerAllBuzzDepth.tidy, paste0(args[2], "/glmerAllBuzzDepth.tidy.rds"))
-saveRDS(glmerAllBuzzDepth.glance, paste0(args[2], "/glmerAllBuzzDepth.glance.rds"))
-saveRDS(acf.plot.data, paste0(args[2], "/acf.plot.data.rds"))
-saveRDS(z.plot.data, paste0(args[2], "/z.plot.data.rds"))
-saveRDS(QQ.plot.data, paste0(args[2], "/QQ.plot.data.rds"))
+saveRDS(glmerAllBuzzDepth, paste0(args[2], "/glmerAllBuzzDepth.rds"))
