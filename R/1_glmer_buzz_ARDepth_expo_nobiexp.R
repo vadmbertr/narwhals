@@ -47,8 +47,7 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+coefs.estimate <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 coefs.idx <- 1:(4 + maxlag.opt) + 1
@@ -62,12 +61,11 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset
-ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
-  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
-data$ARDepth <- as.matrix(dataAR) %*% ARvec
+ARcoefs <- coefs.estimate[1:maxlag.opt + 4]
+data$ARDepth <- as.matrix(dataAR) %*% ARcoefs
 
 ### Depth coefficients for offset
-Depthcoeff <- ARcoef.best$estimate[2:5]
+Depthcoeff <- coefs.estimate[1:4]
 data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
 ## Weights for the glmer analysis
