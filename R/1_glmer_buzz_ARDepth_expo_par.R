@@ -51,12 +51,13 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-glmer.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-RegBiExp.coefs <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
-RegBiExp.vcov <- readRDS("../data/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
-Depth.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
+coefs.estimate <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+coefs.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+coefs.idx <- 1:(4 + maxlag.opt) + 1
+coefs.estimate <- coefs.estimate$estimate[coefs.idx]
+coefs.vcov <- coefs.vcov[coefs.idx, coefs.idx]
 
 ## Set ARcoef using optimal max lag
 ### Define the first maxlag.opt lags
@@ -66,6 +67,10 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
+  ### Components for offset
+  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov,
+                              checkSymmetry = FALSE))
+
   ### Autoregressive component for offset
   ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
                                 checkSymmetry = FALSE))
@@ -73,8 +78,7 @@ fit.glmer <- function (i) {
   data$ARDepth <- as.matrix(dataAR) %*% ARvec
 
   ### Depth coefficients for offset
-  Depthcoefs <- as.numeric(rmvnorm(1, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov,
-                                   checkSymmetry = FALSE))
+  Depthcoefs <- coefs[1:4]
   data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoefs
 
   ## Weights for the glmer analysis
