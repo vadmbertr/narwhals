@@ -51,8 +51,6 @@ ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
 ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
-coefs.idx <- 1:(4 + maxlag.opt) + 1
-coefs.estimate <- coefs.estimate$estimate[coefs.idx]
 
 ## Set ARcoef using optimal max lag
 ### Define the first maxlag.opt lags
