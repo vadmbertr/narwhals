@@ -47,7 +47,8 @@ data <- OnlyAirgun(data)
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-coefs.estimate <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+ARcoef.best <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+ARcoef.RegBiExp <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 coefs.idx <- 1:(4 + maxlag.opt) + 1
@@ -61,8 +62,9 @@ LagVariables <- names(data[, 1:maxlag.opt])
 dataAR <- data[, LagVariables]
 
 ### Autoregressive component for offset
-ARcoefs <- coefs.estimate[1:maxlag.opt + 4]
-data$AR <- as.matrix(dataAR) %*% ARcoefs
+ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
+  ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
+data$AR <- as.matrix(dataAR) %*% ARvec
 
 ## Weights for the glmer analysis
 data$n <- rep(0, length(data$Ind))
