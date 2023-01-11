@@ -1,5 +1,5 @@
 #--------------------------------------------------------------------------------
-## Objective : find the optimal (BIC wise) memory lag
+## Objective : fit glmer model using fixed AR and depth coefs
 #---------------------------------------------------------------------------------
 
 library(broom.mixed)
