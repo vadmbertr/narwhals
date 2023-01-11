@@ -42,14 +42,14 @@ ExposureFunction <- function(X){
 ```
 
 ```{r, warning=FALSE, echo = FALSE}
-# dataBioLet <- fread(file="data_BiolLet_Tervo_etal_2021.txt")
+dataBioLet <- fread(file="data_BiolLet_Tervo_etal_2021.txt")
 
-dataAll <- fread("../../data/subdb_narwhal_2018.txt")
+dataAll <- fread("~/Dropbox/Effect study EGRL 2018/Database/db_narwhal_2017_2018.txt")
 data <- dataAll
 
 
 ## Time provides time since tagging
-data$Time <- NULL
+data$Time <- numeric()
 for(ind in unique(data$Ind)){
   indicator <- (data$Ind == ind)
   data$Time[indicator] <- TimeFunction(n = sum(indicator))
@@ -69,7 +69,7 @@ for(k in unique(data$Ind)){
 }
 
 ## keep the 2018 data
-data <- data[data$Year=="2018",]
+data = data[data$Year=="2018",]
 ```
 
 
@@ -181,7 +181,7 @@ ggplot(fitresult, aes(x = lag, y = estimate, color = maxlag)) +
 data <- dataAll
 
 ## Time provides time since tagging
-data$Time <- NULL
+data$Time <- numeric()
 for(ind in unique(data$Ind)){
   indicator <- (data$Ind == ind)
   data$Time[indicator] <- TimeFunction(n = sum(indicator))

@@ -715,3 +715,43 @@ g4 <- ggplot() +
 
 (g1 + g2) / (g3 + g4)
 ```
+
+## Comparaison de l'estimation du taux de buzzing avec et sans la profondeur
+
+```{r}
+dataAll <- fread("")
+data <- dataAll
+## keep the 2018 data
+data <- data[data$Year == "2018", ]
+## Add time since tagging
+data <- AddTime(data)
+## We restrict the data to be after exposure and 24 hours after tagging
+data <- AfterExposure(data, no_stress = TRUE)
+## We add exposure
+data <- AddExposure(data)
+### We restrict to airgun expositions
+data <- OnlyAirgun(data)
+## Set ARcoef using optimal max lag
+### Define the first maxlag.opt lags
+temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.opt, give.names = TRUE))
+data <- cbind(temp, data)
+LagVariables <- names(data[, 1:maxlag.opt])
+dataAR <- data[, LagVariables]
+data$ARDepth <- as.matrix(dataAR) %*% ARvec
+```
+
+```{r}
+dist <- seq(1, 70, .1) # distance to ship in km
+depth <- -400 # fixed depth in m
+
+predFrameMany <- NULL
+for(k in unique(data$Ind)) {
+  temp <- range(data$X[data$X > 0 & data$Ind == k])
+  temp1 <- expand.grid(X = 1 / seq(1/temp[2], 1/temp[1], .1),
+                       P = 0,
+                       Depth = depth,
+                       AR = 0,
+                       Ind = k)
+  predFrameMany <- rbind(predFrameMany, temp1)
+}
+```
