@@ -167,3 +167,8 @@ QQ.plot.data <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
 #---------------------------------------------------------------------------------
 # Save R objects
 saveRDS(glmerAllBuzzDepth, paste0(args[2], "/glmerAllBuzzDepth.rds"))
+saveRDS(glmerAllBuzzDepth.tidy, paste0(args[2], "/glmerAllBuzzDepth.tidy.rds"))
+saveRDS(glmerAllBuzzDepth.glance, paste0(args[2], "/glmerAllBuzzDepth.glance.rds"))
+saveRDS(acf.plot.data, paste0(args[2], "/acf.plot.data.rds"))
+saveRDS(z.plot.data, paste0(args[2], "/z.plot.data.rds"))
+saveRDS(QQ.plot.data, paste0(args[2], "/QQ.plot.data.rds"))

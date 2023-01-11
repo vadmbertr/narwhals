@@ -76,11 +76,13 @@ glmerAllBuzz <- glmer(Buzz ~ offset(AR) + ns(X, knots = quantile(data$X[data$X >
                       weights = n,
                       family = poisson)
 
-glmerAllBuzzDepth.tidy <- tidy(glmerAllBuzz) # to save
-glmerAllBuzzDepth.glance <- glance(glmerAllBuzz) # to save
+glmerAllBuzz.tidy <- tidy(glmerAllBuzz) # to save
+glmerAllBuzz.glance <- glance(glmerAllBuzz) # to save
 
 summary(glmerAllBuzz)
 
 #---------------------------------------------------------------------------------
 # Save R objects
 saveRDS(glmerAllBuzz, paste0(args[2], "/glmerAllBuzz.rds"))
+saveRDS(glmerAllBuzz.tidy, paste0(args[2], "/glmerAllBuzz.tidy.rds"))
+saveRDS(glmerAllBuzz.glance, paste0(args[2], "/glmerAllBuzz.glance.rds"))
