@@ -4,11 +4,10 @@
 
 library(broom.mixed)
 library(data.table)
-library(splines)
-library(lme4)
 library(RhpcBLASctl)
 blas_set_num_threads(1)
-source("0_data.R")
+source("utils/0_data.R")
+source("utils/1_glmer_buzz_ARDepth_expo.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -34,8 +33,11 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
-### Remove NA
-# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
+## Weights for the glmer analysis
+data$n <- rep(0, length(data$Ind))
+for (k in unique(data$Ind)) {
+  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+}
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
@@ -62,23 +64,10 @@ dataAR <- data[, LagVariables]
 ### Autoregressive component for offset
 ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
   ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
-data$ARDepth <- as.matrix(dataAR) %*% ARvec
-
 ### Depth coefficients for offset
 Depthcoeff <- ARcoef.best$estimate[2:5]
-data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoeff
 
-## Weights for the glmer analysis
-data$n <- rep(0, length(data$Ind))
-for (k in unique(data$Ind)) {
-  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
-}
-
-glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
-                           data = data,
-                           nAGQ = 0,
-                           weights = n,
-                           family = poisson)
+glmerAllBuzzDepth <- glmer_buzz_ARDepth_expo(data, dataAR, ARvec, Depthcoeff)
 
 glmerAllBuzzDepth.tidy <- tidy(glmerAllBuzzDepth) # to save
 glmerAllBuzzDepth.glance <- glance(glmerAllBuzzDepth) # to save
@@ -166,7 +155,6 @@ QQ.plot.data <- data.frame(qunif = (1:nresid) / nresid, qZ = Zorder) # to save
 
 #---------------------------------------------------------------------------------
 # Save R objects
-saveRDS(glmerAllBuzzDepth, paste0(args[2], "/glmerAllBuzzDepth.rds"))
 saveRDS(glmerAllBuzzDepth.tidy, paste0(args[2], "/glmerAllBuzzDepth.tidy.rds"))
 saveRDS(glmerAllBuzzDepth.glance, paste0(args[2], "/glmerAllBuzzDepth.glance.rds"))
 saveRDS(acf.plot.data, paste0(args[2], "/acf.plot.data.rds"))

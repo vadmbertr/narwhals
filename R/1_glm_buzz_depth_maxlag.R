@@ -4,7 +4,7 @@
 
 library(data.table)
 library(splines)
-source("0_data.R")
+source("utils/0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments

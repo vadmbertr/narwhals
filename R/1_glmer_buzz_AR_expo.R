@@ -8,7 +8,8 @@ library(splines)
 library(lme4)
 library(RhpcBLASctl)
 blas_set_num_threads(1)
-source("0_data.R")
+source("utils/0_data.R")
+source("utils/1_glmer_buzz_AR_expo.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -34,8 +35,11 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
-### Remove NA
-# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
+## Weights for the glmer analysis
+data$n <- rep(0, length(data$Ind))
+for (k in unique(data$Ind)) {
+  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+}
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
@@ -62,19 +66,8 @@ dataAR <- data[, LagVariables]
 ### Autoregressive component for offset
 ARvec <- ARcoef.RegBiExp$estimate[1] * exp(-exp(ARcoef.RegBiExp$estimate[2]) * (1:maxlag.opt)) +
   ARcoef.RegBiExp$estimate[3] * exp(-exp(ARcoef.RegBiExp$estimate[4]) * (1:maxlag.opt))
-data$AR <- as.matrix(dataAR) %*% ARvec
 
-## Weights for the glmer analysis
-data$n <- rep(0, length(data$Ind))
-for (k in unique(data$Ind)) {
-  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
-}
-
-glmerAllBuzz <- glmer(Buzz ~ offset(AR) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
-                      data = data,
-                      nAGQ = 0,
-                      weights = n,
-                      family = poisson)
+glmerAllBuzz <- glmer_buzz_ARDepth_expo(data, dataAR, ARvec, Depthcoeff)
 
 glmerAllBuzz.tidy <- tidy(glmerAllBuzz) # to save
 glmerAllBuzz.glance <- glance(glmerAllBuzz) # to save

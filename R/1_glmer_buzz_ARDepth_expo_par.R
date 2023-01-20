@@ -4,19 +4,19 @@
 
 library(broom.mixed)
 library(data.table)
-library(lme4)
 library(mvtnorm)
 library(splines)
 library(parallel)
 library(RhpcBLASctl)
-source("0_data.R")
-source("0_biexp.R")
+source("utils/0_data.R")
+source("utils/0_biexp.R")
+source("utils/1_glmer_buzz_ARDepth_expo.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read args from command line
 if (length(args) != 4) {
-  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2")
+  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2 arg3 arg4")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   print("arg3 : nombre de coefficients estimés souhaités")
@@ -38,8 +38,11 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
-### Remove NA
-# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
+## Weights for the glmer analysis
+data$n <- rep(0, length(data$Ind))
+for (k in unique(data$Ind)) {
+  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+}
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
@@ -68,28 +71,13 @@ dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
   ### Components for offset
-  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov,
-                              checkSymmetry = FALSE))
-
+  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov, checkSymmetry = FALSE))
   ### Autoregressive component for offset
   ARcoefs <- coefs[1:maxlag.opt + 4]
-  data$ARDepth <- as.matrix(dataAR) %*% ARcoefs
-
   ### Depth coefficients for offset
   Depthcoefs <- coefs[1:4]
-  data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoefs
 
-  ## Weights for the glmer analysis
-  data$n <- rep(0, length(data$Ind))
-  for (k in unique(data$Ind)) {
-    data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
-  }
-
-  glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
-                             data = data,
-                             nAGQ = 0,
-                             weights = n,
-                             family = poisson)
+  glmerAllBuzzDepth <- glmer_buzz_ARDepth_expo(data, dataAR, ARcoefs, Depthcoefs)
   coefs <- tidy(glmerAllBuzzDepth)
   if (!any(grepl("Error", coefs$term, fixed = T))) {
     return(coefs[, c("term", "estimate", "std.error")])

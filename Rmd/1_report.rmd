@@ -250,7 +250,7 @@ ggplot(ARcoef.fit, aes(x = lag, y = truth)) +
 ### Intervalles de confiance des coefficients d'exposition
 
 ```{r}
-source("../R/1_monte_carlo_conf_int.R")
+source("../R/utils/1_monte_carlo_conf_int.R")
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T) ,]
