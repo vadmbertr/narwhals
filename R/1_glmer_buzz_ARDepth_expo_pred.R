@@ -47,12 +47,9 @@ glmerAllBuzzDepth <- readRDS(paste0(dirname(args[2]), "/glmer_buzz_ARDepth_expo/
 plotdist <- seq(1, 70, 0.1) ## Plotting distances in km
 # individual prediction wrt exposure X for glmerAllBuzz
 predFrameMany <- NULL
-Depthlevel <- -400
 for (k in unique(data$Ind)) {
   temp <- range(data$X[data$X > 0 & data$Ind == k])
   temp1 <- expand.grid(X = 1 / seq(1 / temp[2], 1 / temp[1], 0.1),
-                       P = 0,
-                       Depth = Depthlevel,
                        AR = 0,
                        Ind = k)
   predFrameMany <- rbind(predFrameMany, temp1)
@@ -68,8 +65,6 @@ predFrameMany <- NULL
 for (k in unique(data$Ind)) {
   temp <- range(data$X[data$X > 0 & data$Ind == k])
   temp1 <- expand.grid(X = 1 / seq(1 / temp[2], 1 / temp[1], 0.1),
-                       P = 0,
-                       Depth = Depthlevel,
                        ARDepth = 0,
                        Ind = k)
   predFrameMany <- rbind(predFrameMany, temp1)
@@ -79,13 +74,11 @@ predBuzz <- predict(glmerAllBuzzDepth,
 temp <- cbind(predFrameMany, as.data.frame(predBuzz))
 temp$exposure <- "Trial"
 temp$model <- "With Depth"
-names(temp) <- c("X", "P", "Depth", "AR", "Ind", "predBuzz", "exposure", "model")
+names(temp) <- c("X", "AR", "Ind", "predBuzz", "exposure", "model")
 predFrame <- rbind(predFrame, temp) # to save
 
 # population prediction wrt exposure X for glmerAllBuzz
 predFramePop_temp <- expand.grid(X = 1 / plotdist,
-                                 P = 0,
-                                 Depth = Depthlevel,
                                  AR = 0,
                                  Ind = "Population")
 predBuzzPop <- predict(glmerAllBuzz,
@@ -95,8 +88,6 @@ predFramePop <- cbind(predFramePop_temp, as.data.frame(predBuzzPop))
 predFramePop$model <- "Without Depth"
 # population prediction wrt exposure X for glmerAllBuzzDepth
 predFramePop_temp <- expand.grid(X = 1 / plotdist,
-                                 P = 0,
-                                 Depth = Depthlevel,
                                  ARDepth = 0,
                                  Ind = "Population")
 predBuzzPop <- predict(glmerAllBuzzDepth,
@@ -104,13 +95,11 @@ predBuzzPop <- predict(glmerAllBuzzDepth,
                        re.form = NA)
 temp <- cbind(predFramePop_temp, as.data.frame(predBuzzPop))
 temp$model <- "With Depth"
-names(temp) <- c("X", "P", "Depth", "AR", "Ind", "predBuzzPop", "model")
+names(temp) <- c("X", "AR", "Ind", "predBuzzPop", "model")
 predFramePop <- rbind(predFramePop, temp) # to save
 
 # individual prediction with no exposure X for glmerAllBuzz
 predFrame0_temp <- expand.grid(X = 0,
-                               P = 0,
-                               Depth = Depthlevel,
                                AR = 0,
                                Ind = unique(data$Ind))
 predBuzz0 <- predict(glmerAllBuzz,
@@ -119,21 +108,17 @@ predFrame0 <- cbind(predFrame0_temp, as.data.frame(predBuzz0))
 predFrame0$model <- "Without Depth"
 # individual prediction with no exposure X for glmerAllBuzzDepth
 predFrame0_temp <- expand.grid(X = 0,
-                               P = 0,
-                               Depth = Depthlevel,
                                ARDepth = 0,
                                Ind = unique(data$Ind))
 predBuzz0 <- predict(glmerAllBuzzDepth,
                      newdata = predFrame0_temp)
 temp <- cbind(predFrame0_temp, as.data.frame(predBuzz0))
 temp$model <- "With Depth"
-names(temp) <- c("X", "P", "Depth", "AR", "Ind", "predBuzz0", "model")
+names(temp) <- c("X", "AR", "Ind", "predBuzz0", "model")
 predFrame0 <- rbind(predFrame0, temp) # to save
 
 # population prediction with no exposure X for glmerAllBuzz
 predFramePop0_temp <- expand.grid(X = 0,
-                                  P = 0,
-                                  Depth = Depthlevel,
                                   AR = 0,
                                   Ind = "Population")
 predBuzzPop0 <- predict(glmerAllBuzz,
@@ -143,8 +128,6 @@ predFramePop0 <- cbind(predFramePop0_temp, as.data.frame(predBuzzPop0))
 predFramePop0$model <- "Without Depth"
 # population prediction with no exposure X for glmerAllBuzzDepth
 predFramePop0_temp <- expand.grid(X = 0,
-                                  P = 0,
-                                  Depth = Depthlevel,
                                   ARDepth = 0,
                                   Ind = "Population")
 predBuzzPop0 <- predict(glmerAllBuzzDepth,
@@ -152,7 +135,7 @@ predBuzzPop0 <- predict(glmerAllBuzzDepth,
                         re.form = NA)
 temp <- cbind(predFramePop0_temp, as.data.frame(predBuzzPop0))
 temp$model <- "With Depth"
-names(temp) <- c("X", "P", "Depth", "AR", "Ind", "predBuzzPop0", "model")
+names(temp) <- c("X", "AR", "Ind", "predBuzzPop0", "model")
 predFramePop0 <- rbind(predFramePop0, temp) # to save
 
 # percentage of normal behavior
@@ -162,6 +145,29 @@ ChangePop$change[seq_along(plotdist)] <-
   ChangePop$change[seq_along(plotdist)] / exp(predFramePop0$predBuzzPop0[1]) * 100
 ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
   ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] / exp(predFramePop0$predBuzzPop0[2]) * 100
+## CI
+### mean, var estimates
+expo.coef <- readRDS(paste0(dirname(args[2]), "glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
+#### no intercept as we are looking at the percentage of normal behaviour
+expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
+expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
+expo.coef$estimate <- as.numeric(expo.coef$estimate)
+expo.coef$std.error <- as.numeric(expo.coef$std.error)
+expo.coef.estimate <- expo.coef[, c("term", "estimate")]
+expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
+expo.coef.estimate <- dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:4]
+Beta.hat <- apply(expo.coef.estimate, 2, mean)
+Sigma.hat <- cov(expo.coef.estimate)
+### f.hat
+expo <- 1 / plotdist
+X <- ns(expo, knots = quantile(data$X[data$X > 0], 1:2 / 3))
+f.hat <- exp(X %*% Beta.hat)
+# sig.hat
+ChangePop$sig <- 0
+for (i in seq_along(expo)) {
+  ChangePop$sig[[length(plotdist) + i]] <- f.hat[[i]] * sqrt(t(X[i, ]) %*% Sigma.hat %*% X[i, ]) / sqrt(1000)
+}
 
 #---------------------------------------------------------------------------------
 # Save objects
