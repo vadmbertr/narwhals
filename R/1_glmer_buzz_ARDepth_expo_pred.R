@@ -7,7 +7,7 @@ library(data.table)
 library(splines)
 library(lme4)
 library(RhpcBLASctl)
-source("0_data.R")
+source("utils/0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
