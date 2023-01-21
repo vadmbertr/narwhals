@@ -144,7 +144,7 @@ ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
   ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] / exp(predFramePop0$predBuzzPop0[2]) * 100
 ## CI
 ### mean, var estimates
-expo.coef <- readRDS(paste0(dirname(args[2]), "glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
+expo.coef <- readRDS(paste0(dirname(args[2]), "/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
 #### no intercept as we are looking at the percentage of normal behaviour
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
