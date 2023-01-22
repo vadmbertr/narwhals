@@ -159,12 +159,12 @@ Sigma.hat <- cov(expo.coef.estimate)
 ### f.hat
 expo <- 1 / plotdist
 X <- ns(expo, knots = quantile(data$X[data$X > 0], 1:2 / 3))
-f.hat <- exp(X %*% Beta.hat)
-# sig.hat
-ChangePop$sig <- 0
-for (i in seq_along(expo)) {
-  ChangePop$sig[[length(plotdist) + i]] <- f.hat[[i]] * sqrt(t(X[i, ]) %*% Sigma.hat %*% X[i, ]) / sqrt(1000)
-}
+f2.hat <- (exp(X %*% Beta.hat) * 100)^2
+### var
+sigma.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
+### CI
+ChangePop$CI <- 0
+ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <- sqrt(sigma.hat / length(Beta.hat))
 
 #---------------------------------------------------------------------------------
 # Save objects
