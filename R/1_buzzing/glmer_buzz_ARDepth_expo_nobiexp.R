@@ -44,8 +44,8 @@ data <- OnlyAirgun(data)
 # To obtain convergence the optimization is done by Adaptive Gauss-Hermite Quadrature, which is obtained by the option nAGQ = 0 in the glmer-call.
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
-maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-coefs.estimate <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+maxlag.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+coefs.estimate <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 coefs.idx <- 1:(4 + maxlag.opt) + 1

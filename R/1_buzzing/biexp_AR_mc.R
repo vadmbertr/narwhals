@@ -5,7 +5,6 @@
 library(broom)
 library(mvtnorm)
 library(reshape2)
-source("utils/biexp.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -20,9 +19,9 @@ if (length(args) != 2) {
 #---------------------------------------------------------------------------------
 # MC
 
-maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-glmer.coefs <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.tidy.rds")
-glmer.coefs.vcov <- as.matrix(readRDS("../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
+maxlag.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+glmer.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.tidy.rds")
+glmer.coefs.vcov <- as.matrix(readRDS("../../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 AR.est <- glmer.coefs$estimate[1:(maxlag.opt)+5]

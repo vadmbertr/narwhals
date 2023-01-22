@@ -53,11 +53,11 @@ for (k in unique(data$Ind)) {
 # To obtain convergence the optimization is done by Adaptive Gauss-Hermite Quadrature, which is obtained by the option nAGQ = 0 in the glmer-call.
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
-maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-coefs.estimate <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-coefs.vcov <- as.matrix(readRDS("../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
-biexp.coef.estimate <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
-biexp.coef.cov <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
+maxlag.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+coefs.estimate <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
+coefs.vcov <- as.matrix(readRDS("../../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
+biexp.coef.estimate <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+biexp.coef.cov <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 coefs.idx <- 1:(4 + maxlag.opt) + 1

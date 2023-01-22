@@ -13,7 +13,7 @@ source("utils/biexp.R")
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
 if (length(args)!=2) {
-  print("Usage du script : RScript glmER_buzz_depth_maxlag.R arg1 arg2")
+  print("Usage du script : RScript glmer_buzz_depth_maxlag.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
@@ -33,8 +33,8 @@ data <- BeforeExposure(data)
 #---------------------------------------------------------------------------------
 # Estimation of the model
 
-maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.RegBiExp <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+maxlag.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+ARcoef.RegBiExp <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 

@@ -48,9 +48,9 @@ for (k in unique(data$Ind)) {
 # To obtain convergence the optimization is done by Adaptive Gauss-Hermite Quadrature, which is obtained by the option nAGQ = 0 in the glmer-call.
 # The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
 
-maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
-ARcoef.best <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.best.rds")
-ARcoef.RegBiExp <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+maxlag.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+ARcoef.best <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
+ARcoef.RegBiExp <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 

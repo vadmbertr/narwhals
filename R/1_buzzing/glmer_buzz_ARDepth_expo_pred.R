@@ -35,8 +35,8 @@ data <- OnlyAirgun(data)
 
 #---------------------------------------------------------------------------------
 # Load models
-glmerAllBuzz <- readRDS("../data/1_buzzing/glmer_buzz_AR_expo/glmerAllBuzz.rds")
-glmerAllBuzzDepth <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.rds")
+glmerAllBuzz <- readRDS("../../data/1_buzzing/glmer_buzz_AR_expo/glmerAllBuzz.rds")
+glmerAllBuzzDepth <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.rds")
 
 #---------------------------------------------------------------------------------
 # Obj for ploting
@@ -144,7 +144,7 @@ ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
 ## CI
 alpha <- .05
 ### mean, var estimates
-expo.coef <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
+expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
 #### no intercept as we are looking at the percentage of normal behaviour
 expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]

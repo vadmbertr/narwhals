@@ -12,7 +12,7 @@ source("utils/data.R")
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read db path from command line
 if (length(args)!=5) {
-  print("Usage du script : RScript glmER_buzz_depth_maxlag.R arg1 arg2 arg3 arg4 arg5")
+  print("Usage du script : RScript glmer_buzz_depth_maxlag.R arg1 arg2 arg3 arg4 arg5")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : la borne inférieure de recherche du lag maximum")
   print("arg3 : la borne supérieure de recherche du lag maximum")
@@ -42,7 +42,7 @@ maxlag.from <- as.numeric(args[2])
 maxlag.to <- as.numeric(args[3])
 maxlag.n <- as.numeric(args[4])
 
-maxlag.bic.path <- "../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds"
+maxlag.bic.path <- "../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds"
 if (file.exists(maxlag.bic.path)) {
   maxlag.bic <- readRDS(maxlag.bic.path)
   BICvector <- maxlag.bic$BIC

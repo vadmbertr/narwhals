@@ -1,5 +1,5 @@
 ---
-title: "Buzzing - Rapport d'avancement"
+title: "Effet des perturbations humaines sur l'alimentation des narvals"
 output:
   bookdown::pdf_document2:
     toc: true
@@ -8,6 +8,9 @@ toc-title: "Sommaire"
 urlcolor: blue
 linkcolor: blue
 header-includes:
+    \usepackage{amssymb}
+    \usepackage{bbm}
+    \usepackage{dirtytalk}
     \usepackage{float}
     \makeatletter\renewcommand*{\fps@figure}{H}\makeatother
 ---
@@ -16,7 +19,7 @@ header-includes:
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE,
                       comment = NA, warning = FALSE,
                       message = FALSE)
-knitr::opts_chunk$set(fig.width = 8, fig.height = 4, fig.align = "center")
+knitr::opts_chunk$set(fig.width = 4, fig.height = 2, fig.align = "center")
 ```
 
 ```{r}
@@ -28,53 +31,105 @@ library(patchwork)
 library(reshape2)
 library(splines)
 
-source("../R/utils/biexp.R")
-source("../R/utils/monte_carlo_conf_int.R")
+source("../../R/1_buzzing/utils/biexp.R")
+source("../../R/1_buzzing/utils/monte_carlo_conf_int.R")
 
 set.seed(15)
 ```
 
 \newpage
 
-Nous souhaitons observer chez des narvals l'effet de l'exposition à des perturbations humaines sur leur capacité à se nourrir. Lorsqu'elles se nourissent, ces baleines émettent des sons spécifiques (buzz). Nous nous intéresserons donc à la fréquence d'émission de ces buzz (buzz/min), ce qui peut être modélisé par un modèle de Poisson.
+\qquad Les narvals sont des baleines vivant toute l'année au Groenland.
+Le réchauffement climatique favorise le recul des glaces sur le territoire groenlandais et ses côtes.
+Cela ouvre la porte au développement d'activités humaines au Groenland, et notamment les activités minières.
+Les biologistes se questionnent sur les effets potentiels engendrés sur les comportements des narvals.
 
-# Modélisation du buzzing chez les narvals sans exposition
+\qquad Afin d'anticiper ces possibles changements de comportements une étude a été conduite pendant plusieurs mois en 2018.
+Dans ce cadre, 8 narvals ont été équipées de capteurs permettant d'enregistrer leur profondeur de plongée, leur localisation et les sons qu'elles émettent.
+Les baleines ont été laissées libres de toutes perturbations pendant plusieurs jours avant d'y être exposées.
+Les perturbations ont pris la forme de coups de fusil tirés dans l'eau depuis un bateau afin d'imiter les ondes émises par des activités minières.
 
-## Estimation de l'effet de la profondeur
+\qquad Lorsqu'elles se nourissent, les narvals émettent des sons spécifiques appelés \say{buzz}.
+À partir des sons collectés il est donc possible de déterminer quand ces baleines sont en train de manger.
+La distance séparant les baleines du bateau émettant une perturbation peut-elle être calculée grâce aux puces GPS placées sur les narvals.
+Ainsi, nous pouvons tenter de modéliser l'effet de l'exposition des perturbations humaines sur la capacité des narvals à se nourrir.
 
-Pour se nourrir, les narvals doivent plonger profondément alors que le reste du temps, ils restent "proche" de la surface. Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz. La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une variable explicative la décrivant par un polynôme de degré 3.
+# Modélisation de l'effet de l'exposition sur le taux d'émission
 
-## Estimation de l'autocorrélation dans l'émission de buzz
+## Taux d'émission de buzz sans exposition
 
-### Recherche de la mémoire optimale
+\qquad Etant donné que nous voulons modéliser un taux, la régression de Poisson est l'outil tout indiqué.
+On suppose que le taux d'émission de buzz $Y$, dépendant d'un ensemble de variables $X$, suit une loi de Poisson de paramètre $\lambda$, et on a que $\mathbb{E}(Y \vert X) = \lambda$.
+La régression de Poisson permet de modéliser le $log$ de $\lambda$ par une combinaison linéaire des variables $X$ :
+$$log(\lambda) = \beta_0 + X \beta$$
+Les variables $X$ utilisées dans le modèle sont détaillées dans la suite de cette section.
+Il n'existe pas d'expression explicite de l'estimateur du maximum de vraisemblance des paramètres $\beta$, cependant maximiser cette vraisemblance est un problème d'optimisation convexe qui peut être résolu numériquement.
 
-L'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents $t$. Cet effet mémoire doit donc être ajouté au modèle et pour cela nous devons déterminer la mémoire maximum qu'il faut autoriser au modèle.
+\qquad Les données que nous utilisons correspondent à plusieurs individus, nous avons donc plusieurs observations par individus et celles-ci ne sont pas indépendantes.
+Pour palier ce défaut de modélisation et tenir compte de la spécifité des individus, nous avons ajouté des effets aléatoires $b_i$ au modèle : $$log(\lambda_i) = \beta_0 + b_i + X_i \beta$$
+où $i$ dénote les observations de l'individu $i$ et $b_i \sim \mathcal{N}(O, \sigma_i^2)$, $\sigma_i^2$ étant la variance intra-individu.
 
-Afin de trouver la mémoire optimale, nous avons utilisé la démarche suivante :
+\qquad Pour se nourrir, les narvals doivent plonger profondément (plusieurs centaines de mètres), alors que le reste du temps elles restent \say{proche} (quelques dizaines de mètres) de la surface.
+Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz.
+La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une spline cubique naturelle ayant pour noeuds les quantiles $1/3$ et $2/3$.
+Nous pouvons expliciter un peu plus l'expression précédente du modèle :
+$$log(\lambda_i) = \beta_0 + b_i + spline(Depth_i) \beta_D$$
 
-1. $from.ml = 1\ ;\ to.ml = N$
-2. Tant que $(to.ml - from.ml > 2)$ :
-   1. Pour $ml^k_i = from.ml + (i-1) * \lfloor\frac{to.ml-from.ml}{M-1}\rceil,\ i = 1...M$ :
-      1. ajustement d'un modèle de Poisson avec $ml^k_i$ éléments mémoire
+\qquad Passer par l'estimateur du maximum de vraisemblance nécessite que les observations $Y_{ij}$ soient indépendantes.
+Or, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents ; cet effet mémoire doit donc être intégré au modèle pour rendre les $Y_{ij}$ indépendants.
+Pour cela nous introduisons $K$ variables binaires d'auto-régression codant l'émission d'un buzz aux l'instants $t - k,\ k \in \{1, ..., K\}$.
+Le modèle résultant s'écrit alors :
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(Depth_i(t)) \beta_D + \sum_{k=1}^K \alpha_k Y_i(t-k)$$
+Cette approche nécessite de fixer une mémoire maximale, et ainsi la valeur de $K$.
+Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilisé le BIC comme mesure de la qualité des différents modèles correspondants ; nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
+Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
+
+1. $from.k = K_{min}\ ;\ to.k = K_{max}$
+2. Tant que $(to.k - from.k > 2)$ :
+   1. Pour $K_i = from.k + (i-1) * \lfloor\frac{to.k-from.k}{M-1}\rceil,\ i \in \{1, ..., M\}$ :
+      1. ajustement d'un modèle avec $K_i$ éléments mémoire
       2. calcul du BIC
    2. $i_{opt} = argmin\ BIC_i$
-   3. $ml_{opt} = ml^{k}_{i_{opt}}$
-   4. $from.ml = ml^{k}_{i_{opt}-1}\ ;\ to.ml = ml^{k}_{i_{opt}+1}$
+   3. $K_{opt} = K_{i_{opt}}$
+   4. $from.k = K_{i_{opt}-1}\ ;\ to.k = K_{i_{opt}+1}$
 
-#### Sans effets aléatoires
+Le nombre de composants auto-régressifs pouvant être grand, nous avons utilisé une régression bi-exponentielle double permettant de lier le décalage mémoire et le coefficient associé :
+$$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
+Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
 
-Dans un premier temps, nous n'avons pas inclus d'effets aléatoires sur les individus pour estimer la mémoire optimale :
-$$
-Buzz \sim Ind + spline(Depth) + Lag_1 + ... + Lag_N
-$$
-Nous avons fixé $N = 300$ et $M = 10$.
+## Effet de l'exposition
+
+\qquad Le niveau d'exposition aux perturbations est représenté par l'inverse de la distance séparant la baleine du bateau quand un coup de feu est tiré.
+De même que pour la profondeur, la non-linéarité de la relation entre le niveau d'exposition et le taux d'émission de buzz est représentée par l'utilisation d'une spline cubique naturelle dont les noeuds sont les quantiles $1/3$ et $2/3$ des niveaux d'exposition.
+
+\qquad Afin d'observer l'effet de l'exposition aux perturbations par rapport à l'émission de buzz sans perturbation, nous ajoutons un terme d'\say{offset}.
+Cet offset est calculé à partir des coefficients $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$ estimés sans perturbation :
+$$offset_i(t) = spline(Depth_i(t)) \hat{\beta_D} + \sum_{k=1}^{K_{opt}} (\hat{A_1} e^{-e^{\hat{lrc_1}} k} + \hat{A_2} e^{-e^{\hat{lrc_2}} k}) Y_i(t-k)$$
+
+\qquad Le modèle incluant l'exposition s'écrit donc :
+$$log(\lambda_i(t)) = offset_i(t) + \beta_0 + b_i + spline(Expo_i(t)) \beta_E$$
+Et les paramètres estimés $\hat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions de stress normales.
+
+## Construction d'intervalles de confiance
+
+\qquad Pour se rassurer quant à l'interprétabilité des résultats obtenus il est important de construire les intervalles de confiance des estimations des coefficients associés à l'exposition aux perturbations.
+L'approche classique de calcul des intervalles de confiance se basant sur la seule variance estimée des coefficients d'exposition donnerait ici des résultats incorrects, la variance des coefficients de profondeur et d'auto-régression ne serait alors pas prise en compte car tuée par l'utilisation de l'offset.
+Nous avons donc utilisée une approche Monte-Carlo lors de laquelle nous répétons $M = 1000$ fois l'ajustement du modèle incluant l'exposition en tirant aléatoirement les coefficients $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$ selon leur moyenne et leur variance.
+Les $1000$ ajustements obtenus nous fournissent ainsi un échantillon pour chacun des coefficients d'exposition et nous construisons leur intervalle de confiance via les quantiles empiriques de leur distribution.
+
+# Résultats
+
+## Recherche de la mémoire optimale
 
 ```{r}
-maxlag.bic <- readRDS("../data/1_buzzing/glm_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.bic <- readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag/maxlag.bic.rds")
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 ```
 
-Nous obtenons une mémoire optimale de `r maxlag.opt` secondes. La figure \@ref(fig:plot-glm-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
+Le temps d'ajustement des modèles mixtes étant nettement plus important que ceux des modèles sans effets aléatoires, nous avons dans un premier temps exclu ces effets du modèle sans exposition pour estimer la mémoire optimale.
+Nous avons choisi pour la recherche $K_{min} = 1\, K_{max} = 300\, M = 10$
+Nous obtenons une mémoire optimale de `r maxlag.opt` secondes.
+La figure \@ref(fig:plot-glm-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
 
 ```{r plot-glm-bic, fig.cap = "BIC en fonction de la mémoire maximum"}
 ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
@@ -84,20 +139,13 @@ ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
   labs(x = "Mémoire maximum [secondes]")
 ```
 
-#### Avec effets aléatoires
-
-Nous avons plusieurs observations par individu, ce qui implique qu'elles ne sont pas indépendantes. Pour prendre en compte cette dépendance, nous avons tenté d'inclure un effet aléatoire sur les individus :
-$$
-Buzz \sim (1 | Ind) + spline(Depth) + Lag_1 + ... + Lag_N
-$$
-Compte tenu du résultat obtenu précédemment, nous avons tout de suite restreint l'intervalle de recherche initial à $[30, 90]$.
-
 ```{r}
-maxlag.glmer.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.glmer.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
 maxlag.glmer.opt <- as.integer(maxlag.glmer.bic[which.min(maxlag.glmer.bic[, 2]), 1])
 ```
 
-La figure \@ref(fig:plot-glmer-bic) présente les résultats obtenus. La courbe est similaire à celle obtenue sans l'ajout d'effets aléatoires.
+Cela nous a permis de restreindre tout de suite l'ensemble de recherche initial à $\{30, ..., 90\}$ quand nous avons considéré le modèle incluant les effets aléatoires.
+De même que précédemment, nous obtenons une mémoire optimale de `r maxlag.glmer.opt` secondes et la figure \@ref(fig:plot-glmer-bic) nous indique qu'il s'agit bien d'un optimum global.
 
 ```{r plot-glmer-bic, fig.cap = "BIC en fonction de la mémoire maximum - modèle mixte"}
 ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
@@ -109,18 +157,18 @@ ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
 
 ### Note sur le temps d'ajustement des modèles
 
-Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
-Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que pour les modèles mixtes celle-ci est quadratique.
-
 ```{r}
-glm.profiling <- as.data.frame(readRDS("../data/1_buzzing/glm_buzz_depth_maxlag_profiling/profiling.rds"))
+glm.profiling <- as.data.frame(readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag_profiling/profiling.rds"))
 glm.profiling$maxlag <- as.numeric(rownames(glm.profiling))
 
-glmer.profiling <- as.data.frame(readRDS("../data/1_buzzing/glmer_buzz_depth_maxlag_profiling/profiling.rds"))
+glmer.profiling <- as.data.frame(readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag_profiling/profiling.rds"))
 glmer.profiling$maxlag <- as.numeric(rownames(glmer.profiling))
 ```
 
-```{r plot-glm-time, fig.cap = "Temps d'ajustement (en secondes) des modèles en fonction de la mémoire maximum"}
+Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
+Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que pour les modèles mixtes celle-ci est quadratique.
+
+```{r plot-glm-time, fig.height = 3, fig.width = 6, fig.cap = "Temps d'ajustement (en secondes) des modèles en fonction de la mémoire maximum"}
 g1 <- ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
   geom_line() +
   geom_point() +
@@ -149,7 +197,7 @@ Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les mo
 La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
 
 ```{r}
-ARcoefs.fit <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.fit.rds")
+ARcoefs.fit <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
 ```{r plot-AR-BiExp, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs"}
@@ -163,7 +211,7 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
 Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
 
 ```{r}
-RegBiExp.coefs <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
+RegBiExp.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 ```
 
 ```{r tab-AR-BiExp}
@@ -177,7 +225,7 @@ kable(RegBiExp.coefs, caption = "Coefficients autorégressifs obtenus par régre
 Les coefficients de profondeur du modèle linéaire mixte sans exposition sont proposés table \@ref(tab:tab-depth).
 
 ```{r}
-glmer.coefs <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+glmer.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
 ```
 
 ```{r tab-depth}
@@ -201,11 +249,11 @@ $$
 Les coefficients estimés par le modèle mixte sans exposition sont fixés dans celui-ci afin que les coefficients ajustés pour la variable d'exposition s'interprètent comme un effet par rapport au comportement normal (sans exposition). De plus, cela permet de réduire sensiblement le coût calculatoire d'ajustement.
 
 ```{r}
-glmerAllBuzzDepth.tidy <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.tidy.rds")
-glmerAllBuzzDepth.glance <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.glance.rds")
-acf.plot.data <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/acf.plot.data.rds")
-QQ.plot.data <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
-z.plot.data <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo/z.plot.data.rds")
+glmerAllBuzzDepth.tidy <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.tidy.rds")
+glmerAllBuzzDepth.glance <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.glance.rds")
+acf.plot.data <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/acf.plot.data.rds")
+QQ.plot.data <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/QQ.plot.data.rds")
+z.plot.data <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/z.plot.data.rds")
 ```
 
 ```{r tab-coef-glmer-expo}
@@ -303,7 +351,7 @@ ggplot(Depthcoefs.fit) +
 ```
 
 ```{r}
-expo.coef <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.norm.rds")
+expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.norm.rds")
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -387,7 +435,7 @@ g4 <- ggplot() +
 L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients. Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans des lois normales multivariées (une pour les coefficients de la régression biexponentielle et une pour les coefficients de l'interpolation polynomiale) toujours centrées sur les estimations moyennes, mais ayant des matrices de variance-covariance non diagonales. Dorénavant nous avons donc une loi normale multivariée pour les coefficients de la régression biexponentielle et une autre pour la profondeur, les 2 étant de dimension 4.
 
 ```{r}
-RegBiExp.vcov <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/RegBiExp.vcov.rds")
+RegBiExp.vcov <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/RegBiExp.vcov.rds")
 ARcoefs <- rmvnorm(B, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
                    checkSymmetry = FALSE)
 ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
@@ -399,7 +447,7 @@ ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 estimate <- as.matrix(ns(-1000:0, knots = c(-323, -158, -54))) %*%
   glmer.coefs$estimate[2:5]
 Depthcoefs.fit <- data.frame(depth = -1000:0, estimate = estimate)
-Depth.vcov <- as.matrix(readRDS("../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
+Depth.vcov <- as.matrix(readRDS("../../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))[2:5, 2:5]
 Depthcoefs <- rmvnorm(B, mean = glmer.coefs$estimate[2:5], sigma = Depth.vcov,
                       checkSymmetry = FALSE)
 Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
@@ -431,7 +479,7 @@ ggplot(Depthcoefs.fit) +
 ```
 
 ```{r}
-expo.coef <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.biexp.rds")
+expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.biexp.rds")
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -514,8 +562,8 @@ g4 <- ggplot() +
 Bien que plus intéressante, la procédure que nous avons mise en place se base sur la matrice de variance-covariance des coefficients de la régression biexponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression biexponentielle. Pour palier cette approximation nous avons tenté d'estimer la matrice de variance-covariance des coefficients autorégressifs, à nouveau par une procédure Monte Carlo. Cette fois-ci nous répétons 1000 fois le tirage des 60 coefficients de mémoire à partir d'une loi normale multivariée et à chaque fois nous ajustons une régression biexponentielle sur les 60 coefficients tirés ; finalement nous pouvons obtenir les estimations moyennes des coefficients de la biexponentielle, ainsi que la matrice de variance-covariance associée. Nous reprenons enfin la procédure Monte Carlo employée dans la section précédente avec le vecteur de moyennes et la matrice de variance-covariance obtenus.
 
 ```{r}
-biexp.coef.cov <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
-biexp.coef.estimate <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+biexp.coef.cov <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
+biexp.coef.estimate <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
 ARcoefs <- rmvnorm(B, mean = apply(biexp.coef.estimate, 2, mean),
                    sigma = biexp.coef.cov,
                    checkSymmetry = FALSE)
@@ -538,7 +586,7 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
 ```
 
 ```{r}
-expo.coef <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
+expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -624,7 +672,7 @@ L'intérêt de la régression biexponentielle était de :
 En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients. Ainsi, nous avons tenté de nous passer de la régression biexponentielle, et donc de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée.
 
 ```{r}
-expo.coef <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
+expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -703,9 +751,9 @@ g4 <- ggplot() +
 ## Comparaison de l'estimation du taux d'émission de buzz avec et sans la profondeur
 
 ```{r}
-predFrame <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
-predFramePop <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
-ChangePop <- readRDS("../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
+predFrame <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
+predFramePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
+ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
 ```
 
 ```{r}

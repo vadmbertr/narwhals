@@ -47,7 +47,7 @@ splineDepth <- ns(data$Depth, knots = c(-323, -158, -54))
 lagvector <- c(1, seq(10, 90, by = 10))
 
 # retrieve previous runs
-maxlag.memory.time.path <- "../data/1_buzzing/glmer_buzz_depth_maxlag_profiling/profiling.rds"
+maxlag.memory.time.path <- "../../data/1_buzzing/glmer_buzz_depth_maxlag_profiling/profiling.rds"
 if (file.exists(maxlag.memory.time.path)) {
   glmer.maxlag.memory.time <- readRDS(maxlag.memory.time.path)
   lagvector <- setdiff(lagvector,
