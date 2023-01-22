@@ -157,10 +157,11 @@ expo <- 1 / plotdist
 X <- ns(expo, knots = quantile(data$X[data$X > 0], 1:2 / 3))
 f2.hat <- (exp(X %*% Beta.hat) * 100)^2
 ### var
-sigma.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
+sigma2.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
 ### CI
 ChangePop$CI <- 0
-ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <- qnorm(1 - alpha / 2) * sqrt(sigma.hat / length(Beta.hat))
+ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <-
+  qnorm(1 - alpha / 2) * sqrt(sigma2.hat / length(Beta.hat))
 
 #---------------------------------------------------------------------------------
 # Save objects
