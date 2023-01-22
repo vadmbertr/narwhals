@@ -737,7 +737,7 @@ ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
 ```{r}
 ggplot(data = ChangePop, aes(x = 1 / X, y = change, color = model)) +
   geom_line() +
-  geom_ribbon(aes(ymin = change - CI, ymax = change + CI), alpha = 0.2) +
+  geom_ribbon(aes(ymin = change - CI, ymax = change + CI, fill = model), alpha = 0.5, linetype = 0) +
   xlim(0, 40) +
   xlab("Distance avec le bateau (km)") +
   ylab("Pourcentage de taux normal d'émission de buzz") +
