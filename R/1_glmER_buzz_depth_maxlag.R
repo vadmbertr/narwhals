@@ -6,7 +6,7 @@ library(broom.mixed)
 library(data.table)
 library(splines)
 library(lme4)
-source("0_data.R")
+source("utils/0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments

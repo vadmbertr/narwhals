@@ -4,19 +4,19 @@
 
 library(broom.mixed)
 library(data.table)
-library(lme4)
 library(mvtnorm)
 library(splines)
 library(parallel)
 library(RhpcBLASctl)
-source("0_data.R")
-source("0_biexp.R")
+source("utils/0_data.R")
+source("utils/1_biexp.R")
+source("utils/1_glmer_buzz_ARDepth_expo.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read args from command line
 if (length(args) != 4) {
-  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2")
+  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo.R arg1 arg2 arg3 arg4")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   print("arg3 : nombre de coefficients estimés souhaités")
@@ -38,8 +38,11 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
-### Remove NA
-# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
+## Weights for the glmer analysis
+data$n <- rep(0, length(data$Ind))
+for (k in unique(data$Ind)) {
+  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+}
 
 #---------------------------------------------------------------------------------
 # Estimation of the glmer model
@@ -53,11 +56,14 @@ data <- OnlyAirgun(data)
 maxlag.bic <- readRDS("../data/glmER_buzz_depth_maxlag/maxlag.bic.rds")
 coefs.estimate <- readRDS("../data/glmER_buzz_depth_maxlag/ARcoef.best.rds")
 coefs.vcov <- as.matrix(readRDS("../data/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
+biexp.coef.estimate <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+biexp.coef.cov <- readRDS("../data/glmer_biexp_AR_mc/biexp.coef.cov.rds")
 
 maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
 coefs.idx <- 1:(4 + maxlag.opt) + 1
 coefs.estimate <- coefs.estimate$estimate[coefs.idx]
 coefs.vcov <- coefs.vcov[coefs.idx, coefs.idx]
+biexp.coef.estimate <- apply(biexp.coef.estimate, 2, mean)
 
 ## Set ARcoef using optimal max lag
 ### Define the first maxlag.opt lags
@@ -68,30 +74,15 @@ dataAR <- data[, LagVariables]
 
 fit.glmer <- function (i) {
   ### Components for offset
-  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov,
-                              checkSymmetry = FALSE))
-
+  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov, checkSymmetry = FALSE))
   ### Autoregressive component for offset
-  ARcoefs <- as.numeric(rmvnorm(1, mean = RegBiExp.coefs$estimate, sigma = RegBiExp.vcov,
+  ARcoefs <- as.numeric(rmvnorm(1, mean = biexp.coef.estimate, sigma = biexp.coef.cov,
                                 checkSymmetry = FALSE))
-  ARvec <- BiExp(ARcoefs[[1]], ARcoefs[[2]], ARcoefs[[3]], ARcoefs[[4]], maxlag = maxlag.opt)
-  data$ARDepth <- as.matrix(dataAR) %*% ARvec
-
+  # ARcoefs <- coefs[1:maxlag.opt + 4]  # to bypass the biexp
   ### Depth coefficients for offset
   Depthcoefs <- coefs[1:4]
-  data$ARDepth <- data$ARDepth + as.matrix(ns(data$Depth, knots = c(-323, -158, -54))) %*% Depthcoefs
 
-  ## Weights for the glmer analysis
-  data$n <- rep(0, length(data$Ind))
-  for (k in unique(data$Ind)) {
-    data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
-  }
-
-  glmerAllBuzzDepth <- glmer(Buzz ~ offset(ARDepth) + ns(X, knots = quantile(data$X[data$X > 0], 1:2 / 3)) + (1 | Ind),
-                             data = data,
-                             nAGQ = 0,
-                             weights = n,
-                             family = poisson)
+  glmerAllBuzzDepth <- glmer_buzz_ARDepth_expo(data, dataAR, ARcoefs, Depthcoefs)
   coefs <- tidy(glmerAllBuzzDepth)
   if (!any(grepl("Error", coefs$term, fixed = T))) {
     return(coefs[, c("term", "estimate", "std.error")])

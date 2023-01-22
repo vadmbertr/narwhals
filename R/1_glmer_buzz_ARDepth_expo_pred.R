@@ -1,20 +1,18 @@
 #--------------------------------------------------------------------------------
-## Objective : generate and save obj for plots
+## Objective : generate and save obj for plotting prediction band
 #---------------------------------------------------------------------------------
 
 library(broom.mixed)
 library(data.table)
-library(splines)
 library(lme4)
-library(RhpcBLASctl)
-blas_set_num_threads(1)
-source("0_data.R")
+library(splines)
+source("utils/0_data.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
 args <- commandArgs(trailingOnly = TRUE) # read args from command line
 if (length(args) != 2) {
-  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo_plots.R arg1 arg2")
+  print("Usage du script : Rscript 1_glmer_buzz_ARDepth_expo_pred.R arg1 arg2")
   print("arg1 : le chemin vers la base de données")
   print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
   stop("Des arguments doivent être donnés au script.", call. = FALSE)
@@ -34,8 +32,6 @@ data <- AfterExposure(data, no_stress = TRUE)
 data <- AddExposure(data)
 ### We restrict to airgun expositions
 data <- OnlyAirgun(data)
-### Remove NA
-# data <- RemoveNA(data, c("Ind", "Buzz", "Depth", "X"))
 
 #---------------------------------------------------------------------------------
 # Load models
@@ -147,7 +143,7 @@ ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
   ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] / exp(predFramePop0$predBuzzPop0[2]) * 100
 ## CI
 ### mean, var estimates
-expo.coef <- readRDS(paste0(dirname(args[2]), "glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
+expo.coef <- readRDS(paste0(dirname(args[2]), "/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
 #### no intercept as we are looking at the percentage of normal behaviour
 expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
@@ -162,12 +158,12 @@ Sigma.hat <- cov(expo.coef.estimate)
 ### f.hat
 expo <- 1 / plotdist
 X <- ns(expo, knots = quantile(data$X[data$X > 0], 1:2 / 3))
-f.hat <- exp(X %*% Beta.hat)
-# sig.hat
-ChangePop$sig <- 0
-for (i in seq_along(expo)) {
-  ChangePop$sig[[length(plotdist) + i]] <- f.hat[[i]] * sqrt(t(X[i, ]) %*% Sigma.hat %*% X[i, ]) / sqrt(1000)
-}
+f2.hat <- (exp(X %*% Beta.hat) * 100)^2
+### var
+sigma.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
+### CI
+ChangePop$CI <- 0
+ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <- sqrt(sigma.hat / length(Beta.hat))
 
 #---------------------------------------------------------------------------------
 # Save objects

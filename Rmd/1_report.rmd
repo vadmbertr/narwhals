@@ -28,8 +28,8 @@ library(patchwork)
 library(reshape2)
 library(splines)
 
-source("../R/0_biexp.R")
-source("../R/0_conf_int.R")
+source("../R/utils/1_biexp.R")
+source("../R/utils/1_monte_carlo_conf_int.R")
 
 set.seed(15)
 ```
