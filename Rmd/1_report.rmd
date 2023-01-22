@@ -719,33 +719,27 @@ g4 <- ggplot() +
 ## Comparaison de l'estimation du taux d'émission de buzz avec et sans la profondeur
 
 ```{r}
-predFrame <- readRDS("../data/glmer_buzz_ARDepth_expo_plots/predFrame.rds")
-predFramePop <- readRDS("../data/glmer_buzz_ARDepth_expo_plots/predFramePop.rds")
-ChangePop <- readRDS("../data/glmer_buzz_ARDepth_expo_plots/ChangePop.rds")
+predFrame <- readRDS("../data/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
+predFramePop <- readRDS("../data/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
+ChangePop <- readRDS("../data/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
 ```
 
 ```{r}
 ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
   geom_line() +
   geom_line(data = predFramePop, aes(x = 1 / X, y = 60 * exp(predBuzzPop)), size = 1.2, color = "black") +
-  # ylim(0, 0.3) +
   xlim(0, 50) +
-  xlab("Distance avec le bâteau (km)") +
+  xlab("Distance avec le bateau (km)") +
   ylab("Taux d'émission de buzz (1/min)") +
-  # geom_hline(data = predFrame0, aes(x = 1 / X), yintercept = exp(predBuzz0)*60, color = "gray")  +
-  # geom_hline(data = predFramePop0, aes(x = 1 / X), yintercept = exp(predBuzzPop0) * 60, color = "black", size = 1.2) +
-  # geom_hline(yintercept = exp(fit0) * 60, color = "gray")  +
-  # geom_hline(yintercept = exp(fitPop0) * 60, color = "black", size = 1.2) +
   facet_grid(. ~ model)
 ```
 
 ```{r}
 ggplot(data = ChangePop,
-       aes(x = change, y = 1 / X, color = model)) +
+       aes(x = 1 / X, y = change, color = model)) +
   geom_line() +
   ylim(0, 40) +
-  ylab("Distance avec le bâteau (km)") +
+  ylab("Distance avec le bateau (km)") +
   xlab("Pourcentage de taux normal d'émission de buzz") +
-  # facet_grid(~ model)  +
   theme(legend.position = "top", legend.title = element_blank())
 ```
