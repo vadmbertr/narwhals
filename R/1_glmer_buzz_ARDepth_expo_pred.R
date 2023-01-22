@@ -4,9 +4,9 @@
 
 library(broom.mixed)
 library(data.table)
-library(splines)
 library(lme4)
 library(RhpcBLASctl)
+library(splines)
 source("utils/0_data.R")
 
 #---------------------------------------------------------------------------------
