@@ -146,11 +146,7 @@ alpha <- .05
 ### mean, var estimates
 expo.coef <- readRDS(paste0(dirname(args[2]), "/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
 #### no intercept as we are looking at the percentage of normal behaviour
-expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
 expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
-expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
-expo.coef$estimate <- as.numeric(expo.coef$estimate)
-expo.coef$std.error <- as.numeric(expo.coef$std.error)
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
 expo.coef.estimate <- dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:4]

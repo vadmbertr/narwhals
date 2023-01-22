@@ -120,6 +120,10 @@ while (as.numeric(args[3]) - n.done(expo.coef.all, n.coefs) > 0) {
   print(n.done(expo.coef.all, n.coefs))
   n.jobs <- min(n.jobs, as.numeric(args[3]) - n.done(expo.coef.all, n.coefs))
   expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
+  expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+  expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
+  expo.coef$estimate <- as.numeric(expo.coef$estimate)
+  expo.coef$std.error <- as.numeric(expo.coef$std.error)
   if (is.na(n.coefs)) {
     n.coefs <- as.integer(nrow(expo.coef) / n.jobs)
   }

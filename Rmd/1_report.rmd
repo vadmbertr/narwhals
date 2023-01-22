@@ -304,10 +304,6 @@ ggplot(Depthcoefs.fit) +
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.norm.rds")
-expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
-expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
-expo.coef$estimate <- as.numeric(expo.coef$estimate)
-expo.coef$std.error <- as.numeric(expo.coef$std.error)
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -436,10 +432,6 @@ ggplot(Depthcoefs.fit) +
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.biexp.rds")
-expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
-expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
-expo.coef$estimate <- as.numeric(expo.coef$estimate)
-expo.coef$std.error <- as.numeric(expo.coef$std.error)
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -547,10 +539,6 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
-expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
-expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
-expo.coef$estimate <- as.numeric(expo.coef$estimate)
-expo.coef$std.error <- as.numeric(expo.coef$std.error)
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
@@ -637,10 +625,6 @@ En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la m
 
 ```{r}
 expo.coef <- readRDS("../data/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
-expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
-expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
-expo.coef$estimate <- as.numeric(expo.coef$estimate)
-expo.coef$std.error <- as.numeric(expo.coef$std.error)
 
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
