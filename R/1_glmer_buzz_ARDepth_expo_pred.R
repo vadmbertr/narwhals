@@ -142,6 +142,7 @@ ChangePop$change[seq_along(plotdist)] <-
 ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
   ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] / exp(predFramePop0$predBuzzPop0[2]) * 100
 ## CI
+alpha <- .05
 ### mean, var estimates
 expo.coef <- readRDS(paste0(dirname(args[2]), "/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds"))
 #### no intercept as we are looking at the percentage of normal behaviour
@@ -163,7 +164,7 @@ f2.hat <- (exp(X %*% Beta.hat) * 100)^2
 sigma.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
 ### CI
 ChangePop$CI <- 0
-ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <- sqrt(sigma.hat / length(Beta.hat))
+ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <- qnorm(1 - alpha / 2) * sqrt(sigma.hat / length(Beta.hat))
 
 #---------------------------------------------------------------------------------
 # Save objects
