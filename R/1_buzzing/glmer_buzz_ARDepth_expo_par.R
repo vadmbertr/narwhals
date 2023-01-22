@@ -1,0 +1,132 @@
+#--------------------------------------------------------------------------------
+## Objective : fit several glmer while drawing fixed coef and save expo coef
+#---------------------------------------------------------------------------------
+
+library(broom.mixed)
+library(data.table)
+library(mvtnorm)
+library(splines)
+library(parallel)
+library(RhpcBLASctl)
+source("utils/data.R")
+source("utils/biexp.R")
+source("utils/glmer_buzz_ARDepth_expo.R")
+
+#---------------------------------------------------------------------------------
+# Read script arguments
+args <- commandArgs(trailingOnly = TRUE) # read args from command line
+if (length(args) != 4) {
+  print("Usage du script : RScript glmer_buzz_ARDepth_expo.R arg1 arg2 arg3 arg4")
+  print("arg1 : le chemin vers la base de données")
+  print("arg2 : le chemin vers le dossier de sauvegarde des objets R")
+  print("arg3 : nombre de coefficients estimés souhaités")
+  print("arg4 : le nombre de coeurs alloués") # cannot be retrieve from R
+  stop("Des arguments doivent être donnés au script.", call. = FALSE)
+}
+
+#---------------------------------------------------------------------------------
+# Data preparation
+dataAll <- fread(args[1])
+data <- dataAll
+## keep the 2018 data
+data <- data[data$Year == "2018", ]
+## Add time since tagging
+data <- AddTime(data)
+## We restrict the data to be after exposure and 24 hours after tagging
+data <- AfterExposure(data, no_stress = TRUE)
+## We add exposure
+data <- AddExposure(data)
+### We restrict to airgun expositions
+data <- OnlyAirgun(data)
+## Weights for the glmer analysis
+data$n <- rep(0, length(data$Ind))
+for (k in unique(data$Ind)) {
+  data$n[data$Ind == k] <- length(data$Ind[data$Ind == k])
+}
+
+#---------------------------------------------------------------------------------
+# Estimation of the glmer model
+# The generalized linear mixed model with a Poisson response distribution with a log-link to model the effect of exposure on buzzing rate (buzzes/min) with an autoregressive memory component.
+# Exposure is defined as 1/distance (km).
+# Exposure is entered non-linearly as an explanatory variable using natural cubic splines with 3 degrees of freedom (ns, package splines) with internal knots located at the 33th and 66th percentiles of the non-zero exposure values.
+# Individual is included as a random effect allowing each animal to have a unique baseline (intercept) in their sound production rate.
+# To obtain convergence the optimization is done by Adaptive Gauss-Hermite Quadrature, which is obtained by the option nAGQ = 0 in the glmer-call.
+# The default is nAGQ = 1, the Laplace approximation, which does not reach convergence.
+
+maxlag.bic <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/maxlag.bic.rds")
+coefs.estimate <- readRDS("../data/1_buzzing/glmER_buzz_depth_maxlag/ARcoef.best.rds")
+coefs.vcov <- as.matrix(readRDS("../data/1_buzzing/glmer_buzz_ARDepth/glmERBuzzARDepth.vcov.rds"))
+biexp.coef.estimate <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.estimate.rds")
+biexp.coef.cov <- readRDS("../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
+
+maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+coefs.idx <- 1:(4 + maxlag.opt) + 1
+coefs.estimate <- coefs.estimate$estimate[coefs.idx]
+coefs.vcov <- coefs.vcov[coefs.idx, coefs.idx]
+biexp.coef.estimate <- apply(biexp.coef.estimate, 2, mean)
+
+## Set ARcoef using optimal max lag
+### Define the first maxlag.opt lags
+temp <- as.data.frame(shift(data$Buzz, n = 1:maxlag.opt, give.names = TRUE))
+data <- cbind(temp, data)
+LagVariables <- names(data[, 1:maxlag.opt])
+dataAR <- data[, LagVariables]
+
+fit.glmer <- function (i) {
+  ### Components for offset
+  coefs <- as.numeric(rmvnorm(1, mean = coefs.estimate, sigma = coefs.vcov, checkSymmetry = FALSE))
+  ### Autoregressive component for offset
+  ARcoefs <- as.numeric(rmvnorm(1, mean = biexp.coef.estimate, sigma = biexp.coef.cov,
+                                checkSymmetry = FALSE))
+  # ARcoefs <- coefs[1:maxlag.opt + 4]  # to bypass the biexp
+  ### Depth coefficients for offset
+  Depthcoefs <- coefs[1:4]
+
+  glmerAllBuzzDepth <- glmer_buzz_ARDepth_expo(data, dataAR, ARcoefs, Depthcoefs)
+  coefs <- tidy(glmerAllBuzzDepth)
+  if (!any(grepl("Error", coefs$term, fixed = T))) {
+    return(coefs[, c("term", "estimate", "std.error")])
+  }
+}
+
+n.done <- function (df, nc) {
+  if (is.na(nc)) return(0)
+  else return(round(nrow(df) / nc))
+}
+
+expo.coef.path <- paste0(args[2], "/expo.coef.rds")
+if (file.exists(expo.coef.path)) {
+  expo.coef.all <- readRDS(expo.coef.path)
+  n.coefs <- length(unique(expo.coef.all$term))
+} else {
+  expo.coef.all <- data.frame()
+  n.coefs <- NA
+}
+
+## Parallelism
+blas_set_num_threads(1)
+### allocated RAM = RAM total * allocated cores / total cores
+### n glmer // = min(allocated cores, allocated RAM / RAM per glmer)
+ram.total <- 192
+ram.per.job <- 7.5
+n.cores <- detectCores()
+n.cores.alloc <- as.numeric(args[4])
+ram.alloc <- ram.total * n.cores.alloc / n.cores
+n.jobs <- min(n.cores.alloc,
+              floor(ram.alloc / ram.per.job),
+              as.numeric(args[3]) - n.done(expo.coef.all, n.coefs))
+
+while (as.numeric(args[3]) - n.done(expo.coef.all, n.coefs) > 0) {
+  print(n.done(expo.coef.all, n.coefs))
+  n.jobs <- min(n.jobs, as.numeric(args[3]) - n.done(expo.coef.all, n.coefs))
+  expo.coef <- do.call(rbind, mclapply(1:n.jobs, fit.glmer, mc.cores = n.jobs))
+  expo.coef <- expo.coef[!expo.coef$term == "sd__(Intercept)",]
+  expo.coef <- expo.coef[!grepl("Error", expo.coef$term, fixed = T),]
+  expo.coef$estimate <- as.numeric(expo.coef$estimate)
+  expo.coef$std.error <- as.numeric(expo.coef$std.error)
+  if (is.na(n.coefs)) {
+    n.coefs <- as.integer(nrow(expo.coef) / n.jobs)
+  }
+  expo.coef.all <- rbind(expo.coef.all, expo.coef)
+  saveRDS(expo.coef.all, expo.coef.path)
+}
