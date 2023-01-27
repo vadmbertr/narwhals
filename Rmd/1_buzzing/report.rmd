@@ -1,5 +1,6 @@
 ---
 title: "Effet des perturbations humaines sur l'alimentation des narvals"
+author: "Yanis BEN BELGACEM, Vadim BERTRAND, Alicia LORANDI, Angélique SAILLET"
 output:
   bookdown::pdf_document2:
     toc: true
@@ -801,7 +802,8 @@ ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePo
 ```{r mod-expo-rate-per, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
 ggplot(data = ChangePop, aes(x = 1 / X, y = change, color = model)) +
   geom_line() +
-  geom_ribbon(aes(ymin = change - CI, ymax = change + CI, fill = model), alpha = 0.5, linetype = 0) +
+  geom_ribbon(aes(ymin = change - CI * sqrt(1000), ymax = change + CI * sqrt(1000), fill = model),
+              alpha = 0.5, linetype = 0) +
   xlim(0, 40) +
   xlab("Distance avec le bateau (km)") +
   ylab("Pourcentage du taux normal d'émission") +
