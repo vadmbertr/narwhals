@@ -19,7 +19,7 @@ header-includes:
 knitr::opts_chunk$set(echo = FALSE, eval = TRUE,
                       comment = NA, warning = FALSE,
                       message = FALSE)
-knitr::opts_chunk$set(fig.width = 4, fig.height = 2, fig.align = "center")
+knitr::opts_chunk$set(fig.width = 6, fig.height = 3, fig.align = "center")
 ```
 
 ```{r}
@@ -80,7 +80,7 @@ Or, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non 
 Pour cela nous introduisons $K$ variables binaires d'auto-régression codant l'émission d'un buzz aux l'instants $t - k,\ k \in \{1, ..., K\}$.
 Le modèle résultant s'écrit alors :
 $$log(\lambda_i(t)) = \beta_0 + b_i + spline(Depth_i(t)) \beta_D + \sum_{k=1}^K \alpha_k Y_i(t-k)$$
-Cette approche nécessite de fixer une mémoire maximale, et ainsi la valeur de $K$.
+Cette approche demande de fixer une mémoire maximale, et ainsi la valeur de $K$.
 Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilisé le BIC comme mesure de la qualité des différents modèles correspondants ; nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
 Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
 
@@ -93,7 +93,7 @@ Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avon
    3. $K_{opt} = K_{i_{opt}}$
    4. $from.k = K_{i_{opt}-1}\ ;\ to.k = K_{i_{opt}+1}$
 
-Le nombre de composants auto-régressifs pouvant être grand, nous avons utilisé une régression bi-exponentielle double permettant de lier le décalage mémoire et le coefficient associé :
+\qquad Le nombre de composants auto-régressifs pouvant être grand, nous avons utilisé une régression bi-exponentielle double permettant de lier le décalage mémoire et le coefficient associé :
 $$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
 Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
 
@@ -119,43 +119,7 @@ Les $1000$ ajustements obtenus nous fournissent ainsi un échantillon pour chacu
 
 # Résultats
 
-## Recherche de la mémoire optimale
-
-```{r}
-maxlag.bic <- readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag/maxlag.bic.rds")
-maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
-```
-
-Le temps d'ajustement des modèles mixtes étant nettement plus important que ceux des modèles sans effets aléatoires, nous avons dans un premier temps exclu ces effets du modèle sans exposition pour estimer la mémoire optimale.
-Nous avons choisi pour la recherche $K_{min} = 1\, K_{max} = 300\, M = 10$
-Nous obtenons une mémoire optimale de `r maxlag.opt` secondes.
-La figure \@ref(fig:plot-glm-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
-
-```{r plot-glm-bic, fig.cap = "BIC en fonction de la mémoire maximum"}
-ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
-  geom_line() +
-  geom_point() +
-  geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
-  labs(x = "Mémoire maximum [secondes]")
-```
-
-```{r}
-maxlag.glmer.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
-maxlag.glmer.opt <- as.integer(maxlag.glmer.bic[which.min(maxlag.glmer.bic[, 2]), 1])
-```
-
-Cela nous a permis de restreindre tout de suite l'ensemble de recherche initial à $\{30, ..., 90\}$ quand nous avons considéré le modèle incluant les effets aléatoires.
-De même que précédemment, nous obtenons une mémoire optimale de `r maxlag.glmer.opt` secondes et la figure \@ref(fig:plot-glmer-bic) nous indique qu'il s'agit bien d'un optimum global.
-
-```{r plot-glmer-bic, fig.cap = "BIC en fonction de la mémoire maximum - modèle mixte"}
-ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
-  geom_line() +
-  geom_point() +
-  geom_vline(xintercept = maxlag.glmer.opt, col = "blue", lty = 2) +
-  labs(x = "Mémoire maximum [secondes]")
-```
-
-### Note sur le temps d'ajustement des modèles
+## Note sur le temps d'ajustement des modèles
 
 ```{r}
 glm.profiling <- as.data.frame(readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag_profiling/profiling.rds"))
@@ -165,10 +129,10 @@ glmer.profiling <- as.data.frame(readRDS("../../data/1_buzzing/glmer_buzz_depth_
 glmer.profiling$maxlag <- as.numeric(rownames(glmer.profiling))
 ```
 
-Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
-Comme nous pouvons le voir sur la figure \@ref(fig:plot-glm-time) cette augmentation est linéaire pour les modèles classiques, alors que pour les modèles mixtes celle-ci est quadratique.
+\qquad Le temps d'ajustement des modèles, et en particulier des modèles mixtes, augmente fortement lorsque que le nombre de paramètres à ajuster augmentent. \newline
+Comme nous pouvons le voir sur la figure \@ref(fig:glm-time) cette augmentation est linéaire pour les modèles classiques, alors que pour les modèles mixtes celle-ci est quadratique.
 
-```{r plot-glm-time, fig.height = 3, fig.width = 6, fig.cap = "Temps d'ajustement (en secondes) des modèles en fonction de la mémoire maximum"}
+```{r glm-time, fig.width = 8, fig.cap = "Temps d'ajustement (en secondes) des modèles en fonction de la mémoire maximum."}
 g1 <- ggplot(glm.profiling, aes(x = maxlag, y = total_time, group = 1)) +
   geom_line() +
   geom_point() +
@@ -191,16 +155,50 @@ g2 <- ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
 g1 + g2
 ```
 
-### Régression bi-exponentielle sur les coefficients autorégressifs
+## Taux d'émission de buzz sans exposition
 
-Nous avons vu que les modèles mixtes sont bien plus longs à ajuster que les modèles classiques, aussi, afin de réduire le nombre de variables et le temps d'ajustement, nous appliquons une régression bi-exponentielle aux coefficients auto-régressifs obtenus précédemment. Ainsi nous passons de `r maxlag.opt` à 4 variables. \newline
-La figure \@ref(fig:plot-AR-BiExp) illustre les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`. Les points sont les contributions individuelles de chaque décalage, la courbe correspond à la régression bi-exponentielle.
+### Recherche de la mémoire optimale
+
+```{r}
+maxlag.bic <- readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.opt <- as.integer(maxlag.bic[which.min(maxlag.bic[, 2]), 1])
+maxlag.glmer.bic <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/maxlag.bic.rds")
+maxlag.glmer.opt <- as.integer(maxlag.glmer.bic[which.min(maxlag.glmer.bic[, 2]), 1])
+```
+
+\qquad Le temps d'ajustement des modèles mixtes étant nettement plus important que ceux des modèles sans effets aléatoires, nous avons dans un premier temps exclu ces effets du modèle sans exposition pour estimer la mémoire optimale.
+Nous avons choisi pour la recherche $K_{min} = 1,\ K_{max} = 300,\ M = 10$
+Nous obtenons une mémoire optimale de `r maxlag.opt` secondes.
+La figure \@ref(fig:maxlag-bic) permet de voir que cet optimal semble bien correspondre à un minimum global.
+
+```{r maxlag-bic, fig.width = 8, fig.cap = "BIC en fonction de la mémoire maximum."}
+g1 <- ggplot(maxlag.bic, aes(x = maxlag, y = BIC)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = maxlag.opt, col = "blue", lty = 2) +
+  labs(x = "Mémoire maximum [secondes]", caption = "Modèles classiques")
+g2 <- ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
+  geom_line() +
+  geom_point() +
+  geom_vline(xintercept = maxlag.glmer.opt, col = "blue", lty = 2) +
+  labs(x = "Mémoire maximum [secondes]", caption = "Modèles mixtes")
+
+g1 + g2
+```
+
+Cela nous a permis de restreindre tout de suite l'ensemble de recherche initial à $\{30, ..., 90\}$ quand nous avons considéré le modèle incluant les effets aléatoires.
+De même que précédemment, nous obtenons une mémoire optimale de `r maxlag.glmer.opt` secondes et la figure \@ref(fig:plot-glm-bic) nous indique qu'il s'agit bien d'un optimum global.
+
+### Régression double bi-exponentielle sur les coefficients autorégressifs
+
+\qquad La figure \@ref(fig:biexp-AR) permet de comparer la régression double bi-exponentielle et les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`.
+Nous pouvons constater que l'ajustement par la double bi-exponentielle est très fidèle aux `r maxlag.opt` coefficients initiaux.
 
 ```{r}
 ARcoefs.fit <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
-```{r plot-AR-BiExp, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs"}
+```{r biexp-AR, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
@@ -208,45 +206,64 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
 
-Les coefficients obtenus suite à la régression bi-exponentielle sont présentés dans la table \@ref(tab:tab-AR-BiExp).
+Les 4 coefficients obtenus suite à la régression double bi-exponentielle sont présentés dans la table \@ref(tab:coef-biexp-AR).
+Nous pouvons noter que leurs erreurs standard sont faibles, ce qui est cohérent avec la validation visuelle de la régression.
 
 ```{r}
 RegBiExp.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.RegBiExp.rds")
 ```
 
-```{r tab-AR-BiExp}
-kable(RegBiExp.coefs, caption = "Coefficients autorégressifs obtenus par régression bi-exponentielle",
-      label = "tab-AR-BiExp") %>%
+```{r coef-biexp-AR}
+df <- data.frame(RegBiExp.coefs[, c("estimate", "std.error", "p.value")])
+row.names(df) <- c("$A_1$", "$lrc_1$", "$A_2$", "$lrc_2$")
+kable(df,
+      col.names = c("moyenne", "erreur standard", "p-valeur"),
+      caption = "Coefficients autorégressifs obtenus par régression bi-exponentielle",
+      label = "coef-biexp-AR",
+      escape = FALSE) %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
 ### Coefficients de profondeur
 
-Les coefficients de profondeur du modèle linéaire mixte sans exposition sont proposés table \@ref(tab:tab-depth).
+\qquad Les coefficients de profondeur du modèle linéaire mixte sans exposition sont proposés table \@ref(tab:coef-glmer-depth).
+Interpréter les coefficients associés à des splines étant difficile, nous nous contenterons de relever que seul les pvaleurs de $\beta_{D_2}$ et $\beta_{D_3}$ sont significatives au seuil $\alpha = 5\%$ et que l'erreur standard de $\beta_{D_1}$ semble élevée relativement à sa moyenne.
 
 ```{r}
 glmer.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
 ```
 
-```{r tab-depth}
-kable(glmer.coefs[2:5, c("term", "estimate", "std.error", "statistic", "p.value")],
-      caption = "Coefficients de profondeur",
-      label = "tab-depth") %>%
+```{r coef-glmer-depth}
+df <- data.frame(glmer.coefs[3:5, c("estimate", "std.error", "p.value")])
+row.names(df) <- c("$\\beta_{D_1}$", "$\\beta_{D_2}$", "$\\beta_{D_3}$")
+kable(df,
+      col.names = c("moyenne", "erreur standard", "p-valeur"),
+      caption = "Coefficients de profondeur.",
+      label = "coef-glmer-depth",
+      escape = FALSE) %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
-# Estimation de l'effet de l'exposition sur le buzzing
+## Effet de l'exposition
 
-## Modélisation
+\qquad La table \@ref(tab:coef-glmer-expo) expose les coefficients associés à l'exposition du modèle mixte.
+De même que pour les coefficients de profondeur, il est compliqué d'interpréter leur valeur.
+Aussi, nous préférons nous référer à la lecture de la figure \@ref(fig:mod-expo-rate) sur laquelle nous représentons les estimations du modèle pour le taux d'émission de buzz selon la distance avec le bateau. Il est clair que plus le bateau est loin, plus le taux d'émission est élevé.
 
-L'exposition aux perturbations est exprimée par $1/dist$ où $dist$ est la distance en kilomètres séparant l'animal du bateau dont émane la perturbation.
+```{r}
+predFrame <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
+predFramePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
+```
 
-Nous avons ajusté le modèle mixte suivant :
-$$
-Buzz \sim (1 | Ind) + offset(ARDepth) + spline(Expo)
-$$
-
-Les coefficients estimés par le modèle mixte sans exposition sont fixés dans celui-ci afin que les coefficients ajustés pour la variable d'exposition s'interprètent comme un effet par rapport au comportement normal (sans exposition). De plus, cela permet de réduire sensiblement le coût calculatoire d'ajustement.
+```{r mod-expo-rate, fig.cap = "Evolution du taux d'émission de buzz selon la distance au bateau."}
+ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
+  geom_line() +
+  geom_line(data = predFramePop, aes(x = 1 / X, y = 60 * exp(predBuzzPop)), size = 1.2, color = "black") +
+  xlim(0, 50) +
+  xlab("Distance avec le bateau (km)") +
+  ylab("Taux d'émission de buzz (1/min)") +
+  facet_grid(. ~ model)
+```
 
 ```{r}
 glmerAllBuzzDepth.tidy <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.tidy.rds")
@@ -256,39 +273,37 @@ QQ.plot.data <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/QQ.plot.da
 z.plot.data <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/z.plot.data.rds")
 ```
 
-```{r tab-coef-glmer-expo}
-kable(glmerAllBuzzDepth.tidy, "latex",
-      caption = "Coefficients du modèle mixte incluant l'exposition",
-      label = "tab-coef-glmer-expo") %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
-```
-
-```{r tab-stat-glmer-expo}
-kable(glmerAllBuzzDepth.glance, caption = "Statistiques du modèle mixte incluant l'exposition",
-      label = "tab-stat-glmer-expo") %>%
-  kable_styling(latex_options = "HOLD_position")
+```{r coef-glmer-expo}
+df <- data.frame(glmerAllBuzzDepth.tidy[2:4, c("estimate", "std.error", "p.value")])
+row.names(df) <- c("$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+kable(df,
+      col.names = c("moyenne", "erreur standard", "p-valeur"),
+      caption = "Coefficients d'exposition.",
+      label = "coef-glmer-expo",
+      escape = FALSE) %>%
+  kable_styling(latex_options = c("HOLD_position"))
 ```
 
 La figure \@ref(fig:mod-expo-val) présente plusieurs graphiques utiles pour valider visuellement le modèle : nous sommes satisfaits de l'absence de corrélation entre les résidus constatée sur les deux premiers et du comportement gaussien visible sur le dernier.
 
-```{r mod-expo-val, fig.height = 8, fig.cap = "Validation graphique du modèle"}
+```{r mod-expo-val, fig.height = 5, fig.cap = "Validation graphique du modèle."}
 g1 <- ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
   geom_col(size = .2) +
-  labs(x = "Lag", y = "Autocorrelation of uniform residuals",
-       caption = "Auto-corrélation des résidues") +
+  labs(x = "Décalage", y = "Autocorrélation",
+       caption = "Autocorrélation des résidus") +
   theme(plot.margin = margin(0, 0, 1, 0, "pt"))
 
 g2 <- ggplot(data = z.plot.data[2:nrow(z.plot.data),], aes(x = Zlow, y = Zupp)) +
-  geom_point(size = .5) +
-  labs(x = TeX("Z_{i+1}"), y = TeX("Z_{i}"),
-       caption = "Résidue selon le précédent") +
+  geom_point(size = .25) +
+  labs(x = TeX("$Z_{i+1}$"), y = TeX("$Z_{i}$"),
+       caption = "Résidu selon le précédent") +
   coord_fixed() +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g3 <- ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
-  geom_point() +
+  geom_point(size = .5) +
   geom_abline(slope = 1, intercept = 0, size = 1, linetype = "dashed") +
-  labs(x = "Uniform theoretical quantiles", y = "Empirical quantiles",
+  labs(x = "Quantiles uniformes théoriques ", y = "Quantiles empiriques",
        caption = "Q-Q plot") +
   coord_fixed() +
   theme(plot.margin = margin(0, 0, 0, 0, "pt"))
@@ -296,13 +311,14 @@ g3 <- ggplot(QQ.plot.data, aes(x = qunif, y = qZ)) +
 g1 / (g2 + g3)
 ```
 
-## Intervalles de confiance des coefficients d'exposition
+## Intervalles de confiance
 
-Etant donné que nous avons fixé les coefficients associés à la profondeur et à l'effet mémoire aux valeurs obtenues sans exposition, l'estimation des intervalles de confiance des coefficients d'exposition ne peuvent être construits directement à partir de leurs erreurs standards, car la variabilité des coefficients de profondeur et d'effet mémoire ne serait pas prise en compte. Nous avons donc mis en place une approche Monte Carlo ajustant 1000 fois le modèle avec exposition tout en faisant varier les coefficients fixés, et permettant finalement d'estimer les intervalles de confiance des coefficients d'exposition via les quantiles des distributions obtenues.
+### Coefficients d'exposition
 
-### Variation des coefficients selon des lois normales univariées
+#### Utilisation de lois normales univariées
 
-Dans un premier temps, nous avons considéré que les coefficients suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard. Nous avons donc 4 lois normales univariées pour les coefficients de la régression biexponentille et 4 autres pour l'interpolation polynomiale par morceaux sur la profondeur.
+Dans un premier temps, nous avons considéré que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
+Nous avons donc 4 lois normales univariées pour les coefficients de la régression double bi-exponentille et 4 autres pour la spline sur la profondeur.
 
 ```{r}
 B <- 1000
@@ -329,9 +345,10 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 }))
 ```
 
-Sur la figure \@ref(fig:coef-ar-norm) nous avons représenté les courbes des fonctions biexponentielles ainsi générées. Nous pouvons voir que leurs allures semblent toujours suivre celle de la régression initiale.
+Sur la figure \@ref(fig:coef-ar-norm) nous avons représenté les courbes des fonctions double bi-exponentielles ainsi générées.
+Nous pouvons voir que leurs allures semblent toujours suivre celle de la régression initiale.
 
-```{r coef-ar-norm, fig.cap = "Variation des coefficients autorégressif selon des lois normales univariées"}
+```{r coef-ar-norm, fig.cap = "Variation des coefficients autorégressif selon des lois normales univariées."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -340,9 +357,9 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   labs(x = "Mémoire [secondes]", y = "Coefficient")
 ```
 
-Nous avons fait de même avec les coefficients de profondeur, et nous pouvons remarquer sur la figure \@ref(fig:coef-depth-norm) que cette fois-ci l'allure de certaines courbes s'éloignent sensiblement de l'interpolation polynomiale moyenne.
+Nous avons fait de même avec les coefficients de profondeur, et nous pouvons remarquer sur la figure \@ref(fig:coef-depth-norm) que cette fois-ci l'allure de certaines courbes s'éloignent sensiblement de l'interpolation moyenne.
 
-```{r coef-depth-norm, fig.cap = "Variation des coefficients de profondeur selon des lois normales univariées"}
+```{r coef-depth-norm, fig.cap = "Variation des coefficients de profondeur selon des lois normales univariées."}
 ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
@@ -372,19 +389,25 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-Les intervalles de confiance calculés avec la procédure Monte Carlo sont donnés sur la table \@ref(tab:coef-expo-ci-norm) (colonnes préfixées par "MC"). Nous avons également affiché les valeurs médianes des intervalles de confiance calculés à chaque répétition sur la base de la variation des coefficients d'exposition uniquement (colonne préfixées par "SE"). Il est flagrant que les intervalles Monte Carlo sont bien plus larges et ne permettent en aucun cas de conclure sur un effet de l'exposition sur l'émission de buzz.
+Les intervalles de confiance calculés avec la procédure Monte Carlo sont donnés sur la table \@ref(tab:coef-expo-ci-norm).
+Nous avons également affiché les valeurs médianes des intervalles de confiance calculés à chaque répétition sur la base de la variation des coefficients d'exposition uniquement.
+Il est flagrant que les intervalles Monte Carlo sont bien plus larges et ne permettent en aucun cas de conclure sur un effet de l'exposition sur le taux d'émission de buzz.
 
 ```{r coef-expo-ci-norm}
-kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
-      caption = "Intervalles de confiance dans le cas de normales univariées",
-      label = "coef-expo-ci-norm") %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
+row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+kable(df,
+      col.names = c("inf", "sup", "inf", "sup"),
+      caption = "Intervalles de confiance dans le cas de normales univariées.",
+      label = "coef-expo-ci-norm",
+      escape = FALSE) %>%
+  kable_styling(latex_options = c("HOLD_position")) %>%
+  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
 ```
 
 La figure \@ref(fig:coef-expo-ci-norm-dist) donne une représentation graphique de ces intervalles (en rouge les "MC" et en bleu les "SE"), ainsi que des distributions des coefficients.
 
-```{r coef-expo-ci-norm-dist, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales univariées"}
+```{r coef-expo-ci-norm-dist, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas de normales univariées."}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1,])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -430,9 +453,11 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-### Variation des coefficients selon une loi normale multivariée {#mvnorm}
+#### Utilisation d'une loi normale multivariée {#mvnorm}
 
-L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients. Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans des lois normales multivariées (une pour les coefficients de la régression biexponentielle et une pour les coefficients de l'interpolation polynomiale) toujours centrées sur les estimations moyennes, mais ayant des matrices de variance-covariance non diagonales. Dorénavant nous avons donc une loi normale multivariée pour les coefficients de la régression biexponentielle et une autre pour la profondeur, les 2 étant de dimension 4.
+L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients.
+Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans des lois normales multivariées (une pour les coefficients de la régression double bi-exponentielle et une pour les coefficients de la spline) toujours centrées sur les estimations moyennes, mais ayant des matrices de variance-covariance non diagonales.
+Dorénavant nous avons donc une loi normale multivariée pour les coefficients de la régression double bi-exponentielle et une autre pour la profondeur, les deux étant de dimension 4.
 
 ```{r}
 RegBiExp.vcov <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/RegBiExp.vcov.rds")
@@ -459,7 +484,7 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 
 La figure \@ref(fig:coef-ar-mvnorm) montre que la régression biexponentielle initiale est encore plus fidèlement suivie qu'auparavant.
 
-```{r coef-ar-mvnorm, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée"}
+```{r coef-ar-mvnorm, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -470,7 +495,7 @@ ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
 
 Et surtout, comme nous pouvons le voir sur la figure \@ref(fig:coef-depth-mvnorm), il en va de même pour la profondeur, alors que précédemment les tirages donnaient des courbes fortement éloignées de celle attendue.
 
-```{r coef-depth-mvnorm, fig.cap = "Variation des coefficients de profondeur selon une loi normale multivariée"}
+```{r coef-depth-mvnorm, fig.cap = "Variation des coefficients de profondeur selon une loi normale multivariée."}
 ggplot(Depthcoefs.fit) +
   geom_line(data = Depthcoefs.fit.mc, aes(x = depth, y = estimate, group = b), alpha = .1, col = "red") +
   geom_line(aes(x = depth, y = estimate)) +
@@ -499,19 +524,23 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-Sur la table \@ref(tab:coef-expo-ci-mvnorm) nous pouvons constater que les intervalles de confiance estimés en utilisant des lois normales multivariées sont nettement plus petits et peuvent conduire à conclure sur un effet de l'exposition sur l'émission de buzz.
+Sur la table \@ref(tab:coef-expo-ci-mvnorm) nous pouvons constater que les intervalles de confiance estimés en utilisant des lois normales multivariées sont nettement plus petits et peuvent conduire à conclure sur un effet de l'exposition sur le taux d'émission de buzz.
 
 ```{r coef-expo-ci-mvnorm}
-kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
-      caption = "Intervalles de confiance dans le cas de normales multivariées",
-      label = "coef-expo-ci-mvnorm") %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
+row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+kable(df,
+      col.names = c("inf", "sup", "inf", "sup"),
+      caption = "Intervalles de confiance dans le cas de normales multivariées.",
+      label = "coef-expo-ci-mvnorm",
+      escape = FALSE) %>%
+  kable_styling(latex_options = c("HOLD_position")) %>%
+  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
 ```
 
 Nous pouvons également voir sur la figure \@ref(fig:coef-expo-ci-mvnorm-dist) que les distributions semblent normales, contrairement à celles observées avec les lois univariées.
 
-```{r coef-expo-ci-mvnorm-dist, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+```{r coef-expo-ci-mvnorm-dist, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas de normales multivariées."}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1,])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -557,9 +586,12 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Variance-covariance des coefficients autorégressifs et non des coefficients de la régression biexponentielle \newline
+#### Variance-covariance des coefficients autorégressifs
 
-Bien que plus intéressante, la procédure que nous avons mise en place se base sur la matrice de variance-covariance des coefficients de la régression biexponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression biexponentielle. Pour palier cette approximation nous avons tenté d'estimer la matrice de variance-covariance des coefficients autorégressifs, à nouveau par une procédure Monte Carlo. Cette fois-ci nous répétons 1000 fois le tirage des 60 coefficients de mémoire à partir d'une loi normale multivariée et à chaque fois nous ajustons une régression biexponentielle sur les 60 coefficients tirés ; finalement nous pouvons obtenir les estimations moyennes des coefficients de la biexponentielle, ainsi que la matrice de variance-covariance associée. Nous reprenons enfin la procédure Monte Carlo employée dans la section précédente avec le vecteur de moyennes et la matrice de variance-covariance obtenus.
+Bien que plus intéressante, la procédure que nous avons mise en place se base sur la matrice de variance-covariance des coefficients de la régression double bi-exponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression double bi-exponentielle.
+Pour palier cette approximation nous avons tenté d'estimer la matrice de variance-covariance des coefficients autorégressifs, à nouveau par une procédure Monte Carlo.
+Cette fois-ci nous répétons 1000 fois le tirage des 60 coefficients de mémoire à partir d'une loi normale multivariée et à chaque fois nous ajustons une régression double bi-exponentielle sur les 60 coefficients tirés ; finalement nous pouvons obtenir les estimations moyennes des coefficients de la double bi-exponentielle, ainsi que la matrice de variance-covariance associée.
+Nous reprenons enfin la procédure Monte Carlo employée dans la section précédente avec le vecteur de moyennes et la matrice de variance-covariance obtenus.
 
 ```{r}
 biexp.coef.cov <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
@@ -574,9 +606,9 @@ ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 }))
 ```
 
-Nous pouvons contrôler sur la figure \@ref(fig:coef-ar-mvnorm-mc) que les régressions biexponentielles obtenues sont cohérentes.
+Nous pouvons contrôler sur la figure \@ref(fig:coef-ar-mvnorm-mc) que les régressions double bi-exponentielles obtenues restent cohérentes.
 
-```{r coef-ar-mvnorm-mc, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée estimée par Monte Carlo"}
+```{r coef-ar-mvnorm-mc, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée estimée par Monte Carlo."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -609,14 +641,18 @@ expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.er
 La table \@ref(tab:coef-expo-ci-mvnorm-mc) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-mc) permettent de vérifier que bien que les intervalles calculés ainsi sont légèrement plus grands que les précédents, ils permettent toujours d'interpréter les coefficients d'exposition ajustés par le modèle.
 
 ```{r coef-expo-ci-mvnorm-mc}
-kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
-      caption = "Intervalles de confiance dans le cas de normales multivariées",
-      label = "coef-expo-ci-mvnorm-mc") %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
+row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+kable(df,
+      col.names = c("inf", "sup", "inf", "sup"),
+      caption = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte Carlo.",
+      label = "coef-expo-ci-mvnorm-mc",
+      escape = FALSE) %>%
+  kable_styling(latex_options = c("HOLD_position")) %>%
+  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
 ```
 
-```{r coef-expo-ci-mvnorm-dist-mc, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+```{r coef-expo-ci-mvnorm-dist-mc, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte Carlo."}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1,])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -662,14 +698,15 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Sans passer par la régression biexponentielle \newline
+#### Sans passer par la régression biexponentielle
 
 L'intérêt de la régression biexponentielle était de :
 
 1. réduire le temps d'ajustement des modèles linéaires,
 2. éviter d'accumuler les variances des 60 coefficients de mémoire.
 
-En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients. Ainsi, nous avons tenté de nous passer de la régression biexponentielle, et donc de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée.
+En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients.
+Ainsi, nous avons tenté de nous passer de la régression double bi-exponentielle, et donc de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée.
 
 ```{r}
 expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
@@ -695,14 +732,18 @@ expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.er
 Nous pouvons voir sur la table \@ref(tab:coef-expo-ci-mvnorm-full) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section \@ref(mvnorm), et même plus petit pour l'intercept.
 
 ```{r coef-expo-ci-mvnorm-full}
-kable(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint), "latex",
-      col.names = c("MC - inf", "MC - sup", "SE - inf", "SE - sup"),
-      caption = "Intervalles de confiance dans le cas de normales multivariées",
-      label = "coef-expo-ci-mvnorm-full") %>%
-  kable_styling(latex_options = c("HOLD_position", "scale_down"))
+df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
+row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+kable(df,
+      col.names = c("inf", "sup", "inf", "sup"),
+      caption = "Intervalles de confiance dans le cas d'une loi normale multivariée sans double bi-exponentielle.",
+      label = "coef-expo-ci-mvnorm-full",
+      escape = FALSE) %>%
+  kable_styling(latex_options = c("HOLD_position")) %>%
+  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
 ```
 
-```{r coef-expo-ci-mvnorm-dist-full, fig.height = 6, fig.cap = "Intervalles de confiance dans le cas de normales multivariées"}
+```{r coef-expo-ci-mvnorm-dist-full, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas d'une loi normale multivariée sans double bi-exponentielle."}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1,])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -748,30 +789,21 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-## Comparaison de l'estimation du taux d'émission de buzz avec et sans la profondeur
+### Pourcentage du taux normal d'émission de buzz
+
+\qquad Il est rassurant de voir que les intervalles de confiance des coefficients d'exposition obtenus par Monte Carlo restent raisonnablement petits, cependant comme évoqué précédemment, il n'est pas possible de lier une augmentation ou une diminution du taux d'émission de buzz en fonction de la distance avec le bateau à partir de leur valeur.
+C'est pourquoi nous avions représenté graphiquement cette évolution sur la figure \@ref(fig:mod-expo-rate), mais cette visualisation ne proposait pas d'intervalle de confiance ou de bande de prédiction.
 
 ```{r}
-predFrame <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
-predFramePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
 ```
 
-```{r}
-ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
-  geom_line() +
-  geom_line(data = predFramePop, aes(x = 1 / X, y = 60 * exp(predBuzzPop)), size = 1.2, color = "black") +
-  xlim(0, 50) +
-  xlab("Distance avec le bateau (km)") +
-  ylab("Taux d'émission de buzz (1/min)") +
-  facet_grid(. ~ model)
-```
-
-```{r}
+```{r mod-expo-rate-per, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
 ggplot(data = ChangePop, aes(x = 1 / X, y = change, color = model)) +
   geom_line() +
   geom_ribbon(aes(ymin = change - CI, ymax = change + CI, fill = model), alpha = 0.5, linetype = 0) +
   xlim(0, 40) +
   xlab("Distance avec le bateau (km)") +
-  ylab("Pourcentage de taux normal d'émission de buzz") +
+  ylab("Pourcentage du taux normal d'émission") +
   theme(legend.position = "top", legend.title = element_blank())
 ```
