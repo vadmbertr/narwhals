@@ -1,0 +1,113 @@
+---
+title: "Sinusoidal model"
+author: "Adeline Leclercq Samson"
+date: "2023-01-11"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description of the sinusoidal model
+
+The observations along the tusk are denoted $Y_i$ for $i=1, \ldots, n$, with the corresponding  position along the tusk  denoted $x_i$.
+The model is the following
+$$Y_i = f(x_i, \varphi)+\varepsilon_i $$
+with $\varepsilon_i$ a  random noise assumed to be normally distributed with mean $0$ and variance $\omega^2$.
+The regression function is a periodic sinusoidal function
+$$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
+with function $g$ defined as
+$$ g(x) = ax+\xi_x$$
+and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process 
+$$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
+
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \sigma^2/\beta$. 
+
+## Simulation of trajectories
+
+Let us start with some simulations.
+```{r}
+# parameters
+A = 1/2
+B = -1/4
+b = 1
+a = 0.1
+beta = 0.05
+sigma = 0.1
+omega = 0.01
+
+# simulations
+n = 500
+x = 1:n
+delta = 1
+psi = exp(-delta*beta)
+gamma = sigma/sqrt(2*beta)*sqrt(1-psi^2)
+xi = rep(0,n)
+for (i in 2:n){
+  xi[i] = xi[i-1]*psi + rnorm(1,0, gamma)
+}
+gx = a*x+xi
+fx = A*sin(gx+b) + B*sin(2*gx + 2*b + pi/2)
+Y = fx + rnorm(n,0,omega)
+plot(x,Y,type = "l")
+
+```
+
+
+## Estimation with the EM algorithm
+
+The EM algorithm is based on the complete log-likelihood of the model.
+The solution of the hidden process $\xi_x$ is
+$$\xi_{x+\delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+such that the transition density is
+$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+
+The complete log-likelihood is thus
+\begin{eqnarray*}
+\log L(Y,\xi,\theta)&=&\sum{i=1}^n\log p(Y_i|\xi_i) +\sum{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
+&=& -\sum{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})) 
+\end{eqnarray*}
+
+The EM algorithm proceeds at iteration $k$ with the two following steps, given the current value of the parameters $\theta^k$
+
+- E step: calculation of $Q(\theta, \theta^k)$
+- M step: update of the parameters $\theta^{k+1}=\arg\max_\theta Q(\theta, \theta^k)$
+
+#### E step
+
+The condition distribution $p(\xi|Y; \theta^k)$ is not explicit because the regression function is not linear. We should proceed with a MCMC algorithm to sample from this distribution. This will lead to a stochastic version of the EM algorithm, namely the SAEM algorithm.
+
+#### M step
+
+We need the sufficient statistics to update the algorithm. 
+
+To update $\omega^2$, the statistic is
+
+$$S_1(\xi_i) = \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi_i), \varphi))^2$$
+
+To update $\phi = (A,B,a,b)$, the statistic is
+
+$$S_2(\xi_i) = \sum_{i=1}^n \partial_\varphi f(x_i(\xi_i), \varphi) (y_i-f(x_i(\xi_i), \varphi))$$
+For $\gamma^2=\sigma^2/(2\beta)$, the statistic is
+$$S_3(\xi_i)= \frac{1}{n}\sum_{i=1}^n(\xi_i-\xi_{i-1}\psi)^2$$
+
+To update $\psi$, we need to statistics
+$$S_4(\xi) = \sum_{i=1}^n\xi_i\xi_{i-1}$$
+and 
+$$S_5(\xi) = \sum_{i=1}^n(\xi_i^2+\xi_{i-1}^2)$$
+
+#### SAEM algorithm
+
+The steps of the SAEM algorithm are
+
+- E step: simulation of a new trajectory $\xi^k$ with a MCMC algorithm targeting $p(\xi|Y; \theta^k)$ as stationary distribution
+
+- SA step: stochastic approximation of the sufficient statistics
+
+$$s^k = s^{k-1} + (1-\alpha_k)(S(\xi^k)-s^{k-1}) $$
+
+- M step: update of $\theta^{k}$ using the sufficient statistics $s^k$
