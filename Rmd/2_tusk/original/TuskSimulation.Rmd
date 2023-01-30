@@ -53,7 +53,6 @@ gx = a*x+xi
 fx = A*sin(gx+b) + B*sin(2*gx + 2*b + pi/2)
 Y = fx + rnorm(n,0,omega)
 plot(x,Y,type = "l")
-
 ```
 
 
@@ -61,15 +60,15 @@ plot(x,Y,type = "l")
 
 The EM algorithm is based on the complete log-likelihood of the model.
 The solution of the hidden process $\xi_x$ is
-$$\xi_{x+\delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+$$\xi_{x+\Delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
 such that the transition density is
-$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+$$p(\xi_{x+\Delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
 
 The complete log-likelihood is thus
 \begin{eqnarray*}
-\log L(Y,\xi,\theta)&=&\sum{i=1}^n\log p(Y_i|\xi_i) +\sum{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
-&=& -\sum{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
-&&- \sum{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})) 
+\log L(Y,\xi,\theta)&=&\sum_{i=1}^n\log p(Y_i|\xi_i) +\sum_{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta}))
 \end{eqnarray*}
 
 The EM algorithm proceeds at iteration $k$ with the two following steps, given the current value of the parameters $\theta^k$
