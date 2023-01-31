@@ -208,12 +208,12 @@ Ainsi, quand on applique la méthode Delta on obtient :
 \begin{align*}
     \sqrt{n} (f(\hat{\beta}) - f(\beta)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \nabla f(\beta)^T \Sigma \nabla f(\beta)) \\
     \Leftrightarrow \sqrt{n} (\hat{\lambda(t)}) - \lambda(t)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \lambda(t)^2 X(t)^T \Sigma X(t)) \\
-    &\rightsquigarrow \mathcal{N}(0, \hat{\lambda(t)}^2 X(t)^T \Sigma X(t)) \\
-    \Leftrightarrow \frac{\sqrt{n}}{\hat{\lambda(t)}^2 X(t)^T \Sigma X(t)} (\hat{\lambda(t)}) - \lambda(t)) &\rightsquigarrow \mathcal{N}(0, 1)
+    &\rightsquigarrow \mathcal{N}(0, \hat{\lambda(t)}^2 X(t)^T \hat{\Sigma} X(t)) \\
+    \Leftrightarrow \frac{\sqrt{n}}{\hat{\lambda(t)} \sqrt{X(t)^T \hat{\Sigma} X(t)}} (\hat{\lambda(t)}) - \lambda(t)) &\rightsquigarrow \mathcal{N}(0, 1)
 \end{align*}
 Et on en déduit la bande de confiance au niveau $\alpha$ :
 $$
-IC_\alpha(\lambda(t)) = [\hat{\lambda(t)} \pm q_{1 - \alpha / 2}^\mathcal{N} \frac{\hat{\lambda(t)}^2 X(t)^T \Sigma X(t)}{\sqrt{n}}]
+IC_\alpha(\lambda(t)) = [\hat{\lambda(t)} \pm q_{1 - \alpha / 2}^\mathcal{N} \frac{\hat{\lambda(t)} \sqrt{X(t)^T \hat{\Sigma} X(t)}}{\sqrt{n}}]
 $$
 
 # Résultats
@@ -878,7 +878,7 @@ C'est pourquoi nous avions représenté graphiquement cette évolution sur la fi
 
 Nous avons employé la méthode Delta décrite dans la section \@ref(delta) pour construire une bande de confiance autour de l'estimation du pourcentage du taux normal d'émission de buzz en fonction de la profondeur.
 Ce pourcentage est obtenu en faisant le rapport entre l'intensité estimée avec et sans perturbation.
-La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine et illustre que soumisent à des perturbations à une distance de 10 kilomètres, les narvals émettent deux fois moins de buzz que dans des conditions normales.
+La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumisent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
 
 ```{r}
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
