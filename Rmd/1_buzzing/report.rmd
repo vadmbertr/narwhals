@@ -163,11 +163,11 @@ Aussi, il se peut que l'exposition ait un lien direct sur l'émission de buzz et
 
 \qquad Afin de représenter uniquement le lien direct, les coefficients des covariables autres que l'exposition sont estimés sans inclure celle-ci à partir des observations effectuées sans soumettre les animaux à des perturbations :
 $$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^{K_{opt}} A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k} Y_i(t-k)$$
-Nous obtenons donc les estimations $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$ qui sont ensuite injectées dans le modèle complet au moyen d'un terme d'\say{offset} :
-$$offset_i(t) = spline(D_i(t)) \hat{\beta_D} + \sum_{k=1}^{K_{opt}} (\hat{A_1} e^{-e^{\hat{lrc_1}} k} + \hat{A_2} e^{-e^{\hat{lrc_2}} k}) Y_i(t-k)$$
+Nous obtenons donc les estimations $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$ qui sont ensuite injectées dans le modèle complet au moyen d'un terme d'\say{offset} :
+$$offset_i(t) = spline(D_i(t)) \widehat{\beta_D} + \sum_{k=1}^{K_{opt}} (\widehat{A_1} e^{-e^{\widehat{lrc_1}} k} + \widehat{A_2} e^{-e^{\widehat{lrc_2}} k}) Y_i(t-k)$$
 Le modèle incluant l'exposition est donc reformulé ainsi :
 $$log(\lambda_i(t)) = \beta_0 + b_i + \textcolor{blue}{offset_i(t)} + spline(E_i(t)) \beta_E$$
-Et les paramètres estimés $\hat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions \say{normales}.
+Et les paramètres estimés $\widehat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions \say{normales}.
 
 ## Intervalles de confiance
 
@@ -179,41 +179,41 @@ Nous avons donc utilisée l'approche Monte-Carlo suivante :
 
 \begin{algorithmic}
 \State $M \gets 1000$ \Comment{Nombre de répétitions de la procédure}
-\State $\hat{\beta_E} \gets []$
+\State $\widehat{\beta_E} \gets []$
 \For{$i \in \{1, ..., M\}$}
     \Comment{Tirage aléatoire des coefficients de profondeur et autorégressifs}
-    \State $\hat{\beta_D} \gets \mathcal{N}(\mathbb{E}(\beta_D), \mathbb{V}ar(\beta_D))$
-    \State $\hat{A_1} \gets \mathcal{N}(\mathbb{E}(A_1), \mathbb{V}ar(A_1))$
-    \State $\hat{lrc_1} \gets \mathcal{N}(\mathbb{E}(lrc_1), \mathbb{V}ar(lrc_1))$
-    \State $\hat{A_2} \gets \mathcal{N}(\mathbb{E}(A_2), \mathbb{V}ar(A_2))$
-    \State $\hat{lrc_2} \gets \mathcal{N}(\mathbb{E}(lrc_2), \mathbb{V}ar(lrc_2))$
-    \State calcul de l'offset avec $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$
+    \State $\widehat{\beta_D} \gets \mathcal{N}(\mathbb{E}(\beta_D), \mathbb{V}ar(\beta_D))$
+    \State $\widehat{A_1} \gets \mathcal{N}(\mathbb{E}(A_1), \mathbb{V}ar(A_1))$
+    \State $\widehat{lrc_1} \gets \mathcal{N}(\mathbb{E}(lrc_1), \mathbb{V}ar(lrc_1))$
+    \State $\widehat{A_2} \gets \mathcal{N}(\mathbb{E}(A_2), \mathbb{V}ar(A_2))$
+    \State $\widehat{lrc_2} \gets \mathcal{N}(\mathbb{E}(lrc_2), \mathbb{V}ar(lrc_2))$
+    \State calcul de l'offset avec $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$
     \State ajustement du modèle $\mathcal{M}$ en fixant l'offset
-    \State $\hat{\beta_E}[i] \gets$ coefficients de profondeur ajustés de $\mathcal{M}$
+    \State $\widehat{\beta_E}[i] \gets$ coefficients de profondeur ajustés de $\mathcal{M}$
 \EndFor
-\State $IC_\alpha \gets [Q_{\alpha / 2}^{\hat{\beta_E}}, Q_{1 - \alpha / 2}^{\hat{\beta_E}}]$ \Comment{Estimation via les quantiles empiriques}
+\State $IC_\alpha \gets [Q_{\alpha / 2}^{\widehat{\beta_E}}, Q_{1 - \alpha / 2}^{\widehat{\beta_E}}]$ \Comment{Estimation via les quantiles empiriques}
 \end{algorithmic}
 
 ### Estimation de bandes de prédiction via la méthode Delta {#delta}
 
-\qquad Une fois les coefficients d'exposition $\hat{\beta_E}$ estimés nous pouvons prédire le taux d'émission de buzz sur l'ensemble d'un intervalle de niveau d'exposition aux perturbations.
+\qquad Une fois les coefficients d'exposition $\widehat{\beta_E}$ estimés nous pouvons prédire le taux d'émission de buzz sur l'ensemble d'un intervalle de niveau d'exposition aux perturbations.
 Afin d'associer une bande de confiance à la prédiction moyenne nous avons appliqué la méthode Delta.
 
-Tout d'abord, d'après le Théorème Central Limite on a : $\sqrt{n} (\hat{\beta} - \beta) \sim \mathcal{N}(0, \Sigma)$ avec $\hat{\beta}$ les coefficients estimés du modèle et $\Sigma$ leur variance.
+Tout d'abord, d'après le Théorème Central Limite on a : $\sqrt{n} (\widehat{\beta} - \beta) \sim \mathcal{N}(0, \Sigma)$ avec $\widehat{\beta}$ les coefficients estimés du modèle et $\Sigma$ leur variance.
 
 Etant donné que nous utilisons une régression logistique, le taux d'émission est lié aux coefficients du modèle via la relation $\lambda(t) = exp(X(t) \beta) \vcentcolon = f(\beta)$.
 Ce qui donne pour le gradient de la fonction $f$ : $\nabla f(\beta) = X f(\beta)$.
 
 Ainsi, quand on applique la méthode Delta on obtient :
 \begin{align*}
-    \sqrt{n} (f(\hat{\beta}) - f(\beta)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \nabla f(\beta)^T \Sigma \nabla f(\beta)) \\
-    \Leftrightarrow \sqrt{n} (\hat{\lambda(t)}) - \lambda(t)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \lambda(t)^2 X(t)^T \Sigma X(t)) \\
-    &\rightsquigarrow \mathcal{N}(0, \hat{\lambda(t)}^2 X(t)^T \hat{\Sigma} X(t)) \\
-    \Leftrightarrow \frac{\sqrt{n}}{\hat{\lambda(t)} \sqrt{X(t)^T \hat{\Sigma} X(t)}} (\hat{\lambda(t)}) - \lambda(t)) &\rightsquigarrow \mathcal{N}(0, 1)
+    \sqrt{n} (f(\widehat{\beta}) - f(\beta)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \nabla f(\beta)^T \Sigma \nabla f(\beta)) \\
+    \Leftrightarrow \sqrt{n} (\widehat{\lambda(t)}) - \lambda(t)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \lambda(t)^2 X(t)^T \Sigma X(t)) \\
+    &\rightsquigarrow \mathcal{N}(0, \widehat{\lambda(t)}^2 X(t)^T \widehat{\Sigma} X(t)) \\
+    \Leftrightarrow \frac{\sqrt{n}}{\widehat{\lambda(t)} \sqrt{X(t)^T \widehat{\Sigma} X(t)}} (\widehat{\lambda(t)}) - \lambda(t)) &\rightsquigarrow \mathcal{N}(0, 1)
 \end{align*}
 Et on en déduit la bande de confiance au niveau $\alpha$ :
 $$
-IC_\alpha(\lambda(t)) = [\hat{\lambda(t)} \pm q_{1 - \alpha / 2}^\mathcal{N} \frac{\hat{\lambda(t)} \sqrt{X(t)^T \hat{\Sigma} X(t)}}{\sqrt{n}}]
+IC_\alpha(\lambda(t)) = [\widehat{\lambda(t)} \pm q_{1 - \alpha / 2}^\mathcal{N} \frac{\widehat{\lambda(t)} \sqrt{X(t)^T \widehat{\Sigma} X(t)}}{\sqrt{n}}]
 $$
 
 # Résultats
