@@ -1,6 +1,8 @@
 ---
 title: "MCMC"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r}
@@ -33,7 +35,7 @@ f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
   A.arg * sin(g(xi, a.arg) + b.arg) +
           B.arg * sin(2 * g(xi, a.arg) + 2 * b.arg + pi / 2)
 }
-rxi <- function (xi, psi.arg = psi, gamma.arg = gamma) {
+rxi <- function (xi=rep(0,n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi)) {
     xi[i] <- xi[i - 1] * psi.arg + rnorm(1, 0, gamma.arg * sqrt((1 - psi.arg^2) / 2))
   }
@@ -76,74 +78,16 @@ log.lik <- function (xi.arg, omega.arg = omega, psi.arg = psi, gamma.arg = gamma
 }
 ```
 
-## All process
-
-```{r}
-M <- 250000
-delta <- .005
-delta.all <- rep(0, M)
-delta.ar <- 0.001
-
-xi.mcmc <- matrix(nrow = M, ncol = n)
-xi.c <- rnorm(n, 0, .1)
-accepted.n <- 0
-accepted.all <- rep(0, M)
-accepted.rate.all <- rep(0, M)
-acceptance.target <- .23
-
-for (k in 1:M) {
-  xi.p <- xi.c + rnorm(n, 0, delta)
-  log.prob <- min(1, log.lik(xi.p) - log.lik(xi.c))
-  if (log(runif(1)) < log.prob) {
-    xi.c <- xi.p
-    accepted.all[[k]] <- 1
-    accepted.n <- accepted.n + 1
-  }
-  xi.mcmc[k, ] <- xi.c
-
-  # adaptative variance
-  acceptance.rate <- accepted.n / k
-  accepted.rate.all[[k]] <- acceptance.rate
-  delta.all[[k]] <- delta
-  if (acceptance.rate < acceptance.target * (1 - .1)) {
-    delta <- delta * (1 - delta.ar)
-  } else if (acceptance.rate > acceptance.target * (1 + .1)) {
-    delta <- delta * (1 + delta.ar)
-  }
-}
-
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
-lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
-```
-
-```{r}
-print(acceptance.rate)
-```
-
-```{r}
-plot(accepted.rate.all, type = "l")
-abline(h = acceptance.target, lty = "dashed", col = "red")
-```
-
-```{r}
-plot(delta.all, type = "l")
-```
-
-```{r}
-plot(Y, type = "l", col = "blue")
-lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = "red")
-```
 
 ## Per process unit
 
 ```{r}
-M <- 500
-delta <- rep(.05, n)
+M <- 150
+delta <- matrix(c(rep(.05, n),rep(NA,n*(M-1))),nrow=M,byrow=T)
 delta.ar <- 0.01
 
 xi.mcmc <- matrix(nrow = M, ncol = n)
-xi.c <- rnorm(n, 0, .1)
+xi.c <- rep(0,n)
 accepted.n <- rep(0, n)
 acceptance.rate <- rep(0, n)
 acceptance.target <- .23
@@ -151,19 +95,21 @@ acceptance.target <- .23
 for (k in 1:M) {
   for (i in 1:n) {
     xi.p <- xi.c
-    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[i]])
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
     log.prob <- min(1, log.lik(xi.p) - log.lik(xi.c))
     if (log(runif(1)) < log.prob) {
       xi.c <- xi.p
       accepted.n[[i]] <- accepted.n[[i]] + 1
     }
-
-    # adaptative variance
-    acceptance.rate[[i]] <- accepted.n[[i]] / k
-    if (acceptance.rate[[i]] < acceptance.target * (1 - .1)) {
-      delta[[i]] <- delta[[i]] * (1 - delta.ar)
-    } else if (acceptance.rate[[i]] > acceptance.target * (1 + .1)) {
-      delta[[i]] <- delta[[i]] * (1 + delta.ar)
+    
+    if(k<M){
+      # adaptative variance
+      acceptance.rate[[i]] <- accepted.n[[i]] / k
+      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
+        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
+      } else{
+        delta[k+1,i] <- delta[[k,i]]
+      }
     }
   }
   xi.mcmc[k, ] <- xi.c
@@ -172,6 +118,29 @@ for (k in 1:M) {
 plot(xi, type = "l", col = "blue",
      ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
 lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+```
+
+```{r}
+
+plot(delta[150,])
+delt.test<-delta[150,]
+maxs=sort(delt.test,decreasing=TRUE)[2]
+
+indice<-457
+
+#On regarde la colonnes des delta associée au 457ème indice 
+
+plot(delta[,indice],main="evolution du delta de la 456eme valeurs de xi") #comportement bizarre entre 50 et 100 
+
+#On regarde donc le comportement des xi 50:100
+
+#par(mfrow=c(1,3))
+#for(k.ind in c(80,81,82)){
+ # plot(xi, type = "l", col = "blue",main=paste("k=",k.ind),
+#     ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
+#  lines(xi.mcmc[k.ind, ], type = "l", col = "red")
+  
+#}
 ```
 
 ```{r}
@@ -187,3 +156,160 @@ plot(delta)
 plot(Y, type = "l", col = "blue")
 lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = "red")
 ```
+
+## Comparaison de xi au fil des k 
+
+```{r}
+# xi
+par(mfrow=c(2,2))
+for(k.ind in round(seq(1,M,length.out=10),0)){
+  plot(xi, type = "l", col = "blue",
+       ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))),main=paste("k= ",k.ind))
+  lines(xi.mcmc[k.ind, ], type = "l", col = "red")
+  
+}
+
+
+#Converge aux alentours de 300 
+```
+
+## Comparaison de f au fil des k 
+
+```{r}
+# f
+par(mfrow=c(2,2))
+for(k.ind in round(seq(1,M,length.out=10),0)){
+  plot(Y, type = "l", col = "blue",main=paste("k= ",k.ind))
+  lines(f(xi.mcmc[k.ind, ]), type = "l", col = "red")
+}
+
+#Converge aux alentours de 300 
+```
+
+### Identifiabilité 
+
+
+```{r,fig.height=6,fig.width=9}
+p1<-rxi()
+p2<-rxi()
+p3<-rxi()
+p4<-rxi()
+
+par(mfrow=c(2,2))
+
+plot(p1, type = "l", col = 1,ylim=c(min(p1),max(p1)))
+
+plot(p1, type = "l", col = 1,ylim=c(min(c(min(p1),min(p2))),max(c(max(p1),max(p2)))))
+lines(p2, type = "l", col = 2)
+
+plot(p1, type = "l", col = 1,ylim=c(min(c(min(p1),min(p3))),max(c(max(p1),max(p3)))))
+lines(p3, type = "l", col = 3)
+
+plot(p1, type = "l", col = 1,ylim=c(min(c(min(p1),min(p4))),max(c(max(p1),max(p4)))))
+lines(p4, type = "l", col = 4)
+```
+
+```{r,fig.height=6,fig.width=9}
+
+par(mfrow=c(2,2))
+
+plot(f(p1), type = "l", col = 1)
+
+plot(f(p1), type = "l", col = 1)
+lines(f(p2), type = "l", col = 2)
+
+plot(f(p1), type = "l", col = 1)
+lines(f(p3), type = "l", col = 3)
+
+plot(f(p1), type = "l", col = 1)
+lines(f(p4), type = "l", col = 4)
+```
+
+## Comparaison du signal f(x) si on utiliser un processus xi simplement simulée ou estimé par MCMC 
+
+```{r,fig.height=8,fig.width=11}
+par(mfrow=c(2,2))
+plot(Y, type = "l", col = 1,main="goal")
+
+plot(Y, type = "l", col = 1,main="MCMC")
+lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = 2)
+
+plot(Y, type = "l", col = 1,main="xi simulation")
+lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = 2)
+lines(f(p1), type = "l", col = 3)
+
+plot(Y, type = "l", col = 1,main="xi simulation")
+lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = 2)
+lines(f(p2), type = "l", col = 4)
+```
+
+
+
+# EM 
+
+
+```{r}
+n=500
+M <- 200
+delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
+delta.ar <- 0.01
+omega<-rep(0,M)
+omega[1]=0.5
+  
+s1<-rep(0,M)
+
+alpha<-rep(1,M)
+alpha[50:M]=1/((1:(M-49))^0.8)
+
+xi.mcmc <- matrix(nrow = M, ncol = n)
+xi.c <- rep(0,n)
+accepted.n <- rep(0, n)
+acceptance.rate <- rep(0, n)
+acceptance.target <- .23
+
+
+for (k in 2:M) {
+  # Etape MCMC 
+  for (i in 1:n) {
+    xi.p <- xi.c
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
+    log.prob <- min(1, log.lik(xi.p,omega.arg=omega[k-1]) - log.lik(xi.c,omega.arg=omega[k-1]))
+    if (log(runif(1)) < log.prob) {
+      xi.c <- xi.p
+      accepted.n[[i]] <- accepted.n[[i]] + 1
+    }
+    
+    if(k<M){
+      # adaptative variance
+      acceptance.rate[[i]] <- accepted.n[[i]] / k
+      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
+        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
+      } else{
+        delta[k+1,i] <- delta[[k,i]]
+      }
+    }
+  }
+  xi.mcmc[k, ] <- xi.c
+  
+  f.k=f(xi.c)
+  #Etape calcul des stats exhaustives
+  S1=mean((Y-f.k)^2)
+  #Etape approximation stochastique
+  s1[k]<-s1[k-1]+alpha[k]*(S1-s1[k-1])
+  
+  #Etape de maximisation 
+  omega[k]=sqrt(s1[k])
+  
+}
+
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
+lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+
+plot(omega,type='l',col='blue')
+abline(h=0.01,col='red')
+```
+
+
+
+
