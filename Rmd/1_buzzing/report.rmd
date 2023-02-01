@@ -329,9 +329,7 @@ Il apparaît alors clairement que plus le bateau est loin, plus le taux d'émiss
 
 ```{r}
 predFrame <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
-predFrame <- predFrame[predFrame$model == "With Depth", ]
 predFramePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFramePop.rds")
-predFramePop <- predFramePop[predFramePop$model == "With Depth", ]
 ```
 
 ```{r mod-expo-rate, fig.cap = "Evolution du taux d'émission de buzz selon la distance au bateau."}
@@ -882,7 +880,6 @@ La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance 
 
 ```{r}
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
-ChangePop <- ChangePop[ChangePop$model == "With Depth", ]
 ```
 
 ```{r mod-expo-rate-per, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
