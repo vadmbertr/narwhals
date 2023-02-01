@@ -51,7 +51,7 @@ for (k in unique(data$Ind)) {
   predFrame <- rbind(predFrame, temp1)
 }
 predBuzz <- predictInterval(merMod = glmerAllBuzzDepth, newdata = predFrame,
-                            level = 0.95, n.sims = 100)
+                            which = "fixed", level = 0.95, include.resid.var = FALSE)
 predFrame <- cbind(predFrame, as.data.frame(predBuzz)) # to save
 
 # population prediction wrt exposure X for glmerAllBuzzDepth
@@ -59,7 +59,7 @@ predFramePop <- expand.grid(X = 1 / plotdist,
                             ARDepth = 0,
                             Ind = "Population")
 predBuzzPop <- predictInterval(merMod = glmerAllBuzzDepth, newdata = predFramePop,
-                            level = 0.95, n.sims = 100)
+                            which = "fixed", level = 0.95, include.resid.var = FALSE)
 predFramePop <- cbind(predFramePop, as.data.frame(predBuzzPop)) # to save
 
 # individual prediction with no exposure X for glmerAllBuzzDepth
@@ -67,7 +67,7 @@ predFrame0 <- expand.grid(X = 0,
                           ARDepth = 0,
                           Ind = unique(data$Ind))
 predBuzz0 <- predictInterval(merMod = glmerAllBuzzDepth, newdata = predFrame0,
-                            level = 0.95, n.sims = 100)
+                            which = "fixed", level = 0.95, include.resid.var = FALSE)
 predFrame0 <- cbind(predFrame0, as.data.frame(predBuzz0)) # to save
 
 # population prediction with no exposure X for glmerAllBuzzDepth
@@ -75,7 +75,7 @@ predFramePop0 <- expand.grid(X = 0,
                              ARDepth = 0,
                              Ind = "Population")
 predBuzzPop0 <- predictInterval(merMod = glmerAllBuzzDepth, newdata = predFramePop0,
-                                which = "fixed", level = 0.95, n.sims = 100)
+                                which = "fixed", level = 0.95, include.resid.var = FALSE)
 predFramePop0 <- cbind(predFramePop0, as.data.frame(predBuzzPop0)) # to save
 
 # percentage of normal behavior
