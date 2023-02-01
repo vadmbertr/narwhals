@@ -9,10 +9,14 @@ toc-title: "Sommaire"
 urlcolor: blue
 linkcolor: blue
 header-includes:
+    \usepackage{algpseudocode}
+    \usepackage{amsmath}
     \usepackage{amssymb}
     \usepackage{bbm}
     \usepackage{dirtytalk}
     \usepackage{float}
+    \usepackage{mathtools}
+    \usepackage{xcolor}
     \makeatletter\renewcommand*{\fps@figure}{H}\makeatother
 ---
 
@@ -42,10 +46,10 @@ set.seed(15)
 
 \qquad Les narvals sont des baleines vivant toute l'année au Groenland.
 Le réchauffement climatique favorise le recul des glaces sur le territoire groenlandais et ses côtes.
-Cela ouvre la porte au développement d'activités humaines au Groenland, et notamment les activités minières.
+Cela ouvre la porte au développement d'activités humaines au Groenland, et notamment des activités minières.
 Les biologistes se questionnent sur les effets potentiels engendrés sur les comportements des narvals.
 
-\qquad Afin d'anticiper ces possibles changements de comportements une étude a été conduite pendant plusieurs mois en 2018.
+\qquad Afin d'anticiper ces possibles modifications de comportements une étude a été conduite pendant plusieurs mois en 2018.
 Dans ce cadre, 8 narvals ont été équipées de capteurs permettant d'enregistrer leur profondeur de plongée, leur localisation et les sons qu'elles émettent.
 Les baleines ont été laissées libres de toutes perturbations pendant plusieurs jours avant d'y être exposées.
 Les perturbations ont pris la forme de coups de fusil tirés dans l'eau depuis un bateau afin d'imiter les ondes émises par des activités minières.
@@ -53,70 +57,164 @@ Les perturbations ont pris la forme de coups de fusil tirés dans l'eau depuis u
 \qquad Lorsqu'elles se nourissent, les narvals émettent des sons spécifiques appelés \say{buzz}.
 À partir des sons collectés il est donc possible de déterminer quand ces baleines sont en train de manger.
 La distance séparant les baleines du bateau émettant une perturbation peut-elle être calculée grâce aux puces GPS placées sur les narvals.
-Ainsi, nous pouvons tenter de modéliser l'effet de l'exposition des perturbations humaines sur la capacité des narvals à se nourrir.
+Ainsi, nous pouvons tenter de modéliser l'effet de l'exposition des perturbations humaines sur l'émission de buzz des narvals et donc indirectement sur leur alimentation.
 
 # Modélisation de l'effet de l'exposition sur le taux d'émission
 
-## Taux d'émission de buzz sans exposition
+## Processus de Poisson
 
-\qquad Etant donné que nous voulons modéliser un taux, la régression de Poisson est l'outil tout indiqué.
-On suppose que le taux d'émission de buzz $Y$, dépendant d'un ensemble de variables $X$, suit une loi de Poisson de paramètre $\lambda$, et on a que $\mathbb{E}(Y \vert X) = \lambda$.
-La régression de Poisson permet de modéliser le $log$ de $\lambda$ par une combinaison linéaire des variables $X$ :
-$$log(\lambda) = \beta_0 + X \beta$$
-Les variables $X$ utilisées dans le modèle sont détaillées dans la suite de cette section.
-Il n'existe pas d'expression explicite de l'estimateur du maximum de vraisemblance des paramètres $\beta$, cependant maximiser cette vraisemblance est un problème d'optimisation convexe qui peut être résolu numériquement.
+\qquad Les données sont collectées toutes les secondes, ainsi nous disposons des temps de collecte $T_j$ et $T_{j+1} = T_j + \Delta$ avec $T_0 = 0$ et $\Delta = 1\ \text{seconde}$.
+On peut considérer $N(t)$, le nombre de buzz émis entre le début de la collecte et un instant $t$, comme un processus stochastique pour lequel $N(0) = 0$ et donnant $N(b) - N(a)$ le nombre de buzz émis dans l'intervalle $]a, b]$. \newline
+Les processus de comptage sont classiquement représentés par un processus de Poisson : $N(t + \Delta) - N(t) \sim Pois$.
+Dans le cas où l'intensité $\lambda$ du processus dépend de $t$, on parle de processus non-homogène et :
+$$N(t + \Delta) - N(t) \sim Pois(\int_t^{t + \Delta} \lambda(u)du)$$
+On a donc que :
+$$\mathbb{P}(N(t + \Delta) - N(t) = k) = e^{-\int_t^{t + \Delta} \lambda(u)du} \frac{(\int_t^{t + \Delta} \lambda(u)du)^k}{k!}$$
+En utilisant le développement limité de l'exponentielle et en considérant $\lambda(t)$ constante sur $]t, t + \Delta]$ on obtient :
+\begin{align*}
+    \mathbb{P}(N(t + \Delta) - N(t) = 0) &= 1 - \lambda(t) \Delta + o(\Delta) \\
+    \mathbb{P}(N(t + \Delta) - N(t) = 1) &= \lambda(t) \Delta + o(\Delta) \\
+    \mathbb{P}(N(t + \Delta) - N(t) \geq 2) &= o(\Delta)
+\end{align*}
+Ainsi, si $\Delta$ est suffisamment petit (de l'ordre de la seconde par exemple), $o(\Delta)$ est négligeable et le processus $Y(t) \vcentcolon = N(t + \Delta) - N(t)$ prend uniquement comme valeurs $0$ ou $1$.
+On peut alors ramener notre processus de comptage à un processus de Bernoulli : $Y(t) \sim \mathcal{B}(\lambda(t) \Delta)$, ce qui implique :
+$$\mathbb{E}(Y(t)) = \mathbb{P}(Y(t) = 1) = \lambda(t) \Delta \underset{\Delta = 1}{=} \lambda(t)$$
 
-\qquad Les données que nous utilisons correspondent à plusieurs individus, nous avons donc plusieurs observations par individus et celles-ci ne sont pas indépendantes.
-Pour palier ce défaut de modélisation et tenir compte de la spécifité des individus, nous avons ajouté des effets aléatoires $b_i$ au modèle : $$log(\lambda_i) = \beta_0 + b_i + X_i \beta$$
-où $i$ dénote les observations de l'individu $i$ et $b_i \sim \mathcal{N}(O, \sigma_i^2)$, $\sigma_i^2$ étant la variance intra-individu.
+## Régression logistique
+
+\qquad Nous cherchons à estimer le lien entre l'intensité d'émission de buzz et plusieurs covariables, dont le niveau d'exposition aux perturbations.
+Nous avons vu dans la section précédente que les variables aléatoires $Y(t)$ de notre processus de comptage sont à valeurs dans ${0, 1}$ et que $\mathbb{P}(Y(t) = 1) = \lambda(t)$.
+En se plaçant dans le cadre des modèles linéaires généralisés (GLM) il est donc possible d'exprimer la probabilité $\lambda(t)$ que $Y(t) = 1$ selon un ensemble de covariables $Z(t)$ (détaillées dans la suite de cette section) en utilisant le logarithme comme fonction de lien :
+$$log(\lambda(t)) = \beta_0 + Z(t) \beta_Z$$
+Ce cas particulier des GLM n'est autre que la régression logistique.
+
+### Effet de la profondeur
 
 \qquad Pour se nourrir, les narvals doivent plonger profondément (plusieurs centaines de mètres), alors que le reste du temps elles restent \say{proche} (quelques dizaines de mètres) de la surface.
 Il faut donc inclure au modèle la profondeur à laquelle se trouvent les baleines quand elles émettent ou non des buzz.
 La relation entre l'émission de buzz et la profondeur n'étant pas linéaire, la profondeur a été remplacée par une spline cubique naturelle ayant pour noeuds les quantiles $1/3$ et $2/3$.
 Nous pouvons expliciter un peu plus l'expression précédente du modèle :
-$$log(\lambda_i) = \beta_0 + b_i + spline(Depth_i) \beta_D$$
+$$log(\lambda(t)) = \beta_0 + \textcolor{blue}{spline(D(t)) \beta_D} + ...$$
 
-\qquad Passer par l'estimateur du maximum de vraisemblance nécessite que les observations $Y_{ij}$ soient indépendantes.
-Or, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents ; cet effet mémoire doit donc être intégré au modèle pour rendre les $Y_{ij}$ indépendants.
-Pour cela nous introduisons $K$ variables binaires d'auto-régression codant l'émission d'un buzz aux l'instants $t - k,\ k \in \{1, ..., K\}$.
-Le modèle résultant s'écrit alors :
-$$log(\lambda_i(t)) = \beta_0 + b_i + spline(Depth_i(t)) \beta_D + \sum_{k=1}^K \alpha_k Y_i(t-k)$$
-Cette approche demande de fixer une mémoire maximale, et ainsi la valeur de $K$.
-Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilisé le BIC comme mesure de la qualité des différents modèles correspondants ; nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
-Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
-
-1. $from.k = K_{min}\ ;\ to.k = K_{max}$
-2. Tant que $(to.k - from.k > 2)$ :
-   1. Pour $K_i = from.k + (i-1) * \lfloor\frac{to.k-from.k}{M-1}\rceil,\ i \in \{1, ..., M\}$ :
-      1. ajustement d'un modèle avec $K_i$ éléments mémoire
-      2. calcul du BIC
-   2. $i_{opt} = argmin\ BIC_i$
-   3. $K_{opt} = K_{i_{opt}}$
-   4. $from.k = K_{i_{opt}-1}\ ;\ to.k = K_{i_{opt}+1}$
-
-\qquad Le nombre de composants auto-régressifs pouvant être grand, nous avons utilisé une régression bi-exponentielle double permettant de lier le décalage mémoire et le coefficient associé :
-$$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
-Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
-
-## Effet de l'exposition
+### Effet de l'exposition
 
 \qquad Le niveau d'exposition aux perturbations est représenté par l'inverse de la distance séparant la baleine du bateau quand un coup de feu est tiré.
 De même que pour la profondeur, la non-linéarité de la relation entre le niveau d'exposition et le taux d'émission de buzz est représentée par l'utilisation d'une spline cubique naturelle dont les noeuds sont les quantiles $1/3$ et $2/3$ des niveaux d'exposition.
+Le modèle incluant l'exposition s'écrit donc :
+$$log(\lambda(t)) = \beta_0 + spline(D(t)) \beta_D + \textcolor{blue}{spline(E(t)) \beta_E} + ...$$
 
-\qquad Afin d'observer l'effet de l'exposition aux perturbations par rapport à l'émission de buzz sans perturbation, nous ajoutons un terme d'\say{offset}.
-Cet offset est calculé à partir des coefficients $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$ estimés sans perturbation :
-$$offset_i(t) = spline(Depth_i(t)) \hat{\beta_D} + \sum_{k=1}^{K_{opt}} (\hat{A_1} e^{-e^{\hat{lrc_1}} k} + \hat{A_2} e^{-e^{\hat{lrc_2}} k}) Y_i(t-k)$$
+## Non-indépendance des observations
 
-\qquad Le modèle incluant l'exposition s'écrit donc :
-$$log(\lambda_i(t)) = offset_i(t) + \beta_0 + b_i + spline(Expo_i(t)) \beta_E$$
-Et les paramètres estimés $\hat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions de stress normales.
+\qquad L'utilisation d'un processus de Poisson pour modéliser nos données de comptage implique l'indépendance des observations $Y(t)$.
+En pratique ce n'est pas le cas, aussi il faut modifier le modèle défini précédemment pour tenter de compenser cette absence d'indépendance.
 
-## Construction d'intervalles de confiance
+### Utilisation de modèles mixtes
+
+\qquad Les données que nous utilisons correspondent à plusieurs individus, nous avons donc plusieurs observations par individus et celles-ci ne sont pas indépendantes.
+Pour palier ce défaut de modélisation et tenir compte de la spécificité des individus, nous utilisons des modèles mixtes en ajoutant un effet aléatoire $b_i$ sur l'ordonnée à l'origine :
+$$log(\lambda_i(t)) = \beta_0 + \textcolor{blue}{b_i} + spline(D_i(t)) \beta_D + spline(E_i(t)) \beta_E + ...$$
+où $i$ dénote l'individu $i$ et $b_i \sim \mathcal{N}(O, \sigma_i^2)$ l'effet aléatoire sur cet l'individu, $\sigma_i^2$ étant la variance intra-individu de $i$.
+
+### Caractère autorégressif du processus
+
+\qquad De plus, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents ; cet effet mémoire doit donc être intégré au modèle pour rendre les $Y_{i}(t)$ indépendants.
+Pour cela nous introduisons $K$ variables binaires d'autorégression codant l'émission d'un buzz aux l'instants $t - k,\ k \in \{1, ..., K\}$.
+Le modèle résultant s'écrit alors :
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \textcolor{blue}{\sum_{k=1}^K \alpha_k Y_i(t-k)} + spline(E_i(t)) \beta_E$$
+Cette approche demande de fixer une mémoire maximale, et ainsi la valeur de $K$.
+Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilisé le BIC comme mesure de la qualité des différents modèles correspondants sans inclure l'effet de l'exposition :
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^K \alpha_k Y_i(t-k)$$
+Nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
+Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
+
+\begin{algorithmic}
+\State $from_k \gets K_{min};\ to_k \gets K_{max}$ \Comment{Bornes de l'intervalle de recherche}
+\State $M \gets 10$ \Comment{Nombre d'éléments évalués dans l'intervalle}
+\While{$(to_k - from_k > 2)$} \Comment{On s'arrête quand on évalué l'ensemble du voisinage du minimum}
+    \State $K \gets []$
+    \State $BIC \gets []$
+    \For{$i \in \{1, ..., M\}$}
+        \State $K[i] \gets from_k + (i - 1) * \lfloor\frac{to_k - from_k}{M - 1}\rceil$ \Comment{Découpage en $M$ éléments équidistants}
+        \State ajustement du modèle $\mathcal{M}$ avec $K[i]$ éléments mémoire
+        \State $BIC[i] \gets calcul du BIC de \mathcal{M}$
+    \EndFor
+    \State $i_{opt} \gets argmin\ BIC$
+    \State $K_{opt} \gets K[i_{opt}]$
+    \State $from_k \gets K[i_{opt} - 1];\ to_k \gets K[i_{opt} + 1]$ \Comment{Mise à jour des bornes en encadrant le minimum}
+\EndWhile
+\end{algorithmic}
+
+\qquad Le nombre de composants autorégressifs pouvant être grand, nous avons utilisé une régression bi-exponentielle double permettant de lier le décalage mémoire et le coefficient associé :
+$$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
+Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
+
+\qquad Le modèle complet s'exprime donc ainsi :
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^{K_{opt}} \textcolor{blue}{(A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k})} Y_i(t-k) + spline(E_i(t)) \beta_E$$
+
+## Effet de médiation de la profondeur
+
+\qquad Il est possible que l'exposition à des perturbations conduisent les narvals à :
+
+1. émettre moins de buzz,
+2. moins plonger ou plonger moins profondément.
+
+Mais il existe également un lien entre la profondeur d'immersion des baleines et leur production de buzz.
+Aussi, il se peut que l'exposition ait un lien direct sur l'émission de buzz et un lien indirect via son effet sur la profondeur.
+
+\qquad Afin de représenter uniquement le lien direct, les coefficients des covariables autres que l'exposition sont estimés sans inclure celle-ci à partir des observations effectuées sans soumettre les animaux à des perturbations :
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^{K_{opt}} A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k} Y_i(t-k)$$
+Nous obtenons donc les estimations $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$ qui sont ensuite injectées dans le modèle complet au moyen d'un terme d'\say{offset} :
+$$offset_i(t) = spline(D_i(t)) \widehat{\beta_D} + \sum_{k=1}^{K_{opt}} (\widehat{A_1} e^{-e^{\widehat{lrc_1}} k} + \widehat{A_2} e^{-e^{\widehat{lrc_2}} k}) Y_i(t-k)$$
+Le modèle incluant l'exposition est donc reformulé ainsi :
+$$log(\lambda_i(t)) = \beta_0 + b_i + \textcolor{blue}{offset_i(t)} + spline(E_i(t)) \beta_E$$
+Et les paramètres estimés $\widehat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions \say{normales}.
+
+## Intervalles de confiance
+
+### Construction par approche Monte Carlo
 
 \qquad Pour se rassurer quant à l'interprétabilité des résultats obtenus il est important de construire les intervalles de confiance des estimations des coefficients associés à l'exposition aux perturbations.
-L'approche classique de calcul des intervalles de confiance se basant sur la seule variance estimée des coefficients d'exposition donnerait ici des résultats incorrects, la variance des coefficients de profondeur et d'auto-régression ne serait alors pas prise en compte car tuée par l'utilisation de l'offset.
-Nous avons donc utilisée une approche Monte-Carlo lors de laquelle nous répétons $M = 1000$ fois l'ajustement du modèle incluant l'exposition en tirant aléatoirement les coefficients $\hat{\beta_D},\ \hat{A_1},\ \hat{lrc_1},\ \hat{A_2},\ \hat{lrc_2}$ selon leur moyenne et leur variance.
-Les $1000$ ajustements obtenus nous fournissent ainsi un échantillon pour chacun des coefficients d'exposition et nous construisons leur intervalle de confiance via les quantiles empiriques de leur distribution.
+L'approche classique de calcul des intervalles de confiance se basant sur la seule variance estimée des coefficients d'exposition donnerait ici des résultats incorrects, la variance des coefficients de profondeur et d'autorégression ne serait alors pas prise en compte car tuée par l'utilisation de l'offset.
+Nous avons donc utilisée l'approche Monte-Carlo suivante :
+
+\begin{algorithmic}
+\State $M \gets 1000$ \Comment{Nombre de répétitions de la procédure}
+\State $\widehat{\beta_E} \gets []$
+\For{$i \in \{1, ..., M\}$}
+    \Comment{Tirage aléatoire des coefficients de profondeur et autorégressifs}
+    \State $\widehat{\beta_D} \gets \mathcal{N}(\mathbb{E}(\beta_D), \mathbb{V}ar(\beta_D))$
+    \State $\widehat{A_1} \gets \mathcal{N}(\mathbb{E}(A_1), \mathbb{V}ar(A_1))$
+    \State $\widehat{lrc_1} \gets \mathcal{N}(\mathbb{E}(lrc_1), \mathbb{V}ar(lrc_1))$
+    \State $\widehat{A_2} \gets \mathcal{N}(\mathbb{E}(A_2), \mathbb{V}ar(A_2))$
+    \State $\widehat{lrc_2} \gets \mathcal{N}(\mathbb{E}(lrc_2), \mathbb{V}ar(lrc_2))$
+    \State calcul de l'offset avec $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$
+    \State ajustement du modèle $\mathcal{M}$ en fixant l'offset
+    \State $\widehat{\beta_E}[i] \gets$ coefficients de profondeur ajustés de $\mathcal{M}$
+\EndFor
+\State $IC_\alpha \gets [Q_{\alpha / 2}^{\widehat{\beta_E}}, Q_{1 - \alpha / 2}^{\widehat{\beta_E}}]$ \Comment{Estimation via les quantiles empiriques}
+\end{algorithmic}
+
+### Estimation de bandes de prédiction via la méthode Delta {#delta}
+
+\qquad Une fois les coefficients d'exposition $\widehat{\beta_E}$ estimés nous pouvons prédire le taux d'émission de buzz sur l'ensemble d'un intervalle de niveau d'exposition aux perturbations.
+Afin d'associer une bande de confiance à la prédiction moyenne nous avons appliqué la méthode Delta.
+
+Tout d'abord, d'après le Théorème Central Limite on a : $\sqrt{n} (\widehat{\beta} - \beta) \sim \mathcal{N}(0, \Sigma)$ avec $\widehat{\beta}$ les coefficients estimés du modèle et $\Sigma$ leur variance.
+
+Etant donné que nous utilisons une régression logistique, le taux d'émission est lié aux coefficients du modèle via la relation $\lambda(t) = exp(X(t) \beta) \vcentcolon = f(\beta)$.
+Ce qui donne pour le gradient de la fonction $f$ : $\nabla f(\beta) = X f(\beta)$.
+
+Ainsi, quand on applique la méthode Delta on obtient :
+\begin{align*}
+    \sqrt{n} (f(\widehat{\beta}) - f(\beta)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \nabla f(\beta)^T \Sigma \nabla f(\beta)) \\
+    \Leftrightarrow \sqrt{n} (\widehat{\lambda(t)}) - \lambda(t)) &\xrightarrow[]{\mathcal{L}} \mathcal{N}(0, \lambda(t)^2 X(t)^T \Sigma X(t)) \\
+    &\rightsquigarrow \mathcal{N}(0, \widehat{\lambda(t)}^2 X(t)^T \widehat{\Sigma} X(t)) \\
+    \Leftrightarrow \frac{\sqrt{n}}{\widehat{\lambda(t)} \sqrt{X(t)^T \widehat{\Sigma} X(t)}} (\widehat{\lambda(t)}) - \lambda(t)) &\rightsquigarrow \mathcal{N}(0, 1)
+\end{align*}
+Et on en déduit la bande de confiance au niveau $\alpha$ :
+$$
+IC_\alpha(\lambda(t)) = [\widehat{\lambda(t)} \pm q_{1 - \alpha / 2}^\mathcal{N} \frac{\widehat{\lambda(t)} \sqrt{X(t)^T \widehat{\Sigma} X(t)}}{\sqrt{n}}]
+$$
 
 # Résultats
 
@@ -156,9 +254,7 @@ g2 <- ggplot(glmer.profiling, aes(x = maxlag, y = total_time, group = 1)) +
 g1 + g2
 ```
 
-## Taux d'émission de buzz sans exposition
-
-### Recherche de la mémoire optimale
+## Recherche de la mémoire optimale
 
 ```{r}
 maxlag.bic <- readRDS("../../data/1_buzzing/glm_buzz_depth_maxlag/maxlag.bic.rds")
@@ -187,10 +283,10 @@ g2 <- ggplot(maxlag.glmer.bic, aes(x = maxlag, y = BIC)) +
 g1 + g2
 ```
 
-Cela nous a permis de restreindre tout de suite l'ensemble de recherche initial à $\{30, ..., 90\}$ quand nous avons considéré le modèle incluant les effets aléatoires.
-De même que précédemment, nous obtenons une mémoire optimale de `r maxlag.glmer.opt` secondes et la figure \@ref(fig:plot-glm-bic) nous indique qu'il s'agit bien d'un optimum global.
+Cela nous a permis de restreindre tout de suite l'ensemble de recherche initial à $K_{min} = 1,\ K_{max} = 300$ quand nous avons considéré le modèle incluant les effets aléatoires.
+De même que précédemment, nous obtenons une mémoire optimale de `r maxlag.glmer.opt` secondes et la figure \@ref(fig:maxlag-bic) nous laisse penser qu'il s'agit d'un optimum global.
 
-### Régression double bi-exponentielle sur les coefficients autorégressifs
+## Régression double bi-exponentielle sur les coefficients autorégressifs
 
 \qquad La figure \@ref(fig:biexp-AR) permet de comparer la régression double bi-exponentielle et les composantes de la mémoire ajustées pour un décalage maximum de `r maxlag.opt`.
 Nous pouvons constater que l'ajustement par la double bi-exponentielle est très fidèle aux `r maxlag.opt` coefficients initiaux.
@@ -199,7 +295,7 @@ Nous pouvons constater que l'ajustement par la double bi-exponentielle est très
 ARcoefs.fit <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
-```{r biexp-AR, fig.cap = "Régression bi-exponentielle des coefficients auto-régressifs."}
+```{r biexp-AR, fig.cap = "Régression bi-exponentielle des coefficients autorégressifs."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
@@ -225,31 +321,11 @@ kable(df,
   kable_styling(latex_options = "HOLD_position")
 ```
 
-### Coefficients de profondeur
-
-\qquad Les coefficients de profondeur du modèle linéaire mixte sans exposition sont proposés table \@ref(tab:coef-glmer-depth).
-Interpréter les coefficients associés à des splines étant difficile, nous nous contenterons de relever que seul les pvaleurs de $\beta_{D_2}$ et $\beta_{D_3}$ sont significatives au seuil $\alpha = 5\%$ et que l'erreur standard de $\beta_{D_1}$ semble élevée relativement à sa moyenne.
-
-```{r}
-glmer.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
-```
-
-```{r coef-glmer-depth}
-df <- data.frame(glmer.coefs[3:5, c("estimate", "std.error", "p.value")])
-row.names(df) <- c("$\\beta_{D_1}$", "$\\beta_{D_2}$", "$\\beta_{D_3}$")
-kable(df,
-      col.names = c("moyenne", "erreur standard", "p-valeur"),
-      caption = "Coefficients de profondeur.",
-      label = "coef-glmer-depth",
-      escape = FALSE) %>%
-  kable_styling(latex_options = "HOLD_position")
-```
-
-## Effet de l'exposition
+## Impact de l'exposition aux perturbations sur le taux d'émission de buzz
 
 \qquad La table \@ref(tab:coef-glmer-expo) expose les coefficients associés à l'exposition du modèle mixte.
-De même que pour les coefficients de profondeur, il est compliqué d'interpréter leur valeur.
-Aussi, nous préférons nous référer à la lecture de la figure \@ref(fig:mod-expo-rate) sur laquelle nous représentons les estimations du modèle pour le taux d'émission de buzz selon la distance avec le bateau. Il est clair que plus le bateau est loin, plus le taux d'émission est élevé.
+Interpréter les valeurs des coefficients liés à des splines étant peu pertinent, nous préférons nous référer à la lecture de la figure \@ref(fig:mod-expo-rate) sur laquelle nous représentons les estimations du modèle pour le taux d'émission de buzz selon la distance avec le bateau.
+Il apparaît alors clairement que plus le bateau est loin, plus le taux d'émission de buzz est élevé.
 
 ```{r}
 predFrame <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/predFrame.rds")
@@ -261,9 +337,8 @@ ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
   geom_line() +
   geom_line(data = predFramePop, aes(x = 1 / X, y = 60 * exp(predBuzzPop)), size = 1.2, color = "black") +
   xlim(0, 50) +
-  xlab("Distance avec le bateau (km)") +
-  ylab("Taux d'émission de buzz (1/min)") +
-  facet_grid(. ~ model)
+  xlab("Distance avec le bateau [km]") +
+  ylab("Taux d'émission de buzz [1/min]")
 ```
 
 ```{r}
@@ -320,6 +395,10 @@ g1 / (g2 + g3)
 
 Dans un premier temps, nous avons considéré que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
 Nous avons donc 4 lois normales univariées pour les coefficients de la régression double bi-exponentille et 4 autres pour la spline sur la profondeur.
+
+```{r}
+glmer.coefs <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.best.rds")
+```
 
 ```{r}
 B <- 1000
@@ -426,7 +505,7 @@ g2 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_1}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
 
@@ -437,7 +516,7 @@ g3 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_2}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g4 <- ggplot() +
@@ -447,7 +526,7 @@ g4 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_3}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
@@ -559,7 +638,7 @@ g2 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_1}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
 
@@ -570,7 +649,7 @@ g3 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_2}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g4 <- ggplot() +
@@ -580,7 +659,7 @@ g4 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_3}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
@@ -671,7 +750,7 @@ g2 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_1}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
 
@@ -682,7 +761,7 @@ g3 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_2}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g4 <- ggplot() +
@@ -692,7 +771,7 @@ g4 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_3}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
@@ -730,7 +809,7 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-Nous pouvons voir sur la table \@ref(tab:coef-expo-ci-mvnorm-full) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section \@ref(mvnorm), et même plus petit pour l'intercept.
+Nous pouvons voir sur la table \@ref(tab:coef-expo-ci-mvnorm-full) et la figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section \@ref(mvnorm), et même plus petit pour l'ordonnée à l'origine.
 
 ```{r coef-expo-ci-mvnorm-full}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
@@ -762,7 +841,7 @@ g2 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[2, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[2, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_1$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_1}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
 
@@ -773,7 +852,7 @@ g3 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[3, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[3, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_2$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_2}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g4 <- ggplot() +
@@ -783,7 +862,7 @@ g4 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[4, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[4, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Exposition $\\beta_3$"), y = "Effectif") +
+  labs(x = TeX("Exposition $\\beta_{E_3}$"), y = "Effectif") +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
@@ -795,17 +874,20 @@ g4 <- ggplot() +
 \qquad Il est rassurant de voir que les intervalles de confiance des coefficients d'exposition obtenus par Monte Carlo restent raisonnablement petits, cependant comme évoqué précédemment, il n'est pas possible de lier une augmentation ou une diminution du taux d'émission de buzz en fonction de la distance avec le bateau à partir de leur valeur.
 C'est pourquoi nous avions représenté graphiquement cette évolution sur la figure \@ref(fig:mod-expo-rate), mais cette visualisation ne proposait pas d'intervalle de confiance ou de bande de prédiction.
 
+Nous avons employé la méthode Delta décrite dans la section \@ref(delta) pour construire une bande de confiance autour de l'estimation du pourcentage du taux normal d'émission de buzz en fonction de la profondeur.
+Ce pourcentage est obtenu en faisant le rapport entre l'intensité estimée avec et sans perturbation.
+La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumisent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
+
 ```{r}
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
 ```
 
 ```{r mod-expo-rate-per, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
-ggplot(data = ChangePop, aes(x = 1 / X, y = change, color = model)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = change - CI * sqrt(1000), ymax = change + CI * sqrt(1000), fill = model),
-              alpha = 0.5, linetype = 0) +
-  xlim(0, 40) +
-  xlab("Distance avec le bateau (km)") +
-  ylab("Pourcentage du taux normal d'émission") +
-  theme(legend.position = "top", legend.title = element_blank())
+ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
+  geom_line(size = .5) +
+  geom_ribbon(aes(ymin = change - CI, ymax = change + CI),
+              alpha = .5, linetype = 0, fill = "red") +
+  xlim(0, 50) +
+  xlab("Distance avec le bateau [km]") +
+  ylab("Pourcentage du taux normal d'émission")
 ```

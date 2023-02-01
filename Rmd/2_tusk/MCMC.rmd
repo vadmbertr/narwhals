@@ -37,7 +37,7 @@ f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
 }
 rxi <- function (xi=rep(0,n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi)) {
-    xi[i] <- xi[i - 1] * psi.arg + rnorm(1, 0, gamma.arg * sqrt((1 - psi.arg^2) / 2))
+    xi[[i]] <- xi[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg * sqrt((1 - psi.arg^2) / 2))
   }
   return(xi)
 }

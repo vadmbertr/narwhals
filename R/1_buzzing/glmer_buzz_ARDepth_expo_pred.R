@@ -41,106 +41,50 @@ glmerAllBuzzDepth <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmer
 #---------------------------------------------------------------------------------
 # Obj for ploting
 plotdist <- seq(1, 70, 0.1) ## Plotting distances in km
-# individual prediction wrt exposure X for glmerAllBuzz
-predFrameMany <- NULL
+# individual prediction wrt exposure X for glmerAllBuzzDepth
+predFrame <- NULL
 for (k in unique(data$Ind)) {
   temp <- range(data$X[data$X > 0 & data$Ind == k])
   temp1 <- expand.grid(X = 1 / seq(1 / temp[2], 1 / temp[1], 0.1),
                        AR = 0,
                        Ind = k)
-  predFrameMany <- rbind(predFrameMany, temp1)
-}
-predBuzz <- predict(glmerAllBuzz,
-                    newdata = predFrameMany)
-predFrame <- cbind(predFrameMany, as.data.frame(predBuzz))
-predFrame$exposure <- "Trial"
-predFrame$model <- "Without Depth"
-
-# individual prediction wrt exposure X for glmerAllBuzzDepth
-predFrameMany <- NULL
-for (k in unique(data$Ind)) {
-  temp <- range(data$X[data$X > 0 & data$Ind == k])
-  temp1 <- expand.grid(X = 1 / seq(1 / temp[2], 1 / temp[1], 0.1),
-                       ARDepth = 0,
-                       Ind = k)
-  predFrameMany <- rbind(predFrameMany, temp1)
+  predFrame <- rbind(predFrame, temp1)
 }
 predBuzz <- predict(glmerAllBuzzDepth,
-                    newdata = predFrameMany)
-temp <- cbind(predFrameMany, as.data.frame(predBuzz))
-temp$exposure <- "Trial"
-temp$model <- "With Depth"
-names(temp) <- c("X", "AR", "Ind", "predBuzz", "exposure", "model")
-predFrame <- rbind(predFrame, temp) # to save
+                    newdata = predFrame)
+predFrame <- cbind(predFrame, as.data.frame(predBuzz)) # to save
 
-# population prediction wrt exposure X for glmerAllBuzz
-predFramePop_temp <- expand.grid(X = 1 / plotdist,
-                                 AR = 0,
-                                 Ind = "Population")
-predBuzzPop <- predict(glmerAllBuzz,
-                       newdata = predFramePop_temp,
-                       re.form = NA)
-predFramePop <- cbind(predFramePop_temp, as.data.frame(predBuzzPop))
-predFramePop$model <- "Without Depth"
 # population prediction wrt exposure X for glmerAllBuzzDepth
-predFramePop_temp <- expand.grid(X = 1 / plotdist,
-                                 ARDepth = 0,
-                                 Ind = "Population")
+predFramePop <- expand.grid(X = 1 / plotdist,
+                            AR = 0,
+                            Ind = "Population")
 predBuzzPop <- predict(glmerAllBuzzDepth,
-                       newdata = predFramePop_temp,
+                       newdata = predFramePop,
                        re.form = NA)
-temp <- cbind(predFramePop_temp, as.data.frame(predBuzzPop))
-temp$model <- "With Depth"
-names(temp) <- c("X", "AR", "Ind", "predBuzzPop", "model")
-predFramePop <- rbind(predFramePop, temp) # to save
+predFramePop <- cbind(predFramePop, as.data.frame(predBuzzPop)) # to save
 
-# individual prediction with no exposure X for glmerAllBuzz
-predFrame0_temp <- expand.grid(X = 0,
-                               AR = 0,
-                               Ind = unique(data$Ind))
-predBuzz0 <- predict(glmerAllBuzz,
-                     newdata = predFrame0_temp)
-predFrame0 <- cbind(predFrame0_temp, as.data.frame(predBuzz0))
-predFrame0$model <- "Without Depth"
 # individual prediction with no exposure X for glmerAllBuzzDepth
-predFrame0_temp <- expand.grid(X = 0,
-                               ARDepth = 0,
-                               Ind = unique(data$Ind))
+predFrame0 <- expand.grid(X = 0,
+                          ARDepth = 0,
+                          Ind = unique(data$Ind))
 predBuzz0 <- predict(glmerAllBuzzDepth,
-                     newdata = predFrame0_temp)
-temp <- cbind(predFrame0_temp, as.data.frame(predBuzz0))
-temp$model <- "With Depth"
-names(temp) <- c("X", "AR", "Ind", "predBuzz0", "model")
-predFrame0 <- rbind(predFrame0, temp) # to save
+                     newdata = predFrame0)
+predFrame0 <- cbind(predFrame0, as.data.frame(predBuzz0)) # to save
 
-# population prediction with no exposure X for glmerAllBuzz
-predFramePop0_temp <- expand.grid(X = 0,
-                                  AR = 0,
-                                  Ind = "Population")
-predBuzzPop0 <- predict(glmerAllBuzz,
-                        newdata = predFramePop0_temp,
-                        re.form = NA)
-predFramePop0 <- cbind(predFramePop0_temp, as.data.frame(predBuzzPop0))
-predFramePop0$model <- "Without Depth"
 # population prediction with no exposure X for glmerAllBuzzDepth
-predFramePop0_temp <- expand.grid(X = 0,
-                                  ARDepth = 0,
-                                  Ind = "Population")
+predFramePop0 <- expand.grid(X = 0,
+                             ARDepth = 0,
+                             Ind = "Population")
 predBuzzPop0 <- predict(glmerAllBuzzDepth,
-                        newdata = predFramePop0_temp,
+                        newdata = predFramePop0,
                         re.form = NA)
-temp <- cbind(predFramePop0_temp, as.data.frame(predBuzzPop0))
-temp$model <- "With Depth"
-names(temp) <- c("X", "AR", "Ind", "predBuzzPop0", "model")
-predFramePop0 <- rbind(predFramePop0, temp) # to save
+predFramePop0 <- cbind(predFramePop0, as.data.frame(predBuzzPop0)) # to save
 
 # percentage of normal behavior
 ChangePop <- predFramePop # to save
 ChangePop$change <- exp(ChangePop$predBuzzPop)
 ChangePop$change[seq_along(plotdist)] <-
   ChangePop$change[seq_along(plotdist)] / exp(predFramePop0$predBuzzPop0[1]) * 100
-ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] <-
-  ChangePop$change[(length(plotdist) + 1):(2 * length(plotdist))] / exp(predFramePop0$predBuzzPop0[2]) * 100
 ## CI
 alpha <- .05
 ### mean, var estimates
@@ -159,9 +103,7 @@ f2.hat <- (exp(X %*% Beta.hat) * 100)^2
 ### var
 sigma2.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
 ### CI
-ChangePop$CI <- 0
-ChangePop$CI[(length(plotdist) + 1):(2 * length(plotdist))] <-
-  qnorm(1 - alpha / 2) * sqrt(sigma2.hat / length(Beta.hat))
+ChangePop$CI <- qnorm(1 - alpha / 2) * sqrt(sigma2.hat / length(Beta.hat))
 
 #---------------------------------------------------------------------------------
 # Save objects
