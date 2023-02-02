@@ -338,7 +338,8 @@ ggplot(data = predFrame, aes(x = 1 / X, y = 60 * exp(predBuzz), color = Ind)) +
   geom_line(data = predFramePop, aes(x = 1 / X, y = 60 * exp(predBuzzPop)), size = 1.2, color = "black") +
   xlim(0, 50) +
   xlab("Distance avec le bateau [km]") +
-  ylab("Taux d'émission de buzz [1/min]")
+  ylab("Taux d'émission de buzz [1/min]") +
+  scale_color_discrete(name = "Baleine")
 ```
 
 ```{r}
@@ -876,32 +877,23 @@ C'est pourquoi nous avions représenté graphiquement cette évolution sur la fi
 
 Nous avons employé la méthode Delta décrite dans la section \@ref(delta) pour construire une bande de confiance autour de l'estimation du pourcentage du taux normal d'émission de buzz en fonction de la profondeur.
 Ce pourcentage est obtenu en faisant le rapport entre l'intensité estimée avec et sans perturbation.
-La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumisent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
+La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumissent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
 
 ```{r}
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
+ChangePop_merTools <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred_merTools/ChangePop.rds")
 ```
 
 ```{r mod-expo-rate-per, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
 ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
   geom_line(size = .5) +
-  geom_ribbon(aes(ymin = change - CI, ymax = change + CI),
-              alpha = .5, linetype = 0, fill = "red") +
+  geom_ribbon(aes(ymin = change - CI, ymax = change + CI, fill = "delta"),
+              alpha = .25, linetype = 0) +
+  geom_ribbon(data = ChangePop_merTools, aes(y = fit, ymin = lwr, ymax = upr,
+                                             fill = "merTools"),
+              alpha = .25, linetype = 0) +
+  scale_fill_manual(name = "Méthode", values = c("delta" = "red", "merTools" = "blue")) +
   xlim(0, 50) +
   xlab("Distance avec le bateau [km]") +
   ylab("Pourcentage du taux normal d'émission")
-```
-
-```{r}
-# ChangePop_merTools <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred_merTools/ChangePop.rds")
-```
-
-```{r mod-expo-rate-per-merTools, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
-# ggplot(data = ChangePop_merTools, aes(x = 1 / X, y = fit)) +
-#   geom_line(size = .5) +
-#   geom_ribbon(aes(ymin = lwr, ymax = upr),
-#               alpha = .5, linetype = 0, fill = "red") +
-#   xlim(0, 50) +
-#   xlab("Distance avec le bateau [km]") +
-#   ylab("Pourcentage du taux normal d'émission")
 ```
