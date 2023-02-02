@@ -88,16 +88,19 @@ alpha <- .05
 ### mean, var estimates
 expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.mc.rds")
 #### no intercept as we are looking at the percentage of normal behaviour
-expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
+# expo.coef <- expo.coef[!expo.coef$term == "(Intercept)",]
 expo.coef.estimate <- expo.coef[, c("term", "estimate")]
 expo.coef.estimate$seq <- with(expo.coef.estimate, ave(estimate, term, FUN = seq_along))
-expo.coef.estimate <- dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:4]
+# expo.coef.estimate <- dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 2:4]
+expo.coef.estimate <- dcast(expo.coef.estimate, seq ~ term, value.var = "estimate")[, 1:4]
 Beta.hat <- apply(expo.coef.estimate, 2, mean)
 Sigma.hat <- cov(expo.coef.estimate)
 ### f.hat
 expo <- 1 / plotdist
 X <- ns(expo, knots = quantile(data$X[data$X > 0], 1:2 / 3))
-f2.hat <- (exp(X %*% Beta.hat) * 100)^2
+X <- cbind(rep(1, nrow(X)), X)
+# f2.hat <- (exp(X %*% Beta.hat) * 100)^2
+f2.hat <- (exp(X %*% Beta.hat - predFramePop0$predBuzzPop0) * 100)^2
 ### var
 sigma2.hat <- f2.hat * diag(X %*% Sigma.hat %*% t(X))
 ### CI
