@@ -118,10 +118,13 @@ for (k in 1:M) {
 plot(xi, type = "l", col = "blue",
      ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
 lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+
+
+
 ```
 
 ```{r}
-
+which.min(xi.mcmc[nrow(xi.mcmc), ])
 plot(delta[150,])
 delt.test<-delta[150,]
 maxs=sort(delt.test,decreasing=TRUE)[2]
@@ -130,7 +133,7 @@ indice<-457
 
 #On regarde la colonnes des delta associée au 457ème indice 
 
-plot(delta[,indice],main="evolution du delta de la 456eme valeurs de xi") #comportement bizarre entre 50 et 100 
+plot(delta[,indice],main="evolution du delta de la 457eme valeurs de xi") #comportement bizarre entre 50 et 100 
 
 #On regarde donc le comportement des xi 50:100
 
@@ -244,22 +247,93 @@ lines(f(p2), type = "l", col = 4)
 ```
 
 
-
 # EM 
 
 
-```{r}
+```{r,fig.height=8,fig.width=11}
+n=500
+M <- 200
+J<-5
+delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
+delta.ar <- 0.01
+omega.mcmc<-rep(0,M)
+omega.mcmc[1]=0.5
+  
+s1<-rep(0,M)
+
+D.alpha<-90
+alpha<-rep(1,M)
+alpha[D.alpha:M]=1/((1:(M-(D.alpha-1)))^0.8)
+
+xi.mcmc <- matrix(nrow = M, ncol = n)
+xi.c <- rep(0,n)
+accepted.n <- rep(0, n)
+acceptance.rate <- rep(0, n)
+acceptance.target <- .23
+
+
+for (k in 2:M) {
+  # Etape MCMC 
+  for(j in 1:J){
+  for (i in 1:n) {
+    xi.p <- xi.c
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
+    log.prob <- min(1, log.lik(xi.p,omega.arg=omega.mcmc[k-1]) - log.lik(xi.c,omega.arg=omega.mcmc[k-1]))
+    if (log(runif(1)) < log.prob) {
+      xi.c <- xi.p
+      accepted.n[[i]] <- accepted.n[[i]] + 1
+    }
+    
+    if(k<M){
+      # adaptative variance
+      acceptance.rate[[i]] <- accepted.n[[i]] / k
+      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
+        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
+      } else{
+        delta[k+1,i] <- delta[[k,i]]
+      }
+    }
+  }
+  xi.mcmc[k, ] <- xi.c
+  }
+  f.k=f(xi.c)
+  #Etape calcul des stats exhaustives
+  S1=mean((Y-f.k)^2)
+  #Etape approximation stochastique
+  s1[k]<-s1[k-1]+alpha[k]*(S1-s1[k-1])
+  
+  #Etape de maximisation 
+  omega.mcmc[k]=sqrt(s1[k])
+  
+}
+
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
+lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+
+plot(omega.mcmc,type='l',col='blue')
+abline(h=omega,col='red')
+```
+
+
+# Recherche de l'équilibre 
+
+
+```{r,fig.height=8,fig.width=11}
+par(mfrow=c(2,2))
+for (D.alpha in c(20,35,50,90)){
 n=500
 M <- 200
 delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
 delta.ar <- 0.01
-omega<-rep(0,M)
-omega[1]=0.5
+omega.mcmc<-rep(0,M)
+omega.mcmc[1]=0.5
   
 s1<-rep(0,M)
 
+#D.alpha<-20
 alpha<-rep(1,M)
-alpha[50:M]=1/((1:(M-49))^0.8)
+alpha[D.alpha:M]=1/((1:(M-(D.alpha-1)))^0.8)
 
 xi.mcmc <- matrix(nrow = M, ncol = n)
 xi.c <- rep(0,n)
@@ -273,7 +347,7 @@ for (k in 2:M) {
   for (i in 1:n) {
     xi.p <- xi.c
     xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
-    log.prob <- min(1, log.lik(xi.p,omega.arg=omega[k-1]) - log.lik(xi.c,omega.arg=omega[k-1]))
+    log.prob <- min(1, log.lik(xi.p,omega.arg=omega.mcmc[k-1]) - log.lik(xi.c,omega.arg=omega.mcmc[k-1]))
     if (log(runif(1)) < log.prob) {
       xi.c <- xi.p
       accepted.n[[i]] <- accepted.n[[i]] + 1
@@ -298,17 +372,80 @@ for (k in 2:M) {
   s1[k]<-s1[k-1]+alpha[k]*(S1-s1[k-1])
   
   #Etape de maximisation 
-  omega[k]=sqrt(s1[k])
+  omega.mcmc[k]=sqrt(s1[k])
   
 }
-
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
-lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
-
-plot(omega,type='l',col='blue')
-abline(h=0.01,col='red')
+plot(omega.mcmc,type='l',col='blue',main=paste("D.alpha = ",D.alpha))
+abline(h=omega,col='red')
+}
 ```
+
+
+## Test nb itération de MCMC dans EM 
+
+```{r,fig.height=8,fig.width=11}
+par(mfrow=c(2,2))
+for (J in c(1,3,5,10)){
+n=500
+M <- 200
+delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
+delta.ar <- 0.01
+omega.mcmc<-rep(0,M)
+omega.mcmc[1]=0.5
+  
+s1<-rep(0,M)
+
+D.alpha<-90
+alpha<-rep(1,M)
+alpha[D.alpha:M]=1/((1:(M-(D.alpha-1)))^0.8)
+
+xi.mcmc <- matrix(nrow = M, ncol = n)
+xi.c <- rep(0,n)
+accepted.n <- rep(0, n)
+acceptance.rate <- rep(0, n)
+acceptance.target <- .23
+
+
+for (k in 2:M) {
+  # Etape MCMC 
+  for(j in 1:J){
+  for (i in 1:n) {
+    xi.p <- xi.c
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
+    log.prob <- min(1, log.lik(xi.p,omega.arg=omega.mcmc[k-1]) - log.lik(xi.c,omega.arg=omega.mcmc[k-1]))
+    if (log(runif(1)) < log.prob) {
+      xi.c <- xi.p
+      accepted.n[[i]] <- accepted.n[[i]] + 1
+    }
+    
+    if(k<M){
+      # adaptative variance
+      acceptance.rate[[i]] <- accepted.n[[i]] / k
+      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
+        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
+      } else{
+        delta[k+1,i] <- delta[[k,i]]
+      }
+    }
+  }
+  xi.mcmc[k, ] <- xi.c
+  }
+  
+  f.k=f(xi.c)
+  #Etape calcul des stats exhaustives
+  S1=mean((Y-f.k)^2)
+  #Etape approximation stochastique
+  s1[k]<-s1[k-1]+alpha[k]*(S1-s1[k-1])
+  
+  #Etape de maximisation 
+  omega.mcmc[k]=sqrt(s1[k])
+  
+}
+plot(omega.mcmc,type='l',col='blue',main=paste("nb d'iterations du MCMC = ",J))
+abline(h=omega,col='red')
+}
+```
+
 
 
 
