@@ -35,7 +35,7 @@ data <- OnlyAirgun(data)
 
 #---------------------------------------------------------------------------------
 # Load models
-glmerAllBuzzDepth <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.rds")
+glmerAllBuzzDepth <- readRDS(paste0(args[2], "/../glmer_buzz_ARDepth_expo/glmerAllBuzzDepth.rds"))
 
 #---------------------------------------------------------------------------------
 # Obj for ploting
