@@ -891,3 +891,17 @@ ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
   xlab("Distance avec le bateau [km]") +
   ylab("Pourcentage du taux normal d'émission")
 ```
+
+```{r}
+# ChangePop_merTools <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred_merTools/ChangePop.rds")
+```
+
+```{r mod-expo-rate-per-merTools, fig.cap = "Pourcentage du taux normal d'émission de buzz selon la distance au bateau."}
+# ggplot(data = ChangePop_merTools, aes(x = 1 / X, y = fit)) +
+#   geom_line(size = .5) +
+#   geom_ribbon(aes(ymin = lwr, ymax = upr),
+#               alpha = .5, linetype = 0, fill = "red") +
+#   xlim(0, 50) +
+#   xlab("Distance avec le bateau [km]") +
+#   ylab("Pourcentage du taux normal d'émission")
+```

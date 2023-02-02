@@ -82,6 +82,8 @@ predFramePop0 <- cbind(predFramePop0, as.data.frame(predBuzzPop0)) # to save
 ChangePop <- predFramePop # to save
 ChangePop$fit <- exp(ChangePop$fit) / exp(predFramePop0$fit) * 100
 ## CI
+# ChangePop$upr <- exp(ChangePop$upr) / exp(predFramePop0$lwr) * 100
+# ChangePop$lwr <- exp(ChangePop$lwr) / exp(predFramePop0$upr) * 100
 ChangePop$upr <- exp(ChangePop$upr) / exp(predFramePop0$fit) * 100
 ChangePop$lwr <- exp(ChangePop$lwr) / exp(predFramePop0$fit) * 100
 
