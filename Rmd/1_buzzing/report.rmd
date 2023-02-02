@@ -80,13 +80,13 @@ Ainsi, si $\Delta$ est suffisamment petit (de l'ordre de la seconde par exemple)
 On peut alors ramener notre processus de comptage à un processus de Bernoulli : $Y(t) \sim \mathcal{B}(\lambda(t) \Delta)$, ce qui implique :
 $$\mathbb{E}(Y(t)) = \mathbb{P}(Y(t) = 1) = \lambda(t) \Delta \underset{\Delta = 1}{=} \lambda(t)$$
 
-## Régression logistique
+## Régression quasi-logistique
 
 \qquad Nous cherchons à estimer le lien entre l'intensité d'émission de buzz et plusieurs covariables, dont le niveau d'exposition aux perturbations.
 Nous avons vu dans la section précédente que les variables aléatoires $Y(t)$ de notre processus de comptage sont à valeurs dans ${0, 1}$ et que $\mathbb{P}(Y(t) = 1) = \lambda(t)$.
 En se plaçant dans le cadre des modèles linéaires généralisés (GLM) il est donc possible d'exprimer la probabilité $\lambda(t)$ que $Y(t) = 1$ selon un ensemble de covariables $Z(t)$ (détaillées dans la suite de cette section) en utilisant le logarithme comme fonction de lien :
 $$log(\lambda(t)) = \beta_0 + Z(t) \beta_Z$$
-Ce cas particulier des GLM n'est autre que la régression logistique.
+Ce cas particulier des GLM appartient à la famille des modèles quasi-logistiques.
 
 ### Effet de la profondeur
 
