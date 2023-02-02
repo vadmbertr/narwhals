@@ -7,6 +7,8 @@ output:
 
 ```{r}
 set.seed(15)
+
+library(ggplot2)
 ```
 
 # Simulation
@@ -84,31 +86,35 @@ log.lik <- function (xi.arg, omega.arg = omega, psi.arg = psi, gamma.arg = gamma
 ```{r}
 M <- 150
 delta <- matrix(c(rep(.05, n),rep(NA,n*(M-1))),nrow=M,byrow=T)
-delta.ar <- 0.01
+delta.ar <- 0.1
 
 xi.mcmc <- matrix(nrow = M, ncol = n)
+xi.mcmc.p <- matrix(nrow = M, ncol = n)
 xi.c <- rep(0,n)
 accepted.n <- rep(0, n)
-acceptance.rate <- rep(0, n)
+acceptance.rate <- matrix(nrow = M, ncol = n)
 acceptance.target <- .23
 
 for (k in 1:M) {
   for (i in 1:n) {
     xi.p <- xi.c
-    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[k,i])
+    xi.mcmc.p[k, i] <- xi.p[[i]]
     log.prob <- min(1, log.lik(xi.p) - log.lik(xi.c))
     if (log(runif(1)) < log.prob) {
       xi.c <- xi.p
       accepted.n[[i]] <- accepted.n[[i]] + 1
     }
-    
+
+    # adaptative variance
+    acceptance.rate[k, i] <- accepted.n[[i]] / k
     if(k<M){
-      # adaptative variance
-      acceptance.rate[[i]] <- accepted.n[[i]] / k
-      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
-        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
-      } else{
-        delta[k+1,i] <- delta[[k,i]]
+      if (acceptance.rate[k, i] < acceptance.target * (1 - .1)) {
+        delta[k+1,i] <- delta[k,i] * (1 - delta.ar)
+      } else if (acceptance.rate[k, i] > acceptance.target * (1 + .1)) {
+        delta[k+1,i] <- delta[k,i] * (1 + delta.ar)
+      } else {
+        delta[k+1,i] <- delta[k,i]
       }
     }
   }
@@ -119,8 +125,44 @@ plot(xi, type = "l", col = "blue",
      ylim = c(min(min(xi.mcmc[nrow(xi.mcmc), ]), min(xi)), max(max(xi.mcmc[nrow(xi.mcmc), ]), max(xi))))
 lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
 
+plot(Y, type = "l", col = "blue")
+lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = "red")
+```
 
+```{r}
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+        geom_line(aes(y = xi.mcmc[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "blue") +
+        geom_line(aes(y = xi.mcmc.p[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "red") +
+        geom_hline(aes(yintercept = xi[which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]))
 
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+        geom_line(aes(y = xi.mcmc[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "blue") +
+        geom_line(aes(y = xi.mcmc.p[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "red") +
+        geom_hline(aes(yintercept = xi[which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]))
+
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+        geom_line(aes(y = xi.mcmc[, which.max(abs(xi))]), color = "blue") +
+        geom_line(aes(y = xi.mcmc.p[, which.max(abs(xi))]), color = "red") +
+        geom_hline(aes(yintercept = xi[which.max(abs(xi))]))
+```
+
+```{r}
+coeff <- max(acceptance.rate[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]) /
+        max(delta[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))])
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+        geom_line(aes(y = acceptance.rate[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "red") +
+        geom_line(aes(y = delta[, which.max(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))] * coeff), color = "blue") +
+        geom_hline(aes(yintercept = .23 * 1.1), linetype = 2, color = "red") +
+        geom_hline(aes(yintercept = .23 * .9), linetype = 2, color = "red") +
+        scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
+coeff <- max(acceptance.rate[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]) /
+        max(delta[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))])
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+        geom_line(aes(y = acceptance.rate[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))]), color = "red") +
+        geom_line(aes(y = delta[, which.min(abs(xi - xi.mcmc[nrow(xi.mcmc), ]))] * coeff), color = "blue") +
+        geom_hline(aes(yintercept = .23 * 1.1), linetype = 2, color = "red") +
+        geom_hline(aes(yintercept = .23 * .9), linetype = 2, color = "red") +
+        scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
 ```
 
 ```{r}
@@ -153,11 +195,6 @@ abline(h = acceptance.target, lty = "dashed", col = "red")
 
 ```{r}
 plot(delta)
-```
-
-```{r}
-plot(Y, type = "l", col = "blue")
-lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = "red")
 ```
 
 ## Comparaison de xi au fil des k 
