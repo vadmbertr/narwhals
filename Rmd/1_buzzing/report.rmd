@@ -878,6 +878,9 @@ C'est pourquoi nous avions représenté graphiquement cette évolution sur la fi
 Nous avons employé la méthode Delta décrite dans la section \@ref(delta) pour construire une bande de confiance autour de l'estimation du pourcentage du taux normal d'émission de buzz en fonction de la profondeur.
 Ce pourcentage est obtenu en faisant le rapport entre l'intensité estimée avec et sans perturbation.
 La figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumissent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
+Afin de comparer l'approche de la méthode Delta, nous avons utilisé la fonction *predictInterval* du package **merTools**.
+Celle-ci permet d'obtenir une bande de prédiction pour des modèles mixtes par une approche Monte Carlo.
+Comme nous pouvons le voir sur la figure \@ref(fig:mod-expo-rate-per), la bande obtenue ainsi (tracée en bleue) suit la même forme que celle de la méthode Delta.
 
 ```{r}
 ChangePop <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_pred/ChangePop.rds")
