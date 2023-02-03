@@ -24,7 +24,7 @@ sigma <- 0.1
 omega <- 0.01
 Delta <- 1
 psi <- exp(-Delta * beta)
-gamma <- sigma / sqrt(beta)
+gamma <- sigma/sqrt(2*beta)*sqrt(1-psi^2)
 
 n <- 500
 x <- 1:n
@@ -39,7 +39,7 @@ f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
 }
 rxi <- function (xi=rep(0,n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi)) {
-    xi[[i]] <- xi[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg * sqrt((1 - psi.arg^2) / 2))
+    xi[[i]] <- xi[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
   }
   return(xi)
 }
@@ -76,7 +76,7 @@ plot(Y, type = "l")
 log.lik <- function (xi.arg, omega.arg = omega, psi.arg = psi, gamma.arg = gamma) {
   return(sum(dnorm(Y, f(xi.arg), omega.arg, log = TRUE)) +
          sum(dnorm(xi.arg[2:length(xi.arg)], xi.arg[1:(length(xi.arg) - 1)] * psi.arg,
-                   gamma.arg * sqrt((1 - psi.arg^2) / 2), log = TRUE)))
+                   gamma.arg, log = TRUE)))
 }
 ```
 
@@ -356,9 +356,9 @@ abline(h=omega,col='red')
 # Recherche de l'équilibre 
 
 
-```{r,fig.height=8,fig.width=11}
-par(mfrow=c(2,2))
-for (D.alpha in c(20,35,50,90)){
+```{r,fig.height=12,fig.width=11}
+par(mfrow=c(3,2))
+for (D.alpha in c(50,70,90,100)){
 n=500
 M <- 200
 delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
@@ -483,6 +483,101 @@ abline(h=omega,col='red')
 }
 ```
 
+
+# Ajout de l'estimation des autres parametres() : EM + omega + psi 
+
+
+```{r,fig.height=8,fig.width=11}
+n=500
+M <- 200
+J<-4
+delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
+delta.ar <- 0.01
+omega.mcmc<-rep(0,M)
+omega.mcmc[1]=0.5
+
+psi.mcmc<-rep(0,M)
+psi.mcmc[1]=0.5
+
+gamma.mcmc<-rep(0,M)
+gamma.mcmc[1]=0.5
+  
+s1<-rep(0,M)
+s2<-rep(0,M)
+s3<-rep(0,M)
+s4<-rep(0,M)
+
+
+D.alpha<-90
+alpha<-rep(1,M)
+alpha[D.alpha:M]=1/((1:(M-(D.alpha-1)))^0.8)
+
+xi.mcmc <- matrix(nrow = M, ncol = n)
+xi.c <- rep(0,n)
+xi.mcmc[1,]<-rxi() #PB d'initialisation car si le premier xi.mcmc[1, ]= 0 alors pas possible de calculer les statistiques, du coup j'ai essayer rxi() ? 
+accepted.n <- rep(0, n)
+acceptance.rate <- rep(0, n)
+acceptance.target <- .23
+
+
+for (k in 2:M) {
+  # Etape MCMC 
+  for(j in 1:J){
+  for (i in 1:n) {
+    xi.p <- xi.c
+    xi.p[[i]] <- rnorm(1, xi.p[[i]], delta[[k,i]])
+    log.prob <- min(1, log.lik(xi.p,omega.arg=omega.mcmc[k-1],psi.arg=psi.mcmc[k-1],gamma.arg = gamma.mcmc[k-1]) - log.lik(xi.c,omega.arg=omega.mcmc[k-1],psi.arg = psi.mcmc[k-1],gamma.arg = gamma.mcmc[k-1]))
+    if (log(runif(1)) < log.prob) {
+      xi.c <- xi.p
+      accepted.n[[i]] <- accepted.n[[i]] + 1
+    }
+    
+    if(k<M){
+      # adaptative variance
+      acceptance.rate[[i]] <- accepted.n[[i]] / k
+      if ((acceptance.rate[[i]] < acceptance.target * (1 - .1))||(acceptance.rate[[i]] > acceptance.target * (1 + .1))) {
+        delta[k+1,i] <- delta[[k,i]] * (1 - delta.ar)
+      } else{
+        delta[k+1,i] <- delta[[k,i]]
+      }
+    }
+  }
+  xi.mcmc[k, ] <- xi.c
+  }
+  f.k=f(xi.c)
+  
+  #Etape calcul des stats exhaustives
+  S1=mean((Y-f.k)^2)
+  S2=sum(xi.mcmc[k-1,]*xi.mcmc[k,]) #PROBLEME pour k autour de 30, psi devient > 1 et pas possible avec le calcul de vraisemblance
+  S3=sum(xi.mcmc[k-1,]*xi.mcmc[k-1,])
+  S4=sum(xi.mcmc[k, ]*xi.mcmc[k, ])
+  
+  #Etape approximation stochastique
+  s1[k]<-s1[k-1]+alpha[k]*(S1-s1[k-1])
+  s2[k]<-s2[k-1]+alpha[k]*(S2-s2[k-1])
+  s3[k]<-s3[k-1]+alpha[k]*(S3-s3[k-1])
+  s4[k]<-s4[k-1]+alpha[k]*(S4-s4[k-1])
+
+  
+  #Etape de maximisation 
+  omega.mcmc[k]=sqrt(s1[k])
+  psi.mcmc[k]=s2[k]/s3[k]
+  gamma.mcmc[k]=sqrt((1/n)*(psi.mcmc[k]^2*s3[k]-2*psi.mcmc[k]*s2[k]+s4[k]))
+  
+}
+
+plot(xi, type = "l", col = "blue")
+lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+
+plot(omega.mcmc,type='l',col='blue',main="Omega",ylim=c(0,0.5))
+abline(h=omega,col='red')
+
+plot(psi.mcmc,type='l',col='blue',main="Psi")
+abline(h=psi,col='red')
+
+plot(gamma.mcmc,type='l',col='blue',main="gamma")
+abline(h=gamma,col='red')
+```
 
 
 
