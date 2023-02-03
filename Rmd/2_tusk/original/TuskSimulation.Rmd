@@ -24,7 +24,7 @@ $$ g(x) = ax+\xi_x$$
 and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process 
 $$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
 
-The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \sigma^2/\beta$. 
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$. 
 
 ## Simulation of trajectories
 
@@ -53,6 +53,7 @@ gx = a*x+xi
 fx = A*sin(gx+b) + B*sin(2*gx + 2*b + pi/2)
 Y = fx + rnorm(n,0,omega)
 plot(x,Y,type = "l")
+
 ```
 
 
@@ -62,13 +63,15 @@ The EM algorithm is based on the complete log-likelihood of the model.
 The solution of the hidden process $\xi_x$ is
 $$\xi_{x+\Delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
 such that the transition density is
-$$p(\xi_{x+\Delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
 
 The complete log-likelihood is thus
 \begin{eqnarray*}
 \log L(Y,\xi,\theta)&=&\sum_{i=1}^n\log p(Y_i|\xi_i) +\sum_{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
 &=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
-&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta}))
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2) 
 \end{eqnarray*}
 
 The EM algorithm proceeds at iteration $k$ with the two following steps, given the current value of the parameters $\theta^k$
@@ -84,20 +87,18 @@ The condition distribution $p(\xi|Y; \theta^k)$ is not explicit because the regr
 
 We need the sufficient statistics to update the algorithm. 
 
-To update $\omega^2$, the statistic is
+The statistics are
 
-$$S_1(\xi_i) = \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi_i), \varphi))^2$$
 
-To update $\phi = (A,B,a,b)$, the statistic is
+\begin{eqnarray*}
+S_1(\xi_i)& =& \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi_i), \varphi))^2\\
+S_2(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}\xi_i\\
+S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
+S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
+\end{eqnarray*}
 
-$$S_2(\xi_i) = \sum_{i=1}^n \partial_\varphi f(x_i(\xi_i), \varphi) (y_i-f(x_i(\xi_i), \varphi))$$
-For $\gamma^2=\sigma^2/(2\beta)$, the statistic is
-$$S_3(\xi_i)= \frac{1}{n}\sum_{i=1}^n(\xi_i-\xi_{i-1}\psi)^2$$
 
-To update $\psi$, we need to statistics
-$$S_4(\xi) = \sum_{i=1}^n\xi_i\xi_{i-1}$$
-and 
-$$S_5(\xi) = \sum_{i=1}^n(\xi_i^2+\xi_{i-1}^2)$$
+The update of the parameters are based on these statistics. 
 
 #### SAEM algorithm
 
@@ -107,6 +108,39 @@ The steps of the SAEM algorithm are
 
 - SA step: stochastic approximation of the sufficient statistics
 
-$$s^k = s^{k-1} + (1-\alpha_k)(S(\xi^k)-s^{k-1}) $$
+\begin{eqnarray*}
+s_1^k &=& s_1^{k-1} + (1-\alpha_k)(S_1(\xi^k)-s_1^{k-1}) \\
+s_2^k &=& s_2^{k-1} + (1-\alpha_k)(S_2(\xi^k)-s_2^{k-1}) \\
+s_3^k &=& s_3^{k-1} + (1-\alpha_k)(S_3(\xi^k)-s_3^{k-1}) \\
+s_4^k &=& s_4^{k-1} + (1-\alpha_k)(S_4(\xi^k)-s_4^{k-1}) \\
+\end{eqnarray*}
 
 - M step: update of $\theta^{k}$ using the sufficient statistics $s^k$
+
+\begin{eqnarray*}
+\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
+\\
+\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
+\widehat{\omega^{2}}^k &=& s_1^k\\
+\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
+\end{eqnarray*}
+
+
+#### MCMC
+On fixe le jeu de données
+
+```{r}
+xi_true = xi
+
+```
+
+On initialise l'algo
+```{r}
+xi_init = rep(0,n)
+for (i in 2:n){
+  xi_init[i] = xi_init[i-1]*psi + rnorm(1,0, gamma)
+}
+
+
+```
+
