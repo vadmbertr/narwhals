@@ -566,8 +566,13 @@ for (k in 2:M) {
   
 }
 
-plot(xi, type = "l", col = "blue")
+plot(xi, type = "l", col = "blue",main="xi")
 lines(xi.mcmc[nrow(xi.mcmc), ], type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue",main="Y")
+lines(f(xi.mcmc[nrow(xi.mcmc), ]), type = "l", col = "red")
+
+par(mfrow=c(2,2))
 
 plot(omega.mcmc,type='l',col='blue',main="Omega",ylim=c(0,0.5))
 abline(h=omega,col='red')
@@ -577,6 +582,8 @@ abline(h=psi,col='red')
 
 plot(gamma.mcmc,type='l',col='blue',main="gamma")
 abline(h=gamma,col='red')
+
+
 ```
 
 
