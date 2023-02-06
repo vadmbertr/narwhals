@@ -12,6 +12,7 @@ linkcolor: blue
 biblatexoptions: [backend=biber,style=numeric,sorting=none]
 bibliography: references.bib
 header-includes:
+    \usepackage{algorithm}
     \usepackage{algpseudocode}
     \usepackage{amsmath}
     \usepackage{amssymb}
@@ -113,7 +114,7 @@ En pratique ce n'est pas le cas, aussi il faut modifier le modèle défini préc
 
 \qquad Les données que nous utilisons correspondent à plusieurs individus, nous avons donc plusieurs observations par individu et celles-ci ne sont pas indépendantes.
 Pour palier ce défaut de modélisation et tenir compte de la spécificité des individus, nous utilisons des modèles mixtes en ajoutant un effet aléatoire $b_i$ sur l'ordonnée à l'origine :
-$$log(\lambda_i(t)) = \beta_0 + \textcolor{blue}{b_i} + spline(D_i(t)) \beta_D + spline(E_i(t)) \beta_E$$
+$$log(\lambda_i(t)) = \beta_0 + \textcolor{blue}{b_i} + spline(D_i(t)) \beta_{D_{1:3}} + spline(E_i(t)) \beta_{E_{1:3}}$$
 où $i$ dénote l'individu $i$ et $b_i \sim \mathcal{N}(0, \sigma^2)$ l'effet aléatoire sur cet l'individu, $\sigma^2$ étant la variance inter-individuelle.
 
 ### Caractère autorégressif du processus
@@ -121,10 +122,12 @@ où $i$ dénote l'individu $i$ et $b_i \sim \mathcal{N}(0, \sigma^2)$ l'effet al
 \qquad De plus, l'émission d'un buzz à un instant $t$ est corrélé à l'émission ou non de buzz aux instants précédents ; cet effet mémoire doit donc être intégré au modèle pour tenir compte de la dépendance des $Y_{i}(t)$.
 Pour cela nous introduisons $K$ variables binaires d'autorégression codant l'émission d'un buzz aux l'instants $t - k,\ k \in \{1, ..., K\}$.
 Le modèle résultant s'écrit alors :
-$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \textcolor{blue}{\sum_{k=1}^K \alpha_k Y_i(t-k)} + spline(E_i(t)) \beta_E$$
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_{D_{1:3}} + \textcolor{blue}{\sum_{k=1}^K \alpha_k Y_i(t-k)} + spline(E_i(t)) \beta_{E_{1:3}}$$
 Cette approche demande de fixer une mémoire maximale, et ainsi la valeur de $K$.
 Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilisé le BIC comme mesure de la qualité des différents modèles correspondants sans inclure l'effet de l'exposition :
-$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^K \alpha_k Y_i(t-k)$$
+\begin{equation}
+log(\lambda_i(t)) = \beta_{D_0} + b_i + spline(D_i(t)) \beta_{D_{1:3}} + \sum_{k=1}^K \alpha_k Y_i(t-k) (\#eq:m-ard)
+\end{equation}
 Nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
 Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
 
@@ -136,8 +139,8 @@ Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avon
     \State $BIC \gets []$
     \For{$i \in \{1, ..., M\}$}
         \State $K[i] \gets from_k + (i - 1) * \lfloor\frac{to_k - from_k}{M - 1}\rceil$ \Comment{Découpage en $M$ éléments équidistants}
-        \State ajustement du modèle $\mathcal{M}$ avec $K[i]$ éléments mémoire
-        \State $BIC[i] \gets calcul du BIC de \mathcal{M}$
+        \State $\mathcal{M} \gets$ ajustement du modèle de l'Equation \@ref(eq:m-ard) avec $K[i]$ éléments mémoire
+        \State $BIC[i] \gets$ calcul du BIC de $\mathcal{M}$
     \EndFor
     \State $i_{opt} \gets argmin\ BIC$
     \State $K_{opt} \gets K[i_{opt}]$
@@ -151,7 +154,7 @@ $$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
 Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
 
 \qquad Le modèle complet s'exprime donc ainsi :
-$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^{K_{opt}} \textcolor{blue}{(A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k})} Y_i(t-k) + spline(E_i(t)) \beta_E$$
+$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_{D_{1:3}} + \sum_{k=1}^{K_{opt}} \textcolor{blue}{(A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k})} Y_i(t-k) + spline(E_i(t)) \beta_{E_{1:3}}$$
 
 ## Effet de médiation de la profondeur
 
@@ -164,37 +167,66 @@ Mais il existe également un lien entre la profondeur d'immersion des baleines e
 Aussi, il se peut que l'exposition ait un lien direct sur l'émission de buzz et un lien indirect via son effet sur la profondeur.
 
 \qquad Afin de représenter uniquement le lien direct, les coefficients des covariables autres que l'exposition sont estimés sans inclure celle-ci à partir des observations effectuées sans soumettre les animaux à des perturbations :
-$$log(\lambda_i(t)) = \beta_0 + b_i + spline(D_i(t)) \beta_D + \sum_{k=1}^{K_{opt}} A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k} Y_i(t-k)$$
-Nous obtenons donc les estimations $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$ qui sont ensuite injectées dans le modèle complet au moyen d'un terme d'\say{offset} (non réestimé) z :
-$$offset_i(t) = spline(D_i(t)) \widehat{\beta_D} + \sum_{k=1}^{K_{opt}} (\widehat{A_1} e^{-e^{\widehat{lrc_1}} k} + \widehat{A_2} e^{-e^{\widehat{lrc_2}} k}) Y_i(t-k)$$
+\begin{equation}
+log(\lambda_i(t)) = \beta_{D_0} + b_i + spline(D_i(t)) \beta_{D_{1:3}} + \sum_{k=1}^{K_{opt}} A_1 e^{-e^{lrc_1} k} + A_2 e^{-e^{lrc_2} k} Y_i(t-k) (\#eq:m0)
+\end{equation}
+Nous obtenons donc les estimations $\widehat{\beta_{D}},\ \widehat{A_{1:2}},\ \widehat{lrc_{1:2}}$ qui sont ensuite injectées dans le modèle complet au moyen d'un terme d'\say{offset} (non réestimé) :
+\begin{equation}
+offset_i(t) = \widehat{\beta_{D_0}} + spline(D_i(t)) \widehat{\beta_{D_{1:3}}} + \sum_{k=1}^{K_{opt}} (\widehat{A_1} e^{-e^{\widehat{lrc_1}} k} + \widehat{A_2} e^{-e^{\widehat{lrc_2}} k}) Y_i(t-k) (\#eq:offset)
+\end{equation}
 Le modèle incluant l'exposition est donc reformulé ainsi :
-$$log(\lambda_i(t)) = \beta_0 + b_i + \textcolor{blue}{offset_i(t)} + spline(E_i(t)) \beta_E$$
-Et les paramètres estimés $\widehat{\beta_E}$ permettront d'interpréter l'effet de l'exposition par rapport à des conditions \say{normales}.
+\begin{equation}
+log(\lambda_i(t)) = \beta_{E_0} + b_i + \textcolor{blue}{offset_i(t)} + spline(E_i(t)) \beta_{E_{1:3}} (\#eq:m)
+\end{equation}
+Et les paramètres estimés $\widehat{\beta_{E}}$ permettront d'évaluer l'effet de l'exposition par rapport à des conditions \say{normales}.
 
 ## Intervalles de confiance
 
-### Construction par approche Monte Carlo
+### Construction par approche Monte-Carlo {#mc}
 
 \qquad Après avoir estimé les coefficients associés à l'exposition aux perturbations, nous souhaitons construire les intervalles de confiance de ces estimations.
 L'approche classique de calcul des intervalles de confiance se basant sur la seule variance estimée des coefficients d'exposition donnerait ici des résultats incorrects, la variance des coefficients de profondeur et d'autorégression ne serait alors pas prise en compte car tuée par l'utilisation de l'offset.
-Nous avons donc utilisé l'approche Monte-Carlo suivante :
 
+\qquad Dans un premier temps, nous avons donc ajusté le modèle sans exposition décrit par l'Equation \@ref(eq:m0) afin d'obtenir la moyenne et la variance empiriques de ses coefficients.
+Nous avons ensuite répété le tirage des coefficients sans exposition selon 8 lois normales univariées paramétrées par leurs statistiques empiriques ; calculé le terme d'offset selon l'Equation \@ref(eq:offset) à partir des réalisations obtenues ; et estimé les coefficients d'exposition $\widehat{\beta_{E}^k}$ du modèle correspondant à l'Equation \@ref(eq:m).
+Les coefficients $\widehat{\beta_{E}^k}$ estimés à chaque itération constituent ainsi un échantillon dont nous utilisons les quantiles empiriques $\alpha / 2$ et $1 - \alpha / 2$ comme bornes de l'intervalle de confiance au niveau $\alpha$ de chacun des coefficients d'exposition.
+
+Le tirage selon des lois normales univariées implique que nous ne considérons pas la covariance existant entre les estimations des coefficients $\widehat{\beta_{D}}$, $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$.
+Afin d'y remédier nous avons employé un tirage suivant 2 lois normales multivariées de dimension 4 (une pour les coefficients $\widehat{\beta_{D}}$ et une pour $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$, dont le vecteur de moyenne est toujours constitué des moyennes empiriques des coefficients sans exposition, mais dont les matrices de variance-covariance ne sont pas diagonales.
+
+La matrice de variance-covariance permettant de tirer les coefficients $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$ était construite à partir des estimations de la régression double bi-exponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression double bi-exponentielle. Pour palier cette approximation, nous avons recalculé la matrice de variance-covariance des coefficients $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$ par une autre procédure Monte-Carlo en répétant l'ajustement de la régression double bi-exponentielle pour des coefficients mémoire tirés selon une loi normale multivariée. Cette approche est décrite par l'Algorithme \@ref(alg:mc).
+
+\begin{algorithm}
+\caption{Procédure Monte-Carlo d'obtention des intervalles de confiance.}
+\label{alg:mc}
 \begin{algorithmic}
-\State $M \gets 1000$ \Comment{Nombre de répétitions de la procédure}
-\State $\widehat{\beta_E} \gets []$
-\For{$i \in \{1, ..., M\}$}
-    \Comment{Tirage aléatoire des coefficients de profondeur et autorégressifs}
-    \State $\widehat{\beta_D} \gets \mathcal{N}(\mathbb{E}(\beta_D), \mathbb{V}ar(\beta_D))$
-    \State $\widehat{A_1} \gets \mathcal{N}(\mathbb{E}(A_1), \mathbb{V}ar(A_1))$
-    \State $\widehat{lrc_1} \gets \mathcal{N}(\mathbb{E}(lrc_1), \mathbb{V}ar(lrc_1))$
-    \State $\widehat{A_2} \gets \mathcal{N}(\mathbb{E}(A_2), \mathbb{V}ar(A_2))$
-    \State $\widehat{lrc_2} \gets \mathcal{N}(\mathbb{E}(lrc_2), \mathbb{V}ar(lrc_2))$
-    \State calcul de l'offset avec $\widehat{\beta_D},\ \widehat{A_1},\ \widehat{lrc_1},\ \widehat{A_2},\ \widehat{lrc_2}$
-    \State ajustement du modèle $\mathcal{M}$ en fixant l'offset
-    \State $\widehat{\beta_E}[i] \gets$ coefficients de profondeur ajustés de $\mathcal{M}$
+\State $\mathcal{M}_0 \gets$ ajustement du modèle correspondant à l'Equation \eqref{eq:m-ard}
+\State $\mu_D,\ \Sigma_D,\ \mu_{AR},\ \Sigma_{AR} \gets$ estimation à partir de $\mathcal{M}_0$
+
+\State $K \gets 1000$ \Comment{Nombre de répétitions des procédures}
+
+\Comment{1ère procédure}
+\State $\widehat{\beta_{A_{1:2}}} \gets []$
+\State $\widehat{\beta_{lrc_{1:2}}} \gets []$
+\For{$k \in \{1, ..., K\}$}
+    \State $\widehat{\alpha} \gets \mathcal{N}(\mu_{AR},\ \Sigma_{AR})$ \Comment{Tirage aléatoire des coefficients autorégressifs}
+    \State $\mathcal{M}_{exp} \gets$ ajustement de la régression double bi-exponentielle utilisant $\widehat{\alpha}$
+    \State $\widehat{\beta_{A_{1:2}}}[k],\ \widehat{\beta_{lrc_{1:2}}}[k] \gets$ coefficients de $\mathcal{M}_{exp}$
 \EndFor
-\State $IC_\alpha \gets [q_{\alpha / 2}^{\widehat{\beta_E}}, q_{1 - \alpha / 2}^{\widehat{\beta_E}}]$ \Comment{Estimation via les quantiles empiriques}
+\State $\mu_{exp},\ \Sigma_{exp} \gets$ calculés à partir de $\widehat{\beta_{A_{1:2}}},\ \widehat{\beta_{lrc_{1:2}}}$
+
+\Comment{2ème procédure}
+\State $\widehat{\beta_{E}} \gets []$
+\For{$k \in \{1, ..., K\}$}
+    \State $\widehat{\beta_{D}} \gets \mathcal{N}(\mu_D,\ \Sigma_D)$ \Comment{Tirage aléatoire des coefficients de profondeur}
+    \State $\widehat{A_{1:2}},\ \widehat{lrc_{1:2}} \gets \mathcal{N}(\mu_{exp},\ \Sigma_{exp})$ \Comment{Tirage aléatoire des coefficients de la double bi-exponentielle}
+    \State calcul de l'offset selon l'Equation \eqref{eq:offset} avec $\widehat{\beta_{D}},\ \widehat{A_{1:2}},\ \widehat{lrc_{1:2}}$
+    \State $\mathcal{M} \gets$ ajustement du modèle donné par l'Equation \eqref{eq:m} en fixant l'offset
+    \State $\widehat{\beta_{E}}[k] \gets$ coefficients de profondeur de $\mathcal{M}$
+\EndFor
+\State $IC_\alpha \gets [q_{\alpha / 2}^{\widehat{\beta_{E}}}, q_{1 - \alpha / 2}^{\widehat{\beta_{E}}}]$ \Comment{Estimation via les quantiles empiriques}
 \end{algorithmic}
+\end{algorithm}
 
 ### Estimation de bandes de prédiction via la méthode Delta {#delta}
 
@@ -400,7 +432,7 @@ g1 / (g2 + g3)
 
 #### Utilisation de lois normales univariées
 
-Dans un premier temps, nous avons considéré que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
+Dans un premier temps, comme détaillé dans la section \@ref(mc), nous avons considéré que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
 Nous avons donc 4 lois normales univariées pour les coefficients de la régression double bi-exponentielle et 4 autres pour la spline sur la profondeur.
 
 ```{r}
@@ -476,9 +508,9 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-Les intervalles de confiance calculés avec la procédure Monte Carlo sont donnés sur la Table \@ref(tab:coef-expo-ci-norm).
+Les intervalles de confiance calculés avec la procédure Monte-Carlo sont donnés sur la Table \@ref(tab:coef-expo-ci-norm).
 Nous avons également affiché les valeurs médianes des intervalles de confiance calculés à chaque répétition sur la base de la variation des coefficients d'exposition uniquement.
-Il est flagrant que les intervalles Monte Carlo sont bien plus larges et ne permettent en aucun cas de conclure sur un effet de l'exposition sur le taux d'émission de buzz.
+Il est flagrant que les intervalles Monte-Carlo sont bien plus larges et ne permettent en aucun cas de conclure sur un effet de l'exposition sur le taux d'émission de buzz.
 
 ```{r coef-expo-ci-norm}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
@@ -490,7 +522,7 @@ kable(df,
       digits = 3,
       escape = FALSE) %>%
   kable_styling(latex_options = c("HOLD_position")) %>%
-  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
+  add_header_above(c(" " = 1, "Monte-Carlo" = 2, "Erreur standard" = 2))
 ```
 
 La Figure \@ref(fig:coef-expo-ci-norm-dist) donne une représentation graphique de ces intervalles (en rouge les "MC" et en bleu les "SE"), ainsi que des distributions des coefficients.
@@ -503,7 +535,7 @@ g1 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  labs(x = TeX("Intercept $\\beta_{E_0}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 1, 0, "pt"))
 
 g2 <- ggplot() +
@@ -544,8 +576,8 @@ g4 <- ggplot() +
 #### Utilisation d'une loi normale multivariée {#mvnorm}
 
 L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients.
-Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans des lois normales multivariées (une pour les coefficients de la régression double bi-exponentielle et une pour les coefficients de la spline) toujours centrées sur les estimations moyennes, mais ayant des matrices de variance-covariance non diagonales.
-Dorénavant nous avons donc une loi normale multivariée pour les coefficients de la régression double bi-exponentielle et une autre pour la profondeur, les deux étant de dimension 4.
+Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans 2 lois normales multivariées : une pour les coefficients de la régression double bi-exponentielle et une pour les coefficients de profondeur.
+Pour plus de détails sur l'obtention des paramètres des lois normales, il est possible de revenir à la section \@ref(mc).
 
 ```{r}
 RegBiExp.vcov <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/RegBiExp.vcov.rds")
@@ -616,7 +648,7 @@ Sur la Table \@ref(tab:coef-expo-ci-mvnorm) nous pouvons constater que les inter
 
 ```{r coef-expo-ci-mvnorm}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
-row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+row.names(df) <- c("$\\beta_{E_0}$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
 kable(df,
       col.names = c("inf", "sup", "inf", "sup"),
       caption = "Intervalles de confiance dans le cas de normales multivariées.",
@@ -624,7 +656,7 @@ kable(df,
       digits = 3,
       escape = FALSE) %>%
   kable_styling(latex_options = c("HOLD_position")) %>%
-  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
+  add_header_above(c(" " = 1, "Monte-Carlo" = 2, "Erreur standard" = 2))
 ```
 
 Nous pouvons également voir sur la Figure \@ref(fig:coef-expo-ci-mvnorm-dist) que les distributions semblent normales, contrairement à celles observées avec les lois univariées.
@@ -637,7 +669,7 @@ g1 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  labs(x = TeX("Intercept $\\beta_{E_0}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 1, 0, "pt"))
 
 g2 <- ggplot() +
@@ -677,10 +709,9 @@ g4 <- ggplot() +
 
 #### Variance-covariance des coefficients autorégressifs
 
-Bien que plus intéressante, la procédure que nous avons mise en place se base sur la matrice de variance-covariance des coefficients de la régression double bi-exponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression double bi-exponentielle.
-Pour palier cette approximation nous avons tenté d'estimer la matrice de variance-covariance des coefficients autorégressifs, à nouveau par une procédure Monte Carlo.
-Cette fois-ci nous répétons 1000 fois le tirage des 60 coefficients de mémoire à partir d'une loi normale multivariée et à chaque fois nous ajustons une régression double bi-exponentielle sur les 60 coefficients tirés ; finalement nous pouvons obtenir les estimations moyennes des coefficients de la double bi-exponentielle, ainsi que la matrice de variance-covariance associée.
-Nous reprenons enfin la procédure Monte Carlo employée dans la section précédente avec le vecteur de moyennes et la matrice de variance-covariance obtenus.
+Bien que plus intéressante, la procédure que nous avons mise en place capte la variabilité de la régression double bi-exponentielle et non celle du phénomène autorégressif en lui-même.
+Nous reprenons donc la procédure Monte-Carlo employée dans la section précédente, mais avec un vecteur de moyennes et une matrice de variance-covariance obtenus via une seconde procédure Monte-Carlo faisant varier les coefficients autorégressifs.
+L'ensemble de cette procédure est décrite par l'Algorithme \@ref(alg:mc) de la section \@ref(mc).
 
 ```{r}
 biexp.coef.cov <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
@@ -697,7 +728,7 @@ ARcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 
 Nous pouvons contrôler sur la Figure \@ref(fig:coef-ar-mvnorm-mc) que les régressions double bi-exponentielles obtenues restent cohérentes.
 
-```{r coef-ar-mvnorm-mc, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée estimée par Monte Carlo."}
+```{r coef-ar-mvnorm-mc, fig.cap = "Variation des coefficients autorégressif selon une loi normale multivariée estimée par Monte-Carlo."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_line(data = ARcoefs.fit.mc, aes(x = lag, y = estimate, group = b), alpha = .1, col = "red") +
   geom_point(alpha = 0.5) +
@@ -731,18 +762,18 @@ La Table \@ref(tab:coef-expo-ci-mvnorm-mc) et la Figure \@ref(fig:coef-expo-ci-m
 
 ```{r coef-expo-ci-mvnorm-mc}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
-row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+row.names(df) <- c("$\\beta_{E_0}$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
 kable(df,
       col.names = c("inf", "sup", "inf", "sup"),
-      caption = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte Carlo.",
+      caption = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte-Carlo.",
       label = "coef-expo-ci-mvnorm-mc",
       digits = 3,
       escape = FALSE) %>%
   kable_styling(latex_options = c("HOLD_position")) %>%
-  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
+  add_header_above(c(" " = 1, "Monte-Carlo" = 2, "Erreur standard" = 2))
 ```
 
-```{r coef-expo-ci-mvnorm-dist-mc, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte Carlo."}
+```{r coef-expo-ci-mvnorm-dist-mc, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas d'une normale multivariée estimée par Monte-Carlo."}
 g1 <- ggplot() +
   geom_histogram(data = data.frame(coef = as.numeric(expo.coef.estimate[1,])),
                  aes(x = coef), position = "identity", col = "grey") +
@@ -750,7 +781,7 @@ g1 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  labs(x = TeX("Intercept $\\beta_{E_0}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 1, 0, "pt"))
 
 g2 <- ggplot() +
@@ -823,7 +854,7 @@ Nous pouvons voir sur la Table \@ref(tab:coef-expo-ci-mvnorm-full) et la Figure 
 
 ```{r coef-expo-ci-mvnorm-full}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
-row.names(df) <- c("$\\beta_0$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
+row.names(df) <- c("$\\beta_{E_0}$", "$\\beta_{E_1}$", "$\\beta_{E_2}$", "$\\beta_{E_3}$")
 kable(df,
       col.names = c("inf", "sup", "inf", "sup"),
       caption = "Intervalles de confiance dans le cas d'une loi normale multivariée sans double bi-exponentielle.",
@@ -831,7 +862,7 @@ kable(df,
       digits = 3,
       escape = FALSE) %>%
   kable_styling(latex_options = c("HOLD_position")) %>%
-  add_header_above(c(" " = 1, "Monte Carlo" = 2, "Erreur standard" = 2))
+  add_header_above(c(" " = 1, "Monte-Carlo" = 2, "Erreur standard" = 2))
 ```
 
 ```{r coef-expo-ci-mvnorm-dist-full, fig.height = 5, fig.cap = "Intervalles de confiance dans le cas d'une loi normale multivariée sans double bi-exponentielle."}
@@ -842,7 +873,7 @@ g1 <- ggplot() +
   geom_vline(xintercept = expo.coef.estimate.confint[1, 2], lty = 2, col = "red") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 1], lty = 2, col = "blue") +
   geom_vline(xintercept = expo.coef.std.error.confint[1, 2], lty = 2, col = "blue") +
-  labs(x = TeX("Intercept $\\beta_0$"), y = "Effectif") +
+  labs(x = TeX("Intercept $\\beta_{E_0}$"), y = "Effectif") +
   theme(plot.margin = margin(0, 1, 1, 0, "pt"))
 
 g2 <- ggplot() +
@@ -882,14 +913,14 @@ g4 <- ggplot() +
 
 ### Pourcentage du taux normal d'émission de buzz
 
-\qquad Il est rassurant de voir que les intervalles de confiance des coefficients d'exposition obtenus par Monte Carlo restent raisonnablement petits, cependant comme évoqué précédemment, il n'est pas possible de lier une augmentation ou une diminution du taux d'émission de buzz en fonction de la distance avec le bateau à partir de leur valeur.
+\qquad Il est rassurant de voir que les intervalles de confiance des coefficients d'exposition obtenus par Monte-Carlo restent raisonnablement petits, cependant comme évoqué précédemment, il n'est pas possible de lier une augmentation ou une diminution du taux d'émission de buzz en fonction de la distance avec le bateau à partir de leur valeur.
 C'est pourquoi nous avions représenté graphiquement cette évolution sur la Figure \@ref(fig:mod-expo-rate), mais cette visualisation ne proposait pas d'intervalle de confiance ou de bande de prédiction.
 
 Nous avons employé la méthode Delta décrite dans la section \@ref(delta) pour construire une bande de confiance autour de l'estimation du pourcentage du taux normal d'émission de buzz en fonction de la profondeur.
 Ce pourcentage est obtenu en faisant le rapport entre l'intensité estimée avec et sans perturbation.
 La Figure \@ref(fig:mod-expo-rate-per) permet de voir que la bande de confiance tracée en rouge est fine. Nous sommes donc confiants dans la lecture de la courbe qui illustre que soumissent à des perturbations à une distance inférieure à 15 kilomètres, les narvals commencent à émettre nettement moins de buzz que dans des conditions normales.
 Afin de comparer l'approche de la méthode Delta, nous avons utilisé la fonction *predictInterval* du package **merTools**.
-Celle-ci permet d'obtenir une bande de prédiction pour des modèles mixtes par une approche Monte Carlo.
+Celle-ci permet d'obtenir une bande de prédiction pour des modèles mixtes par une approche Monte-Carlo.
 Comme nous pouvons le voir sur la Figure \@ref(fig:mod-expo-rate-per), la bande obtenue ainsi (tracée en bleue) suit la même forme que celle de la méthode Delta.
 
 ```{r}
