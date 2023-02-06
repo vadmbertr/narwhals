@@ -129,8 +129,11 @@ Pour choisir la mémoire maximale optimale, nous avons fait varier $K$ et utilis
 log(\lambda_i(t)) = \beta_{D_0} + b_i + spline(D_i(t)) \beta_{D_{1:3}} + \sum_{k=1}^K \alpha_k Y_i(t-k) (\#eq:m-ard)
 \end{equation}
 Nous choisissons la mémoire maximale $K_{opt}$ du modèle minimisant ce critère.
-Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé une démarche permettant de restreindre le pas de recherche au fur et à mesure que l'on s'approche de $K_{opt}$ :
+Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avons utilisé la démarche proposée par l'Algorithme \@ref(alg:opt) permettant de restreindre l'ensemble de recherche au fur et à mesure que l'on s'approche de $K_{opt}$.
 
+\begin{algorithm}
+\caption{Réduction progressive de l'ensemble de recherche de $K_{opt}$.}
+\label{alg:opt}
 \begin{algorithmic}
 \State $from_k \gets K_{min};\ to_k \gets K_{max}$ \Comment{Bornes de l'intervalle de recherche}
 \State $M \gets 10$ \Comment{Nombre d'éléments évalués dans l'intervalle}
@@ -147,6 +150,7 @@ Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avon
     \State $from_k \gets K[i_{opt} - 1];\ to_k \gets K[i_{opt} + 1]$ \Comment{Mise à jour des bornes en encadrant le minimum}
 \EndWhile
 \end{algorithmic}
+\end{algorithm}
 
 \qquad Le nombre de composants autorégressifs pouvant être grand, il faut les lier aux $\alpha_k$ avec un modèle de régression.
 Pour cela, nous avons utilisé une régression bi-exponentielle double :
@@ -209,7 +213,7 @@ La matrice de variance-covariance permettant de tirer les coefficients $\widehat
 \State $\widehat{\beta_{A_{1:2}}} \gets []$
 \State $\widehat{\beta_{lrc_{1:2}}} \gets []$
 \For{$k \in \{1, ..., K\}$}
-    \State $\widehat{\alpha} \gets \mathcal{N}(\mu_{AR},\ \Sigma_{AR})$ \Comment{Tirage aléatoire des coefficients autorégressifs}
+    \State $\widehat{\alpha} \gets \mathcal{N}(\mu_{AR},\ \Sigma_{AR})$ \Comment{Tirage des coefficients autorégressifs}
     \State $\mathcal{M}_{exp} \gets$ ajustement de la régression double bi-exponentielle utilisant $\widehat{\alpha}$
     \State $\widehat{\beta_{A_{1:2}}}[k],\ \widehat{\beta_{lrc_{1:2}}}[k] \gets$ coefficients de $\mathcal{M}_{exp}$
 \EndFor
@@ -218,8 +222,8 @@ La matrice de variance-covariance permettant de tirer les coefficients $\widehat
 \Comment{2ème procédure}
 \State $\widehat{\beta_{E}} \gets []$
 \For{$k \in \{1, ..., K\}$}
-    \State $\widehat{\beta_{D}} \gets \mathcal{N}(\mu_D,\ \Sigma_D)$ \Comment{Tirage aléatoire des coefficients de profondeur}
-    \State $\widehat{A_{1:2}},\ \widehat{lrc_{1:2}} \gets \mathcal{N}(\mu_{exp},\ \Sigma_{exp})$ \Comment{Tirage aléatoire des coefficients de la double bi-exponentielle}
+    \State $\widehat{\beta_{D}} \gets \mathcal{N}(\mu_D,\ \Sigma_D)$ \Comment{Tirage des coefficients de profondeur}
+    \State $\widehat{A_{1:2}},\ \widehat{lrc_{1:2}} \gets \mathcal{N}(\mu_{exp},\ \Sigma_{exp})$ \Comment{Tirage des coefficients de la double bi-exponentielle}
     \State calcul de l'offset selon l'Equation \eqref{eq:offset} avec $\widehat{\beta_{D}},\ \widehat{A_{1:2}},\ \widehat{lrc_{1:2}}$
     \State $\mathcal{M} \gets$ ajustement du modèle donné par l'Equation \eqref{eq:m} en fixant l'offset
     \State $\widehat{\beta_{E}}[k] \gets$ coefficients de profondeur de $\mathcal{M}$
