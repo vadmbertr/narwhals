@@ -153,7 +153,7 @@ Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avon
 \end{algorithm}
 
 \qquad Le nombre de composants autorégressifs pouvant être grand, il faut les lier aux $\alpha_k$ avec un modèle de régression.
-Pour cela, nous avons utilisé une régression bi-exponentielle double :
+Pour cela, nous avons utilisé une régression double bi-exponentielle :
 $$BiExp(lag) = A_1 e^{-e^{lrc_1} lag} + A_2 e^{-e^{lrc_2} lag}$$
 Cela permet de réduire le nombre de coefficients de $K_{opt}$ à $4$, ce qui est doublement bénéfique : le temps d'ajustement des modèles est grandement réduit et lors de la construction des intervalles de confiance de nos coefficients, l'accumulation des variances est limitée.
 
@@ -186,17 +186,23 @@ Et les paramètres estimés $\widehat{\beta_{E}}$ permettront d'évaluer l'effet
 
 ## Intervalles de confiance
 
-### Construction par approche Monte-Carlo {#mc}
+### Construction par approche Monte-Carlo
 
 \qquad Après avoir estimé les coefficients associés à l'exposition aux perturbations, nous souhaitons construire les intervalles de confiance de ces estimations.
 L'approche classique de calcul des intervalles de confiance se basant sur la seule variance estimée des coefficients d'exposition donnerait ici des résultats incorrects, la variance des coefficients de profondeur et d'autorégression ne serait alors pas prise en compte car tuée par l'utilisation de l'offset.
 
-\qquad Dans un premier temps, nous avons donc ajusté le modèle sans exposition décrit par l'Equation \@ref(eq:m0) afin d'obtenir la moyenne et la variance empiriques de ses coefficients.
+#### Utilisation de lois normales univariées {#mc-norm}
+
+Dans un premier temps, nous avons donc ajusté le modèle sans exposition décrit par l'Equation \@ref(eq:m0) afin d'obtenir la moyenne et la variance empiriques de ses coefficients.
 Nous avons ensuite répété le tirage des coefficients sans exposition selon 8 lois normales univariées paramétrées par leurs statistiques empiriques ; calculé le terme d'offset selon l'Equation \@ref(eq:offset) à partir des réalisations obtenues ; et estimé les coefficients d'exposition $\widehat{\beta_{E}^k}$ du modèle correspondant à l'Equation \@ref(eq:m).
 Les coefficients $\widehat{\beta_{E}^k}$ estimés à chaque itération constituent ainsi un échantillon dont nous utilisons les quantiles empiriques $\alpha / 2$ et $1 - \alpha / 2$ comme bornes de l'intervalle de confiance au niveau $\alpha$ de chacun des coefficients d'exposition.
 
+#### Utilisation de lois normales multivariées {#mc-mvnorm}
+
 Le tirage selon des lois normales univariées implique que nous ne considérons pas la covariance existant entre les estimations des coefficients $\widehat{\beta_{D}}$, $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$.
 Afin d'y remédier nous avons employé un tirage suivant 2 lois normales multivariées de dimension 4 (une pour les coefficients $\widehat{\beta_{D}}$ et une pour $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$, dont le vecteur de moyenne est toujours constitué des moyennes empiriques des coefficients sans exposition, mais dont les matrices de variance-covariance ne sont pas diagonales.
+
+#### Variance-covariance des coefficients autorégressifs {#mc-ar}
 
 La matrice de variance-covariance permettant de tirer les coefficients $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$ était construite à partir des estimations de la régression double bi-exponentielle, ce qui signifie que nous ne captons pas directement la variabilité du phénomène autorégressif mais plutôt celle de la régression double bi-exponentielle. Pour palier cette approximation, nous avons recalculé la matrice de variance-covariance des coefficients $\widehat{A_{1:2}}$ et $\widehat{lrc_{1:2}}$ par une autre procédure Monte-Carlo en répétant l'ajustement de la régression double bi-exponentielle pour des coefficients mémoire tirés selon une loi normale multivariée. Cette approche est décrite par l'Algorithme \@ref(alg:mc).
 
@@ -231,6 +237,20 @@ La matrice de variance-covariance permettant de tirer les coefficients $\widehat
 \State $IC_\alpha \gets [q_{\alpha / 2}^{\widehat{\beta_{E}}}, q_{1 - \alpha / 2}^{\widehat{\beta_{E}}}]$ \Comment{Estimation via les quantiles empiriques}
 \end{algorithmic}
 \end{algorithm}
+
+#### Sans passer par la régression double bi-exponentielle {#mc-nexp}
+
+L'intérêt de l'utilisation de la régression double bi-exponentielle est de :
+
+1. réduire le temps d'ajustement des modèles linéaires,
+2. éviter d'accumuler les variances des 60 coefficients de mémoire.
+
+En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients.
+Nous pouvons donc envisager de nous passer de la régression double bi-exponentielle, et de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée dont les paramètres sont obtenus après ajustement du modèle sans exposition de l'Equation \@ref(eq:m-ard).
+Ainsi nous revenons à une seule procédure Monte-Carlo (la deuxième dans l'Algorithme \@ref(alg:mc)) et l'offset utilisé dans l'Equation \@ref(eq:m) du modèle complet devient :
+$$
+offset_i(t) = \widehat{\beta_{D_0}} + spline(D_i(t)) \widehat{\beta_{D_{1:3}}} + \sum_{k=1}^{K_{opt}} \widehat{\alpha_k} Y_i(t-k)
+$$
 
 ### Estimation de bandes de prédiction via la méthode Delta {#delta}
 
@@ -335,7 +355,7 @@ Nous pouvons constater que l'ajustement par la double bi-exponentielle est très
 ARcoefs.fit <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/ARcoef.fit.rds")
 ```
 
-```{r biexp-AR, fig.cap = "Régression bi-exponentielle des coefficients autorégressifs."}
+```{r biexp-AR, fig.width = 5, fig.height = 2.5, fig.cap = "Régression double bi-exponentielle des coefficients autorégressifs."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
   geom_point(alpha = 0.5) +
   geom_line(aes(x = lag, y = estimate)) +
@@ -355,7 +375,7 @@ df <- data.frame(RegBiExp.coefs[, c("estimate", "std.error")])
 row.names(df) <- c("$A_1$", "$lrc_1$", "$A_2$", "$lrc_2$")
 kable(df,
       col.names = c("moyenne", "erreur standard"),
-      caption = "Coefficients autorégressifs obtenus par régression bi-exponentielle",
+      caption = "Coefficients autorégressifs obtenus par régression double bi-exponentielle",
       label = "coef-biexp-AR",
       digits = 3,
       escape = FALSE) %>%
@@ -436,7 +456,7 @@ g1 / (g2 + g3)
 
 #### Utilisation de lois normales univariées
 
-Dans un premier temps, comme détaillé dans la section \@ref(mc), nous avons considéré que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
+Comme détaillé dans la section \@ref(mc-norm), nous avons commencé par considérer que les coefficients autorégressifs et de profondeur suivaient chacun une loi normale centrée sur leur estimation moyenne et avec une variance égale au carré de leur erreur standard.
 Nous avons donc 4 lois normales univariées pour les coefficients de la régression double bi-exponentielle et 4 autres pour la spline sur la profondeur.
 
 ```{r}
@@ -577,11 +597,11 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Utilisation d'une loi normale multivariée {#mvnorm}
+#### Utilisation de lois normales multivariées
 
 L'une des explications aux très larges intervalles de confiance observés dans la section précédente pourrait être que nous avons accumulé les variances des coefficients sans tenir compte des probables covariances existant entre les coefficients.
 Afin de corriger cela nous avons répété l'approche décrite précédemment, mais en tirant les coefficients dans 2 lois normales multivariées : une pour les coefficients de la régression double bi-exponentielle et une pour les coefficients de profondeur.
-Pour plus de détails sur l'obtention des paramètres des lois normales, il est possible de revenir à la section \@ref(mc).
+Pour plus de détails sur l'obtention des paramètres des lois normales, il est possible de revenir à la section \@ref(mc-mvnorm).
 
 ```{r}
 RegBiExp.vcov <- readRDS("../../data/1_buzzing/glmer_buzz_depth_maxlag/RegBiExp.vcov.rds")
@@ -606,7 +626,7 @@ Depthcoefs.fit.mc <- do.call(rbind, lapply(1:B, function(b) {
 }))
 ```
 
-La Figure \@ref(fig:coef-ar-mvnorm) montre que la régression biexponentielle initiale est encore plus fidèlement suivie qu'auparavant.
+La Figure \@ref(fig:coef-ar-mvnorm) montre que la régression double bi-exponentielle initiale est encore plus fidèlement suivie qu'auparavant.
 
 ```{r coef-ar-mvnorm, fig.cap = "Variation des coefficients autorégressifs selon une loi normale multivariée."}
 ggplot(ARcoefs.fit, aes(x = lag, y = truth)) +
@@ -715,7 +735,7 @@ g4 <- ggplot() +
 
 Bien que plus intéressante, la procédure que nous avons mise en place capte la variabilité de la régression double bi-exponentielle et non celle du phénomène autorégressif en lui-même.
 Nous reprenons donc la procédure Monte-Carlo employée dans la section précédente, mais avec un vecteur de moyennes et une matrice de variance-covariance obtenus via une seconde procédure Monte-Carlo faisant varier les coefficients autorégressifs.
-L'ensemble de cette procédure est décrite par l'Algorithme \@ref(alg:mc) de la section \@ref(mc).
+L'ensemble de cette procédure est décrite par l'Algorithme \@ref(alg:mc) de la section \@ref(mc-ar).
 
 ```{r}
 biexp.coef.cov <- readRDS("../../data/1_buzzing/glmer_biexp_AR_mc/biexp.coef.cov.rds")
@@ -823,15 +843,9 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Sans passer par la régression biexponentielle
+#### Sans passer par la régression double bi-exponentielle
 
-L'intérêt de la régression biexponentielle était de :
-
-1. réduire le temps d'ajustement des modèles linéaires,
-2. éviter d'accumuler les variances des 60 coefficients de mémoire.
-
-En fixant les coefficients autorégressifs, avoir 4 ou 60 coefficients pour la mémoire n'importe plus ; et en utilisant une loi normale multivariée, nous devrions également ne plus accumuler directement les variances des coefficients.
-Ainsi, nous avons tenté de nous passer de la régression double bi-exponentielle, et donc de tirer les 60 coefficients mémoire et les 4 coefficients de profondeur directement dans une seule loi normale multivariée.
+Pour les raisons évoquées dans la section \@ref(mc-nexp), il est également pertinent d'observer les intervalles de confiance des coefficients d'exposition en ayant calculé le terme d'offset directement à partir des coefficients autorégressifs, sans utiliser de régression double bi-exponentielle.
 
 ```{r}
 expo.coef <- readRDS("../../data/1_buzzing/glmer_buzz_ARDepth_expo_par/expo.coef.mvnorm.rds")
@@ -854,7 +868,7 @@ expo.coef.std.error.upper <- apply(t(dcast(expo.coef.std.error, seq ~ term, valu
 expo.coef.std.error.confint <- cbind(expo.coef.std.error.lower, expo.coef.std.error.upper)
 ```
 
-Nous pouvons voir sur la Table \@ref(tab:coef-expo-ci-mvnorm-full) et la Figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section \@ref(mvnorm), et même plus petit pour l'ordonnée à l'origine.
+Nous pouvons voir sur la Table \@ref(tab:coef-expo-ci-mvnorm-full) et la Figure \@ref(fig:coef-expo-ci-mvnorm-dist-full) qu'avec cette approche plus directe, les intervalles de confiance sont quasiment identiques à ceux obtenus dans la section précédente, et même plus petit pour l'ordonnée à l'origine.
 
 ```{r coef-expo-ci-mvnorm-full}
 df <- data.frame(cbind(expo.coef.estimate.confint, expo.coef.std.error.confint))
