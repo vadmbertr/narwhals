@@ -492,7 +492,7 @@ n=500
 M <- 200
 J<-4
 delta <- matrix(.5,ncol=n,nrow=M,byrow=T)
-delta.ar <- 0.01
+delta.ar <- 0.1
 omega.mcmc<-rep(0,M)
 omega.mcmc[1]=0.5
 
