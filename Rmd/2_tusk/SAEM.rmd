@@ -445,3 +445,37 @@ abline(h = psi, col = 'red')
 plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma")
 abline(h = gamma, col = 'red')
 ```
+
+
+```{r}
+r<-3
+omega.vec<-rep(0,r)
+gamma.vec<-rep(0,r)
+psi.vec<-rep(0,r)
+
+
+for (w in 1:r){
+  saem.obj <- saem.alg()
+  omega.vec[w]<-saem.obj$omega.c
+  psi.vec[w]<-saem.obj$psi.c
+  gamma.vec[w]<-saem.obj$gamma.c
+}
+
+
+
+gamma.err<-(gamma-gamma.vec)/gamma
+psi.err<-(psi-psi.vec)/psi
+omega.err<-(omega-omega.vec)/omega
+
+par(mfrow=c(1,3))
+boxplot(gamma.err,main="Gamma")
+abline(h = mean(gamma.err), col = "red")
+abline(h = 0, col = "blue")
+boxplot(psi.err,main="Psi")
+abline(h = mean(psi.err), col = "red")
+abline(h = 0, col = "blue")
+boxplot(omega.err,main="Omega")
+abline(h = mean(omega.err), col = "red")
+abline(h = 0, col = "blue")
+```
+
