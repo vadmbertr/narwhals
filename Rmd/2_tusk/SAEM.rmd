@@ -54,7 +54,7 @@ x <- 1:n
 g <- function (xi, a.arg = a) {
   a.arg * x + xi
 }
-f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
+f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) { 
   A.arg * sin(g(xi, a.arg) + b.arg) +
           B.arg * sin(2 * g(xi, a.arg) + 2 * b.arg + pi / 2)
 }
@@ -165,10 +165,10 @@ acceptance.target <- .23
 delta.ar <- 0.1
 
 # functions
-mcmc.log.lik <- function (xi.arg, omega.arg, psi.arg, gamma.arg) {
-  return(sum(dnorm(Y, f(xi.arg), omega.arg, log = TRUE)) +
+mcmc.log.lik <- function (xi.arg, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg) { #TODO : add A, B, a, b 
+  return(sum(dnorm(Y, f(xi.arg,A.arg,B.arg=B.arg,b.arg=b.arg,a.arg=a.arg), omega.arg, log = TRUE)) +
          sum(dnorm(xi.arg[2:length(xi.arg)], xi.arg[1:(length(xi.arg) - 1)] * psi.arg,
-                   gamma.arg, log = TRUE)))
+                   gamma.arg, log = TRUE))) #TODO : add A, B, a, b 
 }
 
 mcmc.init <- function (n.rep) {
@@ -182,7 +182,7 @@ mcmc.init <- function (n.rep) {
               n.it = 0))
 }
 
-mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma) {
+mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma, A.arg = A,B.arg=B,b.arg=b,a.arg=a) {#TODO : add A, B, a, b 
   if (is.null(mcmc.arg)) {
     mcmc.arg <- mcmc.init(n.rep)
   }
@@ -193,8 +193,8 @@ mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, 
       xi.p <- mcmc.arg$xi.c
       xi.p[[i]] <- rnorm(1, xi.p[[i]], mcmc.arg$delta.c[[i]])
       mcmc.arg$xi.p[mcmc.arg$n.it, i] <- xi.p[[i]]
-      log.prob <- min(1, mcmc.log.lik(xi.p, omega.arg, psi.arg, gamma.arg) -
-                            mcmc.log.lik(mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg))
+      log.prob <- min(1, mcmc.log.lik(xi.p, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg) -
+                            mcmc.log.lik(mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg)) #TODO : add A, B, a, b  x 2
       if (log(runif(1)) < log.prob) {
         mcmc.arg$xi.c <- xi.p
         mcmc.arg$accepted.n[[i]] <- mcmc.arg$accepted.n[[i]] + 1
@@ -217,7 +217,7 @@ mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, 
 
 ```{r}
 M <- 150
-mcmc.obj <- mcmc.alg(M)
+mcmc.obj <- mcmc.alg(M,A.arg=A,B.arg=B,b.arg=b,a.arg=a)#TODO : add A, B, a, b 
 ```
 
 **Tirage**
@@ -374,7 +374,22 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   psi <- rep(psi.c, n.rep)
   gamma.c <- .5
   gamma <- rep(gamma.c, n.rep)
-
+  
+  A.c <- .7
+  A <- rep(A.c, n.rep)
+  
+  a.c <- 0
+  a <- rep(a.c, n.rep)
+  
+  
+  B.c <- 0.2 
+  B <- rep(B.c, n.rep)
+  
+  b.c <- 0 
+  b <- rep(b.c, n.rep)
+  
+  #TODO : add A, B, a, b 
+  
   mcmc.rep <- rep(5, n.rep)
   mcmc.rep[n.mcmc:n.rep] <- 1
 
@@ -382,13 +397,13 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   alpha[n.alpha:n.rep] <- 1 / ((1:(n.rep - n.alpha + 1))^0.8)
 
   mcmc.obj <- mcmc.init(sum(mcmc.rep))
-
+  
   for (k in 1:n.rep) {
     # MCMC
-    mcmc.obj <- mcmc.alg(mcmc.rep[[k]], mcmc.obj, omega.c, psi.c, gamma.c)
+    mcmc.obj <- mcmc.alg(mcmc.rep[[k]], mcmc.obj, omega.c, psi.c, gamma.c,A.c,B.c,b.c,a.c) #TODO : add A, B, a, b 
 
     # E
-    S1 <- mean((Y - f(mcmc.obj$xi.c))^2)  # TODO: add A, B, a, b
+    S1 <- mean((Y - f(mcmc.obj$xi.c,A.arg=A.c,B.arg=B.c,b.arg=b.c,a.arg=a.c))^2)  # TODO: add A, B, a, b
     S2 <- sum(mcmc.obj$xi.c[1:(n - 1)] * mcmc.obj$xi.c[2:n])
     S3 <- sum(mcmc.obj$xi.c[1:(n - 1)]^2)
     S4 <- sum(mcmc.obj$xi.c[2:n]^2)
@@ -407,16 +422,36 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
     omega.c <- sqrt(s1.c)
     psi.c <- s2.c / s3.c
     gamma.c <- sqrt((psi.c^2 * s3.c - 2 * psi.c * s2.c + s4.c) / n)
+    #calcul de phi 
+    f.inter<-function(A,B,b,a){
+      return (f(mcmc.obj$xi.c,A.arg=A,B.arg=B,b.arg=b,a.arg=a)) #TODO : add A, B, a, b 
+    }
+    pb <- nls(Y~f.inter(A,B,b,a), start = list(A=0,B=0.1,b=0.3,a=0.2)) #TODO : add A, B, a, b 
+    A.c <- coef(pb)[1]
+    B.c <- coef(pb)[2]
+    b.c <- coef(pb)[3]
+    a.c <- coef(pb)[4]
+    
+
+    #TODO : add A, B, a, b 
+    
     omega[[k]] <- omega.c
     psi[[k]] <- psi.c
     gamma[[k]] <- gamma.c
+    A[[k]]<-A.c
+    B[[k]]<-B.c
+    b[[k]]<-b.c
+    a[[k]]<-a.c
+    
+    
+    #TODO : add A, B, a, b 
   }
 
   return(list(mcmc = mcmc.obj,
               s1.c = s1.c, s2.c = s2.c, s3.c = s3.c, s4.c = s4.c,
               s1 = s1, s2 = s2, s3 = s3, s4 = s4,
-              omega.c = omega.c, psi.c = psi.c, gamma.c = gamma.c,
-              omega = omega, psi = psi, gamma = gamma))
+              omega.c = omega.c, psi.c = psi.c, gamma.c = gamma.c,A.c=A.c,B.c=B.c,b.c=b.c,a.c=a.c,
+              omega = omega, psi = psi, gamma = gamma,A=A,B=B,b=b,a=a)) #TODO : add A, B, a, b 
 }
 ```
 
@@ -436,12 +471,24 @@ lines(f(saem.obj$mcmc$xi.c), type = "l", col = "red")
 ```{r}
 par(mfrow = c(2, 2))
 
-plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega", ylim = c(0, 0.5))
+plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega",ylim=c(min(c(saem.obj$omega,omega)),max(saem.obj$omega,omega)))
 abline(h = omega, col = 'red')
 
-plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi")
+plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi",ylim=c(min(c(saem.obj$psi,psi)),max(saem.obj$psi,psi)))
 abline(h = psi, col = 'red')
 
-plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma")
+plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma",ylim=c(min(c(saem.obj$gamma,gamma)),max(saem.obj$gamma,gamma)))
 abline(h = gamma, col = 'red')
+
+plot(saem.obj$A, type = 'l', col = 'blue', main = "A",ylim=c(min(c(saem.obj$A,A)),max(saem.obj$A,A)))
+abline(h = A, col = 'red')
+
+plot(saem.obj$B, type = 'l', col = 'blue', main="B",ylim=c(min(c(saem.obj$B,B)),max(saem.obj$B,B)))
+abline(h = B, col = 'red')
+
+plot(saem.obj$b, type = 'l', col = 'blue', main="b",ylim=c(min(c(saem.obj$b,b)),max(saem.obj$b,b)))
+abline(h = b, col = 'red')
+
+plot(saem.obj$a, type = 'l', col = 'blue', main="a",ylim=c(min(c(saem.obj$a,a)),max(saem.obj$a,a)))
+abline(h = a, col = 'red')
 ```
