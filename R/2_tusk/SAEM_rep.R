@@ -32,5 +32,5 @@ run.saem <- function (i) {
 n.rep <- as.numeric(args[[1]])
 blas_set_num_threads(1)
 n.jobs <- as.numeric(args[[2]])
-parameters.est <- do.call(rbind(mclapply(1:n.rep, run.saem, mc.cores = n.jobs)))
+parameters.est <- do.call(rbind, mclapply(1:n.rep, run.saem, mc.cores = n.jobs))
 saveRDS(parameters.est, paste0(args[[3]], "/parameters.est.rds"))
