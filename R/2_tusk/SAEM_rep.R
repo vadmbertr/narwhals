@@ -2,6 +2,8 @@
 ## Objective : repeat SAEM algo several times and produce error metrics
 #---------------------------------------------------------------------------------
 
+source("utils/simulation.R")
+source("utils/MCMC.R")
 source("utils/SAEM.R")
 
 #---------------------------------------------------------------------------------

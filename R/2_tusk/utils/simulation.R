@@ -14,15 +14,13 @@ n <- 500
 x <- 1:n
 
 # Functions
-g <- function(xi, a.arg = a) {
-  a.arg * x + xi
+g <- function(xi.arg, a.arg = a) {
+  a.arg * x + xi.arg
 }
-
-f <- function(xi.arg, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
+f <- function(xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
   A.arg * sin(g(xi.arg, a.arg) + b.arg) +
     B.arg * sin(2 * g(xi.arg, a.arg) + 2 * b.arg + pi / 2)
 }
-
 rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi.arg)) {
     xi.arg[[i]] <- xi.arg[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)

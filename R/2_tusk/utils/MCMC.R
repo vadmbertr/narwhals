@@ -1,10 +1,8 @@
-source("simulation.R")
-
 acceptance.target <- .23
 delta.ar <- 0.1
 
-mcmc.log.lik <- function(Y.obs, xi.arg, omega.arg, psi.arg, gamma.arg) {
-  return(sum(dnorm(Y.obs, f(xi.arg), omega.arg, log = TRUE)) +
+mcmc.log.lik <- function(Y.obs, xi.arg, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg) {
+  return(sum(dnorm(Y.obs, f(xi.arg, A.arg = A.arg, B.arg = B.arg, a.arg = a.arg, b.arg = b.arg), omega.arg, log = TRUE)) +
            sum(dnorm(xi.arg[2:length(xi.arg)], xi.arg[1:(length(xi.arg) - 1)] * psi.arg,
                      gamma.arg, log = TRUE)))
 }
@@ -20,19 +18,20 @@ mcmc.init <- function(n.time, n.rep) {
               n.it = 0))
 }
 
-mcmc.alg <- function(Y.obs, n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma) {
+mcmc.alg <- function(Y.obs, n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma,
+                     A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
   if (is.null(mcmc.arg)) {
     mcmc.arg <- mcmc.init(length(Y.obs), n.rep)
   }
 
   for (j in 1:n.rep) {
     mcmc.arg$n.it <- mcmc.arg$n.it + 1
-    for (i in seq_len(Y.obs)) {
+    for (i in seq_len(length(Y.obs))) {
       xi.p <- mcmc.arg$xi.c
       xi.p[[i]] <- rnorm(1, xi.p[[i]], mcmc.arg$delta.c[[i]])
       mcmc.arg$xi.p[mcmc.arg$n.it, i] <- xi.p[[i]]
-      log.prob <- min(1, mcmc.log.lik(Y.obs, xi.p, omega.arg, psi.arg, gamma.arg) -
-        mcmc.log.lik(Y.obs, mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg))
+      log.prob <- min(1, mcmc.log.lik(Y.obs, xi.p, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg) -
+        mcmc.log.lik(Y.obs, mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg))
       if (log(runif(1)) < log.prob) {
         mcmc.arg$xi.c <- xi.p
         mcmc.arg$accepted.n[[i]] <- mcmc.arg$accepted.n[[i]] + 1
