@@ -3,7 +3,7 @@ title: "Sinusoidal model"
 author: "Adeline Leclercq Samson"
 date: "2023-01-11"
 output:
-  html_document: default
+html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -26,10 +26,10 @@ The regression function is a periodic sinusoidal function
 $$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
 with function $g$ defined as
 $$ g(x) = ax+\xi_x$$
-and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process 
+and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process
 $$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
 
-The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$. 
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
 
 ## Simulation of trajectories
 
@@ -51,18 +51,18 @@ n <- 500
 x <- 1:n
 
 # functions
-g <- function (xi, a.arg = a) {
-  a.arg * x + xi
+g <- function(xi.arg, a.arg = a) {
+  a.arg * x + xi.arg
 }
-f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) { 
-  A.arg * sin(g(xi, a.arg) + b.arg) +
-          B.arg * sin(2 * g(xi, a.arg) + 2 * b.arg + pi / 2)
+f <- function(xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
+  A.arg * sin(g(xi.arg, a.arg) + b.arg) +
+    B.arg * sin(2 * g(xi.arg, a.arg) + 2 * b.arg + pi / 2)
 }
-rxi <- function (xi=rep(0,n), psi.arg = psi, gamma.arg = gamma) {
-  for (i in 2:length(xi)) {
-    xi[[i]] <- xi[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
+rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
+  for (i in 2:length(xi.arg)) {
+    xi.arg[[i]] <- xi.arg[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
   }
-  return(xi)
+  return(xi.arg)
 }
 
 xi <- rxi(rep(0, n))
@@ -103,7 +103,7 @@ The complete log-likelihood is thus
 &=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
 &&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})) \\
 &=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
-&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2) 
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
 \end{eqnarray*}
 
 The EM algorithm proceeds at iteration $k$ with the two following steps, given the current value of the parameters $\theta^k$
@@ -117,7 +117,7 @@ The condition distribution $p(\xi|Y; \theta^k)$ is not explicit because the regr
 
 ### M step
 
-We need the sufficient statistics to update the algorithm. 
+We need the sufficient statistics to update the algorithm.
 
 The statistics are
 
@@ -130,7 +130,7 @@ S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
 \end{eqnarray*}
 
 
-The update of the parameters are based on these statistics. 
+The update of the parameters are based on these statistics.
 
 ### SAEM algorithm
 
@@ -165,13 +165,13 @@ acceptance.target <- .23
 delta.ar <- 0.1
 
 # functions
-mcmc.log.lik <- function (xi.arg, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg) { #TODO : add A, B, a, b 
-  return(sum(dnorm(Y, f(xi.arg,A.arg,B.arg=B.arg,b.arg=b.arg,a.arg=a.arg), omega.arg, log = TRUE)) +
-         sum(dnorm(xi.arg[2:length(xi.arg)], xi.arg[1:(length(xi.arg) - 1)] * psi.arg,
-                   gamma.arg, log = TRUE))) #TODO : add A, B, a, b 
+mcmc.log.lik <- function(xi.arg, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg) {
+  return(sum(dnorm(Y, f(xi.arg, A.arg = A.arg, B.arg = B.arg, a.arg = a.arg, b.arg = b.arg), omega.arg, log = TRUE)) +
+           sum(dnorm(xi.arg[2:length(xi.arg)], xi.arg[1:(length(xi.arg) - 1)] * psi.arg,
+                     gamma.arg, log = TRUE)))
 }
 
-mcmc.init <- function (n.rep) {
+mcmc.init <- function(n.rep) {
   return(list(xi = matrix(nrow = n.rep, ncol = n),
               xi.p = matrix(nrow = n.rep, ncol = n),
               delta = matrix(nrow = n.rep, ncol = n),
@@ -182,19 +182,20 @@ mcmc.init <- function (n.rep) {
               n.it = 0))
 }
 
-mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma, A.arg = A,B.arg=B,b.arg=b,a.arg=a) {#TODO : add A, B, a, b 
+mcmc.alg <- function(n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, gamma.arg = gamma,
+                     A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
   if (is.null(mcmc.arg)) {
     mcmc.arg <- mcmc.init(n.rep)
   }
 
-  for(j in 1:n.rep) {
+  for (j in 1:n.rep) {
     mcmc.arg$n.it <- mcmc.arg$n.it + 1
     for (i in 1:n) {
       xi.p <- mcmc.arg$xi.c
       xi.p[[i]] <- rnorm(1, xi.p[[i]], mcmc.arg$delta.c[[i]])
       mcmc.arg$xi.p[mcmc.arg$n.it, i] <- xi.p[[i]]
-      log.prob <- min(1, mcmc.log.lik(xi.p, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg) -
-                            mcmc.log.lik(mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg,A.arg,B.arg,b.arg,a.arg)) #TODO : add A, B, a, b  x 2
+      log.prob <- min(1, mcmc.log.lik(xi.p, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg) -
+        mcmc.log.lik(mcmc.arg$xi.c, omega.arg, psi.arg, gamma.arg, A.arg, B.arg, a.arg, b.arg))
       if (log(runif(1)) < log.prob) {
         mcmc.arg$xi.c <- xi.p
         mcmc.arg$accepted.n[[i]] <- mcmc.arg$accepted.n[[i]] + 1
@@ -207,8 +208,8 @@ mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, 
         mcmc.arg$delta.c[[i]] <- mcmc.arg$delta.c[[i]] * (1 + delta.ar)
       }
     }
-    mcmc.arg$xi[mcmc.arg$n.it, ] <- mcmc.arg$xi.c
-    mcmc.arg$delta[mcmc.arg$n.it, ] <- mcmc.arg$delta.c
+    mcmc.arg$xi[mcmc.arg$n.it,] <- mcmc.arg$xi.c
+    mcmc.arg$delta[mcmc.arg$n.it,] <- mcmc.arg$delta.c
   }
 
   return(mcmc.arg)
@@ -217,7 +218,7 @@ mcmc.alg <- function (n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg = psi, 
 
 ```{r}
 M <- 150
-mcmc.obj <- mcmc.alg(M,A.arg=A,B.arg=B,b.arg=b,a.arg=a)#TODO : add A, B, a, b 
+mcmc.obj <- mcmc.alg(M)
 ```
 
 **Tirage**
@@ -232,7 +233,7 @@ lines(f(mcmc.obj$xi.c), type = "l", col = "red")
 ```
 
 ```{r}
-plot(mcmc.obj$acceptance.rate[mcmc.obj$n.it, ])
+plot(mcmc.obj$acceptance.rate[mcmc.obj$n.it,])
 abline(h = acceptance.target, lty = "dashed", col = "red")
 ```
 
@@ -241,53 +242,53 @@ abline(h = acceptance.target, lty = "dashed", col = "red")
 ```{r}
 worst.idx <- which.max(abs(xi - mcmc.obj$xi.c))
 ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-        geom_line(aes(y = mcmc.obj$xi[, worst.idx]), color = "blue") +
-        geom_line(aes(y = mcmc.obj$xi.p[, worst.idx]), color = "red") +
-        geom_hline(aes(yintercept = xi[[worst.idx]])) +
-        ylab("Y")
+  geom_line(aes(y = mcmc.obj$xi[, worst.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, worst.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[worst.idx]])) +
+  ylab("Y")
 
 best.idx <- which.min(abs(xi - mcmc.obj$xi.c))
 ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-        geom_line(aes(y = mcmc.obj$xi[, best.idx]), color = "blue") +
-        geom_line(aes(y = mcmc.obj$xi.p[, best.idx]), color = "red") +
-        geom_hline(aes(yintercept = xi[[best.idx]])) +
-        ylab("Y")
+  geom_line(aes(y = mcmc.obj$xi[, best.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, best.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[best.idx]])) +
+  ylab("Y")
 
 farest.idx <- which.max(abs(xi))
 ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-        geom_line(aes(y = mcmc.obj$xi[, farest.idx]), color = "blue") +
-        geom_line(aes(y = mcmc.obj$xi.p[, farest.idx]), color = "red") +
-        geom_hline(aes(yintercept = xi[[farest.idx]])) +
-        ylab("Y")
+  geom_line(aes(y = mcmc.obj$xi[, farest.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, farest.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[farest.idx]])) +
+  ylab("Y")
 ```
 
 ```{r}
 coeff <- max(mcmc.obj$acceptance.rate[, worst.idx]) / max(mcmc.obj$delta[, worst.idx])
 ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-        geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
-        geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff), color = "blue") +
-        geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
-        geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
-        scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
 
 coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
 ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-        geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
-        geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
-        geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
-        geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
-        scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
 ```
 
 *xi au fil des k*
 
 ```{r}
 par(mfrow = c(2, 2))
-for(k.ind in round(seq(1, M, length.out = 10))) {
+for (k.ind in round(seq(1, M, length.out = 10))) {
   plot(xi, type = "l", col = "blue",
-       ylim = c(min(min(mcmc.obj$xi[k.ind, ]), min(xi)), max(max(mcmc.obj$xi[k.ind, ]), max(xi))),
+       ylim = c(min(min(mcmc.obj$xi[k.ind,]), min(xi)), max(max(mcmc.obj$xi[k.ind,]), max(xi))),
        main = paste("k=", k.ind))
-  lines(mcmc.obj$xi[k.ind, ], type = "l", col = "red")
+  lines(mcmc.obj$xi[k.ind,], type = "l", col = "red")
 }
 ```
 
@@ -295,10 +296,10 @@ for(k.ind in round(seq(1, M, length.out = 10))) {
 
 ```{r}
 par(mfrow = c(2, 2))
-for(k.ind in round(seq(1, M, length.out = 10))) {
+for (k.ind in round(seq(1, M, length.out = 10))) {
   plot(Y, type = "l", col = "blue",
        main = paste("k=", k.ind))
-  lines(f(mcmc.obj$xi[k.ind, ]), type = "l", col = "red")
+  lines(f(mcmc.obj$xi[k.ind,]), type = "l", col = "red")
 }
 ```
 
@@ -341,16 +342,16 @@ lines(f(p4), type = "l", col = 4)
 
 ```{r}
 par(mfrow = c(2, 2))
-plot(Y, type = "l", col = 1, main="goal")
+plot(Y, type = "l", col = 1, main = "goal")
 
-plot(Y, type = "l", col = 1, main="MCMC")
+plot(Y, type = "l", col = 1, main = "MCMC")
 lines(f(mcmc.obj$xi.c), type = "l", col = 2)
 
-plot(Y, type = "l", col = 1, main="xi simulation")
+plot(Y, type = "l", col = 1, main = "xi simulation")
 lines(f(mcmc.obj$xi.c), type = "l", col = 2)
 lines(f(p1), type = "l", col = 3)
 
-plot(Y, type = "l", col = 1, main="xi simulation")
+plot(Y, type = "l", col = 1, main = "xi simulation")
 lines(f(mcmc.obj$xi.c), type = "l", col = 2)
 lines(f(p2), type = "l", col = 4)
 ```
@@ -358,7 +359,7 @@ lines(f(p2), type = "l", col = 4)
 #### EM
 
 ```{r}
-saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
+saem.alg <- function(n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   s1.c <- 0
   s1 <- rep(s1.c, n.rep)
   s2.c <- 0
@@ -374,22 +375,19 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   psi <- rep(psi.c, n.rep)
   gamma.c <- .5
   gamma <- rep(gamma.c, n.rep)
-  
-  A.c <- .7
+  A.B.max <- max(Y) + omega.c
+  A.c <- runif(1, -A.B.max, A.B.max)
   A <- rep(A.c, n.rep)
-  
-  a.c <- 0
-  a <- rep(a.c, n.rep)
-  
-  
-  B.c <- 0.2 
+  B.c <- runif(1, -A.B.max, A.B.max)
   B <- rep(B.c, n.rep)
-  
-  b.c <- 0 
+  b.max <- 2
+  b.c <- runif(1, 0, b.max)
   b <- rep(b.c, n.rep)
-  
-  #TODO : add A, B, a, b 
-  
+  # we initialize "a" using the frequency of "Y" with the highest spectral density. Otherwise "nls" is not converging
+  ssp <- spectrum(Y, plot = FALSE)
+  a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+  a <- rep(a.c, n.rep)
+
   mcmc.rep <- rep(5, n.rep)
   mcmc.rep[n.mcmc:n.rep] <- 1
 
@@ -397,13 +395,13 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   alpha[n.alpha:n.rep] <- 1 / ((1:(n.rep - n.alpha + 1))^0.8)
 
   mcmc.obj <- mcmc.init(sum(mcmc.rep))
-  
+
   for (k in 1:n.rep) {
     # MCMC
-    mcmc.obj <- mcmc.alg(mcmc.rep[[k]], mcmc.obj, omega.c, psi.c, gamma.c,A.c,B.c,b.c,a.c) #TODO : add A, B, a, b 
+    mcmc.obj <- mcmc.alg(mcmc.rep[[k]], mcmc.obj, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
 
     # E
-    S1 <- mean((Y - f(mcmc.obj$xi.c,A.arg=A.c,B.arg=B.c,b.arg=b.c,a.arg=a.c))^2)  # TODO: add A, B, a, b
+    S1 <- mean((Y - f(mcmc.obj$xi.c, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c))^2)
     S2 <- sum(mcmc.obj$xi.c[1:(n - 1)] * mcmc.obj$xi.c[2:n])
     S3 <- sum(mcmc.obj$xi.c[1:(n - 1)]^2)
     S4 <- sum(mcmc.obj$xi.c[2:n]^2)
@@ -422,36 +420,32 @@ saem.alg <- function (n.rep = 500, n.mcmc = 20, n.alpha = 90) {
     omega.c <- sqrt(s1.c)
     psi.c <- s2.c / s3.c
     gamma.c <- sqrt((psi.c^2 * s3.c - 2 * psi.c * s2.c + s4.c) / n)
-    #calcul de phi 
-    f.inter<-function(A,B,b,a){
-      return (f(mcmc.obj$xi.c,A.arg=A,B.arg=B,b.arg=b,a.arg=a)) #TODO : add A, B, a, b 
+    # function to minimize
+    f.min <- function(A, B, a, b) {
+      return(f(mcmc.obj$xi.c, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
     }
-    pb <- nls(Y~f.inter(A,B,b,a), start = list(A=0,B=0.1,b=0.3,a=0.2)) #TODO : add A, B, a, b 
-    A.c <- coef(pb)[1]
-    B.c <- coef(pb)[2]
-    b.c <- coef(pb)[3]
-    a.c <- coef(pb)[4]
-    
+    phi.nls <- nls(Y ~ f.min(A, B, a, b),
+                   start = list(A = A.c, B = B.c, a = a.c, b = b.c),
+                   control = nls.control(warnOnly = TRUE))
+    A.c <- coef(phi.nls)[[1]]
+    B.c <- coef(phi.nls)[[2]]
+    a.c <- coef(phi.nls)[[3]]
+    b.c <- coef(phi.nls)[[4]]
 
-    #TODO : add A, B, a, b 
-    
     omega[[k]] <- omega.c
     psi[[k]] <- psi.c
     gamma[[k]] <- gamma.c
-    A[[k]]<-A.c
-    B[[k]]<-B.c
-    b[[k]]<-b.c
-    a[[k]]<-a.c
-    
-    
-    #TODO : add A, B, a, b 
+    A[[k]] <- A.c
+    B[[k]] <- B.c
+    a[[k]] <- a.c
+    b[[k]] <- b.c
   }
 
   return(list(mcmc = mcmc.obj,
               s1.c = s1.c, s2.c = s2.c, s3.c = s3.c, s4.c = s4.c,
               s1 = s1, s2 = s2, s3 = s3, s4 = s4,
-              omega.c = omega.c, psi.c = psi.c, gamma.c = gamma.c,A.c=A.c,B.c=B.c,b.c=b.c,a.c=a.c,
-              omega = omega, psi = psi, gamma = gamma,A=A,B=B,b=b,a=a)) #TODO : add A, B, a, b 
+              omega.c = omega.c, psi.c = psi.c, gamma.c = gamma.c, A.c = A.c, B.c = B.c, a.c = a.c, b.c = b.c,
+              omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b))
 }
 ```
 
@@ -465,64 +459,35 @@ plot(xi, type = "l", col = "blue",
 lines(saem.obj$mcmc$xi.c, type = "l", col = "red")
 
 plot(Y, type = "l", col = "blue")
-lines(f(saem.obj$mcmc$xi.c), type = "l", col = "red")
+lines(f(saem.obj$mcmc$xi.c, A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+      type = "l", col = "red")
+
+plot(f(rep(0, n)), type = "l")
+lines(f(rep(0, n), A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+      type = "l", col = "red")
 ```
 
 ```{r}
 par(mfrow = c(2, 2))
 
-plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega",ylim=c(min(c(saem.obj$omega,omega)),max(saem.obj$omega,omega)))
+plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega", ylim = c(min(c(saem.obj$omega, omega)), max(saem.obj$omega, omega)))
 abline(h = omega, col = 'red')
 
-plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi",ylim=c(min(c(saem.obj$psi,psi)),max(saem.obj$psi,psi)))
+plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi", ylim = c(min(c(saem.obj$psi, psi)), max(saem.obj$psi, psi)))
 abline(h = psi, col = 'red')
 
-plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma",ylim=c(min(c(saem.obj$gamma,gamma)),max(saem.obj$gamma,gamma)))
+plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma", ylim = c(min(c(saem.obj$gamma, gamma)), max(saem.obj$gamma, gamma)))
 abline(h = gamma, col = 'red')
 
-plot(saem.obj$A, type = 'l', col = 'blue', main = "A",ylim=c(min(c(saem.obj$A,A)),max(saem.obj$A,A)))
+plot(saem.obj$A, type = 'l', col = 'blue', main = "A", ylim = c(min(c(saem.obj$A, A)), max(saem.obj$A, A)))
 abline(h = A, col = 'red')
 
-plot(saem.obj$B, type = 'l', col = 'blue', main="B",ylim=c(min(c(saem.obj$B,B)),max(saem.obj$B,B)))
+plot(saem.obj$B, type = 'l', col = 'blue', main = "B", ylim = c(min(c(saem.obj$B, B)), max(saem.obj$B, B)))
 abline(h = B, col = 'red')
 
-plot(saem.obj$b, type = 'l', col = 'blue', main="b",ylim=c(min(c(saem.obj$b,b)),max(saem.obj$b,b)))
+plot(saem.obj$b, type = 'l', col = 'blue', main = "b", ylim = c(min(c(saem.obj$b, b)), max(saem.obj$b, b)))
 abline(h = b, col = 'red')
 
-plot(saem.obj$a, type = 'l', col = 'blue', main="a",ylim=c(min(c(saem.obj$a,a)),max(saem.obj$a,a)))
+plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a, a)), max(saem.obj$a, a)))
 abline(h = a, col = 'red')
 ```
-
-
-```{r}
-r<-3
-omega.vec<-rep(0,r)
-gamma.vec<-rep(0,r)
-psi.vec<-rep(0,r)
-
-
-for (w in 1:r){
-  saem.obj <- saem.alg()
-  omega.vec[w]<-saem.obj$omega.c
-  psi.vec[w]<-saem.obj$psi.c
-  gamma.vec[w]<-saem.obj$gamma.c
-}
-
-
-
-gamma.err<-(gamma-gamma.vec)/gamma
-psi.err<-(psi-psi.vec)/psi
-omega.err<-(omega-omega.vec)/omega
-
-par(mfrow=c(1,3))
-boxplot(gamma.err,main="Gamma")
-abline(h = mean(gamma.err), col = "red")
-abline(h = 0, col = "blue")
-boxplot(psi.err,main="Psi")
-abline(h = mean(psi.err), col = "red")
-abline(h = 0, col = "blue")
-boxplot(omega.err,main="Omega")
-abline(h = mean(omega.err), col = "red")
-abline(h = 0, col = "blue")
-```
-

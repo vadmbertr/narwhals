@@ -1,0 +1,64 @@
+---
+title: "nls - sin"
+output: html_notebook
+---
+
+```{r}
+# parameters
+A <- 1 / 2
+B <- -1 / 4
+b <- 1
+a <- 0.1
+beta <- 0.05
+sigma <- 0.1
+omega <- 0.01
+delta <- 1
+psi <- exp(-delta * beta)
+gamma <- sigma / sqrt(2 * beta) * sqrt(1 - psi^2)
+
+n <- 500
+x <- 1:n
+
+# functions
+g <- function(xi.arg, a.arg = a) {
+  a.arg * x + xi.arg
+}
+f <- function(xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
+  A.arg * sin(g(xi.arg, a.arg) + b.arg) +
+    B.arg * sin(2 * g(xi.arg, a.arg) + 2 * b.arg + pi / 2)
+}
+rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
+  for (i in 2:length(xi.arg)) {
+    xi.arg[[i]] <- xi.arg[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
+  }
+  return(xi.arg)
+}
+
+xi <- rxi(rep(0, n))
+Y <- f(xi) + rnorm(n, 0, omega)
+```
+
+```{r}
+A.B.max <- max(Y) + omega
+A.c <- runif(1, -A.B.max, A.B.max)
+B.c <- runif(1, -A.B.max, A.B.max)
+b.max <- 2
+b.c <- runif(1, 0, b.max)
+
+ssp <- spectrum(Y, plot = FALSE)
+a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+
+f.min <- function(A, B, a, b) {
+  return(f(xi, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
+}
+phi.nls <- nls(Y ~ f.min(A, B, a, b),
+               start = list(A = A.c, B = B.c, a = a.c, b = b.c),
+               control = nls.control(warnOnly = TRUE))
+c <- coef(phi.nls)
+
+print(c)
+
+plot(Y, type = "l")
+lines(f(xi, A.arg = c[["A"]], B.arg = c[["B"]], a.arg = c[["a"]], b.arg = c[["b"]]),
+      type = "l", col = "red")
+```
