@@ -39,7 +39,7 @@ source("../../R/2_tusk/utils/simulation.R")
 ```
 
 ```{r}
-xi <- rxi(rep(0, n))
+xi <- rxi()
 Y <- f(xi) + rnorm(n, 0, omega)
 ```
 
