@@ -423,7 +423,13 @@ kable(df,
   kable_styling(latex_options = c("HOLD_position"))
 ```
 
-La Figure \@ref(fig:mod-expo-val) présente plusieurs graphiques utiles pour valider visuellement le modèle : nous sommes satisfaits de l'absence de corrélation entre les résidus constatée sur les deux premiers et du comportement gaussien visible sur le dernier.
+\qquad Nous voulons vérifier que notre processus de comptage est bien représenté par un processus de Poisson et que nous avons bien tenu compte de la corrélation entre ses accroissements.
+Pour cela, nous nous sommes intéressé aux résidus uniformes du modèle.
+
+Pour vérifier l'absence de corrélation, nous avons représenté sur la Figure \@ref(fig:mod-expo-val) l'autocorrélation des résidus en fonction du décalage temporel, ainsi que les résidus en fonction des résidus précédents.
+Nous remarquons qu'aucun motif de corrélation ne semble apparaître, ce qui vient valider notre approche pour inclure au modèle le lien naturel existant entre les émissions de buzz.
+
+Le Q-Q plot de la Figure \@ref(fig:mod-expo-val) confirme lui que le processus de Poisson est bien adapté aux données de comptage des buzz étant donné que les quantiles des résidus correspondent à ceux de la loi uniforme.
 
 ```{r mod-expo-val, fig.height = 5, fig.cap = "Validation graphique du modèle."}
 g1 <- ggplot(data = acf.plot.data, aes(x = lag, y = acf)) +
