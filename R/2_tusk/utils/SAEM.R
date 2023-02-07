@@ -14,7 +14,7 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   psi <- rep(psi.c, n.rep)
   gamma.c <- .5
   gamma <- rep(gamma.c, n.rep)
-  A.B.max <- max(Y) + omega.c
+  A.B.max <- max(Y.obs) + omega.c
   A.c <- runif(1, -A.B.max, A.B.max)
   A <- rep(A.c, n.rep)
   B.c <- runif(1, -A.B.max, A.B.max)
@@ -23,7 +23,7 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   b.c <- runif(1, 0, b.max)
   b <- rep(b.c, n.rep)
   # we initialize "a" using the frequency of "Y" with the highest spectral density. Otherwise "nls" is not converging
-  ssp <- spectrum(Y, plot = FALSE)
+  ssp <- spectrum(Y.obs, plot = FALSE)
   a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
   a <- rep(a.c, n.rep)
 
@@ -64,7 +64,7 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
     f.min <- function(A, B, a, b) {
       return(f(mcmc.obj$xi.c, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
     }
-    phi.nls <- nls(Y ~ f.min(A, B, a, b),
+    phi.nls <- nls(Y.obs ~ f.min(A, B, a, b),
                    start = list(A = A.c, B = B.c, a = a.c, b = b.c),
                    control = nls.control(warnOnly = TRUE))
     A.c <- coef(phi.nls)[[1]]
