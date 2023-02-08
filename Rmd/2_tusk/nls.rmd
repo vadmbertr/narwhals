@@ -8,19 +8,69 @@ source("../../R/2_tusk/utils/simulation.R")
 ```
 
 ```{r}
+find.x0 <- function(Y.arg) {
+  sign.p <- sign(Y.arg[[1]])
+  for (i in seq_len(length(Y.arg))) {
+    sign.c <- sign(Y.arg[[i]])
+    if (sign.c == 0) {
+      return(x[[i]])
+    } else if (sign.p != sign.c) {
+      return((x[[i]] + x[[i - 1]]) / 2)
+    }
+  }
+}
+```
+
+```{r}
+a <- 1
+x <- seq(0, 3 * pi, length.out = 100 / a) / a
+Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
+
+b.est <- (7 * pi / 8) - find.x0(Y) * a
+Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
+```
+
+```{r}
+plot(x, Y, type = "l")
+lines(x, Y.est, type = "l", col = "red", lty = 2)
+```
+
+```{r}
+a <- .1
+b <- 1
+x <- seq(0, 3 * pi, length.out = 100 / a) / a
+Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
+
+b.est <- (7 * pi / 8) - find.x0(Y) * a
+Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
+```
+
+```{r}
+plot(x, Y, type = "l")
+lines(x, Y.est, type = "l", col = "red", lty = 2)
+abline(h = 0)
+```
+
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+```
+
+```{r}
 xi <- rxi()
 Y <- f(xi) + rnorm(n, 0, omega)
 ```
 
 ```{r}
-A.B.max <- max(Y) + omega
+A.B.max <- max(abs(Y)) + omega
 A.c <- runif(1, -A.B.max, A.B.max)
 B.c <- runif(1, -A.B.max, A.B.max)
-b.max <- 2
-b.c <- runif(1, 0, b.max)
 
 ssp <- spectrum(Y)
-a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+a.c <- a.est
+
+b.est <- (7 * pi / 8) - find.x0(Y) * a.est
+b.c <- b.est
 
 f.min <- function(A, B, a, b) {
   return(f(xi, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
@@ -30,6 +80,37 @@ phi.nls <- nls(Y ~ f.min(A, B, a, b),
                control = nls.control(warnOnly = TRUE))
 c <- coef(phi.nls)
 
+print(c)
+
+plot(Y, type = "l")
+lines(f(xi, A.arg = c[["A"]], B.arg = c[["B"]], a.arg = c[["a"]], b.arg = c[["b"]]),
+      type = "l", col = "red")
+```
+
+```{r}
+A.B.max <- max(abs(Y)) + omega
+A.c <- runif(1, -A.B.max, A.B.max)
+B.c <- runif(1, -A.B.max, A.B.max)
+
+ssp <- spectrum(Y)
+a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+a.c <- a.est
+
+b.est <- (7 * pi / 8) - find.x0(Y) * a.est
+b.c <- b.est
+
+f.min <- function(par) {
+  return(mean((Y - f(xi, A.arg = par[[1]], B.arg = par[[2]],
+                     a.arg = par[[3]], b.arg = par[[4]]))^2))
+}
+phi.optim <- optim(par = list(A = A.c, B = B.c, a = a.c, b = b.c),
+                   fn = f.min, method = "L-BFGS-B")
+A.c <- phi.optim$par[[1]]
+B.c <- phi.optim$par[[2]]
+a.c <- phi.optim$par[[3]]
+b.c <- phi.optim$par[[4]]
+
+c <- phi.optim$par
 print(c)
 
 plot(Y, type = "l")

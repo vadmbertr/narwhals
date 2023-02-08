@@ -1,3 +1,15 @@
+find.x0 <- function (Y.obs) {
+  sign.p <- sign(Y.obs[[1]])
+  for (i in seq_len(length(Y.obs))) {
+    sign.c <- sign(Y.obs[[i]])
+    if (sign.c == 0) {
+      return(x[[i]])
+    } else if (sign.p != sign.c) {
+      return((x[[i]] + x[[i - 1]]) / 2)
+    }
+  }
+}
+
 saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   s1.c <- 0
   s1 <- rep(s1.c, n.rep)
@@ -14,18 +26,20 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   psi <- rep(psi.c, n.rep)
   gamma.c <- .5
   gamma <- rep(gamma.c, n.rep)
-  A.B.max <- max(Y.obs) + omega.c
+  A.B.max <- max(abs(Y.obs)) + omega.c
   A.c <- runif(1, -A.B.max, A.B.max)
   A <- rep(A.c, n.rep)
   B.c <- runif(1, -A.B.max, A.B.max)
   B <- rep(B.c, n.rep)
-  b.max <- 2
-  b.c <- runif(1, 0, b.max)
-  b <- rep(b.c, n.rep)
   # we initialize "a" using the frequency of "Y" with the highest spectral density. Otherwise "nls" is not converging
   ssp <- spectrum(Y.obs, plot = FALSE)
-  a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+  a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+  a.c <- a.est
   a <- rep(a.c, n.rep)
+  # we can also derive an approximate starting value for b
+  b.est <- (7 * pi / 8) - find.x0(Y.obs) * a.est
+  b.c <- b.est
+  b <- rep(b.c, n.rep)
 
   mcmc.rep <- rep(5, n.rep)
   mcmc.rep[n.mcmc:n.rep] <- 1

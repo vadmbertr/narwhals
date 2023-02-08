@@ -336,6 +336,10 @@ params.est <- readRDS("../../data/2_tusk/parameters.est.rds")
 ```
 
 ```{r}
+apply(params.est, 2, mean)
+```
+
+```{r}
 params.pe <- t(apply(params.est, 1, function (row) (params.true - row) / params.true) * 100)
 params.mape <- apply(abs(params.pe), 2, mean)
 params.se <- apply(params.est, 1, function (row) (params.true - row)^2)
