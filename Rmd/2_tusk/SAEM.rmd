@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 set.seed(15)
 
 library(ggplot2)
+library(reshape2)
 ```
 
 ## Description of the sinusoidal model
@@ -325,4 +326,32 @@ abline(h = b, col = 'red')
 
 plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a, a)), max(saem.obj$a, a)))
 abline(h = a, col = 'red')
+```
+
+**Plan d'expérience**
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.est <- readRDS("../../data/2_tusk/parameters.est.rds")
+```
+
+```{r}
+params.pe <- t(apply(params.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape <- apply(abs(params.pe), 2, mean)
+params.se <- apply(params.est, 1, function (row) (params.true - row)^2)
+params.rmse <- sqrt(apply(params.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.mape
+```
+
+```{r}
+params.rmse
 ```
