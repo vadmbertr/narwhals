@@ -19,7 +19,7 @@ B.c <- runif(1, -A.B.max, A.B.max)
 b.max <- 2
 b.c <- runif(1, 0, b.max)
 
-ssp <- spectrum(Y, plot = FALSE)
+ssp <- spectrum(Y)
 a.c <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
 
 f.min <- function(A, B, a, b) {
