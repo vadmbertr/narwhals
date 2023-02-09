@@ -369,8 +369,7 @@ params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
 ```{r}
 df <- melt(params.a.b.pe, varnames = c("it", "param"))
 ggplot(data = df) +
-  geom_boxplot(aes(x = param, y = value)) +
-  ylim(c(-300, 200))
+  geom_boxplot(aes(x = param, y = value))
 ```
 
 ```{r}
