@@ -25,7 +25,7 @@ init.b <- function (Y.arg, a.arg) {
   return((7 * pi / 8) - find.x0(Y.arg) * a.arg)
 }
 
-saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
+saem.alg <- function(Y.obs, n.rep = 500, n.part = 100, n.mcmc = 20, n.alpha = 90) {
   s1.c <- 0
   s1 <- rep(s1.c, n.rep)
   s2.c <- 0
@@ -67,9 +67,10 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   for (k in 1:n.rep) {
     # MCMC
     mcmc.obj <- mcmc.alg(Y.obs, mcmc.rep[[k]], mcmc.obj, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
+    # mcmc.obj <- pmcmc.alg(Y.obs, n.part, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
 
     # E
-    S1 <- mean((Y.obs - f(mcmc.obj$xi.c, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c))^2)
+    S1 <- mean((Y.obs - f(x, mcmc.obj$xi.c, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c))^2)
     S2 <- sum(mcmc.obj$xi.c[1:(n.time - 1)] * mcmc.obj$xi.c[2:n.time])
     S3 <- sum(mcmc.obj$xi.c[1:(n.time - 1)]^2)
     S4 <- sum(mcmc.obj$xi.c[2:n.time]^2)
@@ -90,7 +91,7 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
     gamma.c <- sqrt((psi.c^2 * s3.c - 2 * psi.c * s2.c + s4.c) / n.time)
     # function to minimize
     f.min <- function(A, B, a, b) {
-      return(f(mcmc.obj$xi.c, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
+      return(f(x, mcmc.obj$xi.c, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
     }
     phi.nls <- nls(Y.obs ~ f.min(A, B, a, b),
                    start = list(A = A.c, B = B.c, a = a.c, b = b.c),

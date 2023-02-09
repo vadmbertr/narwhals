@@ -13,10 +13,10 @@ source("../../R/2_tusk/utils/SAEM.R")
 ```{r}
 a <- 1
 x <- seq(0, 3 * pi, length.out = 100 / a) / a
-Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
+Y <- A * sin(g(x, rep(0, length(x)), a) + b) + B * sin(2 * (g(x, rep(0, length(x)), a) + b) + pi / 2)
 
 b.est <- init.b(Y, a)
-Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
+Y.est <- A * sin(g(x, rep(0, length(x)), a) + b.est) + B * sin(2 * (g(x, rep(0, length(x)), a) + b.est) + pi / 2)
 ```
 
 ```{r}
@@ -30,10 +30,10 @@ abline(v = find.x0(Y))
 a <- .1
 b <- 1
 x <- seq(0, 3 * pi, length.out = 100 / a) / a
-Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
+Y <- A * sin(g(x, rep(0, length(x)), a) + b) + B * sin(2 * (g(x, rep(0, length(x)), a) + b) + pi / 2)
 
 b.est <- init.b(Y, a)
-Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
+Y.est <- A * sin(g(x, rep(0, length(x)), a) + b.est) + B * sin(2 * (g(x, rep(0, length(x)), a) + b.est) + pi / 2)
 ```
 
 ```{r}
@@ -49,7 +49,7 @@ source("../../R/2_tusk/utils/simulation.R")
 
 ```{r}
 xi <- rxi()
-Y <- f(xi) + rnorm(n, 0, omega)
+Y <- f(x, xi) + rnorm(n, 0, omega)
 ```
 
 ```{r}
@@ -73,7 +73,7 @@ phi.nls <- nls(y ~ cbind(A = sin(x * a + xi + b), B = sin(2 * (x * a + xi + b) +
 coef(phi.nls)
 
 f.min <- function(A, B, a, b) {
-  return(f(xi, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
+  return(f(x, xi, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
 }
 phi.nls <- nls(Y ~ f.min(A, B, a, b),
                start = list(A = A.c, B = B.c, a = a.c, b = b.c),
@@ -87,7 +87,7 @@ a.c <- c[[3]]
 b.c <- c[[4]]
 
 plot(Y, type = "l")
-lines(f(xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
+lines(f(x, xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
       type = "l", col = "red")
 ```
 
@@ -104,7 +104,7 @@ b.est <- init.b(Y, a.est)
 b.c <- b.est
 
 f.min <- function(par) {
-  return(sum((Y - f(xi, A.arg = par[[1]], B.arg = par[[2]],
+  return(sum((Y - f(x, xi, A.arg = par[[1]], B.arg = par[[2]],
                      a.arg = par[[3]], b.arg = par[[4]]))^2))
 }
 # not stable
@@ -119,6 +119,6 @@ a.c <- c[[3]]
 b.c <- c[[4]]
 
 plot(Y, type = "l")
-lines(f(xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
+lines(f(x, xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
       type = "l", col = "red")
 ```

@@ -14,16 +14,19 @@ n <- 500
 x <- 1:n
 
 # Functions
-g <- function(xi.arg, a.arg = a) {
-  a.arg * x + xi.arg
+g <- function(x.arg, xi.arg, a.arg = a) {
+  a.arg * x.arg + xi.arg
 }
-f <- function(xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
-  A.arg * sin(g(xi.arg, a.arg) + b.arg) +
-    B.arg * sin(2 * (g(xi.arg, a.arg) + b.arg) + pi / 2)
+f <- function(x.arg, xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
+  A.arg * sin(g(x.arg, xi.arg, a.arg) + b.arg) +
+    B.arg * sin(2 * (g(x.arg, xi.arg, a.arg) + b.arg) + pi / 2)
+}
+f.xi <- function (xi.p, psi.arg = psi, gamma.arg = gamma) {
+  return(xi.p * psi.arg + rnorm(length(xi.p), 0, gamma.arg))
 }
 rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi.arg)) {
-    xi.arg[[i]] <- xi.arg[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
+    xi.arg[[i]] <- f.xi(xi.arg[[i - 1]], psi.arg, gamma.arg)
   }
   return(xi.arg)
 }

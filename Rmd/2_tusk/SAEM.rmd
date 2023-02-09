@@ -41,13 +41,13 @@ source("../../R/2_tusk/utils/simulation.R")
 
 ```{r}
 xi <- rxi()
-Y <- f(xi) + rnorm(n, 0, omega)
+Y <- f(x, xi) + rnorm(n, 0, omega)
 ```
 
 ```{r}
-plot(A * sin(g(rep(0, n), a) + b), type = "l", lty = 2, col = "blue", ylim = c(-.5, .75))
-lines(B * sin(2 * g(rep(0, n), a) + 2 * b + pi / 2), type = "l", lty = 2, col = "red")
-lines(f(rep(0, n)), type = "l")
+plot(A * sin(g(x, rep(0, n), a) + b), type = "l", lty = 2, col = "blue", ylim = c(-.5, .75))
+lines(B * sin(2 * g(x, rep(0, n), a) + 2 * b + pi / 2), type = "l", lty = 2, col = "red")
+lines(f(x, rep(0, n)), type = "l")
 ```
 
 ```{r}
@@ -126,7 +126,6 @@ s_4^k &=& s_4^{k-1} + (1-\alpha_k)(S_4(\xi^k)-s_4^{k-1}) \\
 \widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
 \end{eqnarray*}
 
-
 #### MCMC
 
 ```{r}
@@ -146,7 +145,7 @@ plot(xi, type = "l", col = "blue",
 lines(mcmc.obj$xi.c, type = "l", col = "red")
 
 plot(Y, type = "l", col = "blue")
-lines(f(mcmc.obj$xi.c), type = "l", col = "red")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = "red")
 ```
 
 ```{r}
@@ -216,7 +215,7 @@ par(mfrow = c(2, 2))
 for (k.ind in round(seq(1, M, length.out = 10))) {
   plot(Y, type = "l", col = "blue",
        main = paste("k=", k.ind))
-  lines(f(mcmc.obj$xi[k.ind,]), type = "l", col = "red")
+  lines(f(x, mcmc.obj$xi[k.ind,]), type = "l", col = "red")
 }
 ```
 
@@ -245,16 +244,16 @@ lines(p4, type = "l", col = 4)
 ```{r}
 par(mfrow = c(2, 2))
 
-plot(f(p1), type = "l", col = 1)
+plot(f(x, p1), type = "l", col = 1)
 
-plot(f(p1), type = "l", col = 1)
-lines(f(p2), type = "l", col = 2)
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p2), type = "l", col = 2)
 
-plot(f(p1), type = "l", col = 1)
-lines(f(p3), type = "l", col = 3)
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p3), type = "l", col = 3)
 
-plot(f(p1), type = "l", col = 1)
-lines(f(p4), type = "l", col = 4)
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p4), type = "l", col = 4)
 ```
 
 ```{r}
@@ -262,15 +261,38 @@ par(mfrow = c(2, 2))
 plot(Y, type = "l", col = 1, main = "goal")
 
 plot(Y, type = "l", col = 1, main = "MCMC")
-lines(f(mcmc.obj$xi.c), type = "l", col = 2)
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
 
 plot(Y, type = "l", col = 1, main = "xi simulation")
-lines(f(mcmc.obj$xi.c), type = "l", col = 2)
-lines(f(p1), type = "l", col = 3)
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
+lines(f(x, p1), type = "l", col = 3)
 
 plot(Y, type = "l", col = 1, main = "xi simulation")
-lines(f(mcmc.obj$xi.c), type = "l", col = 2)
-lines(f(p2), type = "l", col = 4)
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
+lines(f(x, p2), type = "l", col = 4)
+```
+
+#### PMCMC
+
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+source("../../R/2_tusk/utils/MCMC.R")
+```
+
+```{r}
+M <- 100
+mcmc.obj <- pmcmc.alg(Y, M)
+```
+
+**Tirage**
+
+```{r}
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(mcmc.obj$xi.c), min(xi)), max(max(mcmc.obj$xi.c), max(xi))))
+lines(mcmc.obj$xi.c, type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = "red")
 ```
 
 #### EM
@@ -289,11 +311,11 @@ plot(xi, type = "l", col = "blue",
 lines(saem.obj$mcmc$xi.c, type = "l", col = "red")
 
 plot(Y, type = "l", col = "blue")
-lines(f(saem.obj$mcmc$xi.c, A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+lines(f(x, saem.obj$mcmc$xi.c, A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
       type = "l", col = "red")
 
-plot(f(rep(0, n)), type = "l")
-lines(f(rep(0, n), A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+plot(f(x, rep(0, n)), type = "l")
+lines(f(x, rep(0, n), A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
       type = "l", col = "red")
 ```
 
