@@ -1,3 +1,4 @@
+# "a" is the pulsation
 init.a <- function (Y.arg) {
   ssp <- spectrum(Y.arg, plot = FALSE)
   return(2 * pi * ssp$freq[[which.max(ssp$spec)]])
