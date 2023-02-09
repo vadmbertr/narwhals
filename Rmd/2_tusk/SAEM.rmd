@@ -45,15 +45,9 @@ Y <- f(xi) + rnorm(n, 0, omega)
 ```
 
 ```{r}
-plot(A * sin(g(rep(0, n), a) + b), type = "l")
-```
-
-```{r}
-plot(B * sin(2 * g(rep(0, n), a) + 2 * b + pi / 2), type = "l")
-```
-
-```{r}
-plot(f(rep(0, n)), type = "l")
+plot(A * sin(g(rep(0, n), a) + b), type = "l", lty = 2, col = "blue", ylim = c(-.5, .75))
+lines(B * sin(2 * g(rep(0, n), a) + 2 * b + pi / 2), type = "l", lty = 2, col = "red")
+lines(f(rep(0, n)), type = "l")
 ```
 
 ```{r}
@@ -330,32 +324,57 @@ abline(h = a, col = 'red')
 
 **Plan d'expérience**
 
+*Estimation of initial a*
+
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.est <- readRDS("../../data/2_tusk/parameters.est.rds")
+params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
 ```
 
 ```{r}
-apply(params.est, 2, mean)
+params.a.mean <- apply(params.a.est, 2, mean)
+params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mape <- apply(abs(params.a.pe), 2, mean)
+params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
+params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
 ```
 
 ```{r}
-params.pe <- t(apply(params.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.mape <- apply(abs(params.pe), 2, mean)
-params.se <- apply(params.est, 1, function (row) (params.true - row)^2)
-params.rmse <- sqrt(apply(params.se, 1, mean))
-```
-
-```{r}
-df <- melt(params.pe, varnames = c("it", "param"))
+df <- melt(params.a.pe, varnames = c("it", "param"))
 ggplot(data = df) +
   geom_boxplot(aes(x = param, y = value))
 ```
 
 ```{r}
-params.mape
+params.a.mean
+params.a.mape
+params.a.rmse
+```
+
+*Estimation of initial a and b*
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
 ```
 
 ```{r}
-params.rmse
+params.a.b.mean <- apply(params.a.b.est, 2, mean)
+params.a.b.pe <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.b.mape <- apply(abs(params.a.b.pe), 2, mean)
+params.a.b.se <- apply(params.a.b.est, 1, function (row) (params.true - row)^2)
+params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.a.b.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value)) +
+  ylim(c(-300, 200))
+```
+
+```{r}
+params.a.b.mean
+params.a.b.mape
+params.a.b.rmse
 ```

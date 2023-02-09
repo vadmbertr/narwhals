@@ -3,22 +3,11 @@ title: "nls - sin"
 output: html_notebook
 ---
 
-```{r}
-source("../../R/2_tusk/utils/simulation.R")
-```
+# a and b estimation
 
 ```{r}
-find.x0 <- function(Y.arg) {
-  sign.p <- sign(Y.arg[[1]])
-  for (i in seq_len(length(Y.arg))) {
-    sign.c <- sign(Y.arg[[i]])
-    if (sign.c == 0) {
-      return(x[[i]])
-    } else if (sign.p != sign.c) {
-      return((x[[i]] + x[[i - 1]]) / 2)
-    }
-  }
-}
+source("../../R/2_tusk/utils/simulation.R")
+source("../../R/2_tusk/utils/SAEM.R")
 ```
 
 ```{r}
@@ -26,13 +15,15 @@ a <- 1
 x <- seq(0, 3 * pi, length.out = 100 / a) / a
 Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
 
-b.est <- (7 * pi / 8) - find.x0(Y) * a
+b.est <- init.b(Y, a)
 Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
 ```
 
 ```{r}
 plot(x, Y, type = "l")
 lines(x, Y.est, type = "l", col = "red", lty = 2)
+abline(h = 0)
+abline(v = find.x0(Y))
 ```
 
 ```{r}
@@ -41,7 +32,7 @@ b <- 1
 x <- seq(0, 3 * pi, length.out = 100 / a) / a
 Y <- A * sin(g(rep(0, length(x)), a) + b) + B * sin(2 * (g(rep(0, length(x)), a) + b) + pi / 2)
 
-b.est <- (7 * pi / 8) - find.x0(Y) * a
+b.est <- init.b(Y, a)
 Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length(x)), a) + b.est) + pi / 2)
 ```
 
@@ -49,6 +40,7 @@ Y.est <- A * sin(g(rep(0, length(x)), a) + b.est) + B * sin(2 * (g(rep(0, length
 plot(x, Y, type = "l")
 lines(x, Y.est, type = "l", col = "red", lty = 2)
 abline(h = 0)
+abline(v = find.x0(Y))
 ```
 
 ```{r}
@@ -69,8 +61,16 @@ ssp <- spectrum(Y)
 a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
 a.c <- a.est
 
-b.est <- (7 * pi / 8) - find.x0(Y) * a.est
+b.est <- init.b(Y, a.est)
 b.c <- b.est
+
+# less flexible
+phi.nls <- nls(y ~ cbind(A = sin(x * a + xi + b), B = sin(2 * (x * a + xi + b) + pi / 2)),
+               data = data.frame(y = Y, x = x, xi = xi),
+               start = list(a = a.c, b = b.c),
+               algorithm = "plinear",
+               control = nls.control(warnOnly = TRUE))
+coef(phi.nls)
 
 f.min <- function(A, B, a, b) {
   return(f(xi, A.arg = A, B.arg = B, a.arg = a, b.arg = b))
@@ -79,11 +79,15 @@ phi.nls <- nls(Y ~ f.min(A, B, a, b),
                start = list(A = A.c, B = B.c, a = a.c, b = b.c),
                control = nls.control(warnOnly = TRUE))
 c <- coef(phi.nls)
-
 print(c)
 
+A.c <- c[[1]]
+B.c <- c[[2]]
+a.c <- c[[3]]
+b.c <- c[[4]]
+
 plot(Y, type = "l")
-lines(f(xi, A.arg = c[["A"]], B.arg = c[["B"]], a.arg = c[["a"]], b.arg = c[["b"]]),
+lines(f(xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
       type = "l", col = "red")
 ```
 
@@ -96,24 +100,25 @@ ssp <- spectrum(Y)
 a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
 a.c <- a.est
 
-b.est <- (7 * pi / 8) - find.x0(Y) * a.est
+b.est <- init.b(Y, a.est)
 b.c <- b.est
 
 f.min <- function(par) {
-  return(mean((Y - f(xi, A.arg = par[[1]], B.arg = par[[2]],
+  return(sum((Y - f(xi, A.arg = par[[1]], B.arg = par[[2]],
                      a.arg = par[[3]], b.arg = par[[4]]))^2))
 }
+# not stable
 phi.optim <- optim(par = list(A = A.c, B = B.c, a = a.c, b = b.c),
                    fn = f.min, method = "L-BFGS-B")
-A.c <- phi.optim$par[[1]]
-B.c <- phi.optim$par[[2]]
-a.c <- phi.optim$par[[3]]
-b.c <- phi.optim$par[[4]]
-
 c <- phi.optim$par
 print(c)
 
+A.c <- c[[1]]
+B.c <- c[[2]]
+a.c <- c[[3]]
+b.c <- c[[4]]
+
 plot(Y, type = "l")
-lines(f(xi, A.arg = c[["A"]], B.arg = c[["B"]], a.arg = c[["a"]], b.arg = c[["b"]]),
+lines(f(xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
       type = "l", col = "red")
 ```

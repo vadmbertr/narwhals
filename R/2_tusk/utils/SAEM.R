@@ -1,13 +1,27 @@
-find.x0 <- function (Y.obs) {
-  sign.p <- sign(Y.obs[[1]])
-  for (i in seq_len(length(Y.obs))) {
-    sign.c <- sign(Y.obs[[i]])
+init.a <- function (Y.arg) {
+  ssp <- spectrum(Y.arg, plot = FALSE)
+  return(2 * pi * ssp$freq[[which.max(ssp$spec)]])
+}
+
+find.x0 <- function (Y.arg) {
+  sign.p <- sign(Y.arg[[1]])
+  for (i in seq_len(length(Y.arg))) {
+    sign.c <- sign(Y.arg[[i]])
     if (sign.c == 0) {
       return(x[[i]])
     } else if (sign.p != sign.c) {
-      return((x[[i]] + x[[i - 1]]) / 2)
+      w.c <- abs(1 / Y.arg[[i]])
+      w.p <- abs(1 / Y.arg[[i - 1]])
+      return((x[[i]] * w.c + x[[i - 1]] * w.p) / (w.c + w.p))
     }
   }
+}
+
+# "b" is the phase shift
+# if "b" = 0 then: Y(x) = 0 <=> x = k * (7 * pi / (8 * a)) := x0 with k = 1
+# hence (if no noise): b = (7 * pi / 8) - x0 * a
+init.b <- function (Y.arg, a.arg) {
+  return((7 * pi / 8) - find.x0(Y.arg) * a.arg)
 }
 
 saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
@@ -32,12 +46,11 @@ saem.alg <- function(Y.obs, n.rep = 500, n.mcmc = 20, n.alpha = 90) {
   B.c <- runif(1, -A.B.max, A.B.max)
   B <- rep(B.c, n.rep)
   # we initialize "a" using the frequency of "Y" with the highest spectral density. Otherwise "nls" is not converging
-  ssp <- spectrum(Y.obs, plot = FALSE)
-  a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+  a.est <- init.a(Y.obs)
   a.c <- a.est
   a <- rep(a.c, n.rep)
-  # we can also derive an approximate starting value for b
-  b.est <- (7 * pi / 8) - find.x0(Y.obs) * a.est
+  # we can also derive an approximate starting value for "b". ?? Is it robust to noise ??
+  b.est <- init.b(Y.obs, a.est)
   b.c <- b.est
   b <- rep(b.c, n.rep)
 

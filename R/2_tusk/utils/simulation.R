@@ -19,7 +19,7 @@ g <- function(xi.arg, a.arg = a) {
 }
 f <- function(xi.arg, A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
   A.arg * sin(g(xi.arg, a.arg) + b.arg) +
-    B.arg * sin(2 * g(xi.arg, a.arg) + 2 * b.arg + pi / 2)
+    B.arg * sin(2 * (g(xi.arg, a.arg) + b.arg) + pi / 2)
 }
 rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
   for (i in 2:length(xi.arg)) {
