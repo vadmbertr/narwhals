@@ -272,27 +272,27 @@ lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
 lines(f(x, p2), type = "l", col = 4)
 ```
 
-#### PMCMC
+#### APF
 
 ```{r}
 source("../../R/2_tusk/utils/simulation.R")
-source("../../R/2_tusk/utils/MCMC.R")
+source("../../R/2_tusk/utils/APF.R")
 ```
 
 ```{r}
-M <- 100
-mcmc.obj <- pmcmc.alg(Y, M)
+M <- 500
+apf.obj <- apf.alg(Y, M)
 ```
 
 **Tirage**
 
 ```{r}
 plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(mcmc.obj$xi.c), min(xi)), max(max(mcmc.obj$xi.c), max(xi))))
-lines(mcmc.obj$xi.c, type = "l", col = "red")
+     ylim = c(min(min(apf.obj$xi.c), min(xi)), max(max(apf.obj$xi.c), max(xi))))
+lines(apf.obj$xi.c, type = "l", col = "red")
 
 plot(Y, type = "l", col = "blue")
-lines(f(x, mcmc.obj$xi.c), type = "l", col = "red")
+lines(f(x, apf.obj$xi.c), type = "l", col = "red")
 ```
 
 #### EM

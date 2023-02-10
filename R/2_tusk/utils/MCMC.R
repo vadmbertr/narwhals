@@ -50,37 +50,3 @@ mcmc.alg <- function(Y.obs, n.rep, mcmc.arg = NULL, omega.arg = omega, psi.arg =
 
   return(mcmc.arg)
 }
-
-pmcmc.init <- function(n.time, n.part) {
-  return(list(xi.part = matrix(nrow = n.part, ncol = n.time),
-              w.part = matrix(nrow = n.part, ncol = n.time),
-              xi.c = rep(0, n.time)))
-}
-
-pmcmc.alg <- function (Y.obs, n.part, omega.arg = omega, psi.arg = psi, gamma.arg = gamma,
-                       A.arg = A, B.arg = B, a.arg = a, b.arg = b) {
-  n.time <- length(Y.obs)
-  mcmc.arg <- pmcmc.init(n.time, n.part)
-
-  mcmc.arg$xi.part[, 1] <- rep(0, n.part)
-  mcmc.arg$w.part[, 1] <- rep(1 / n.part, n.part)
-
-  for (i in 2:n.time) {
-    # 1st stage
-    xi.part <- f.xi(mcmc.arg$xi.part[, i - 1], psi.arg, gamma.arg)
-    w1 <- dnorm(Y.obs[[i]], f(i, xi.part, A.arg = A.arg, B.arg = B.arg, a.arg = a.arg, b.arg = b.arg), omega.arg) * mcmc.arg$w.part[, i - 1]
-    w1.norm <- w1 / sum(w1)
-    idx <- sample(1:n.part, replace = TRUE, prob = w1.norm)
-    mcmc.arg$xi.part[, i - 1] <- mcmc.arg$xi.part[idx, i - 1]
-    # 2nd stage
-    mcmc.arg$xi.part[, i] <- f.xi(mcmc.arg$xi.part[, i - 1], psi.arg, gamma.arg)
-    w <- dnorm(Y.obs[[i]], f(i, mcmc.arg$xi.part[, i], A.arg = A.arg, B.arg = B.arg, a.arg = a.arg, b.arg = b.arg), omega.arg) /
-      dnorm(Y.obs[[i]], f(i, mcmc.arg$xi.part[, i - 1], A.arg = A.arg, B.arg = B.arg, a.arg = a.arg, b.arg = b.arg), omega.arg)
-    mcmc.arg$w.part[, i] <- w / sum(w)
-  }
-
-  mcmc.arg$xi.c <- sapply(1:n.time, function (t) {
-    mcmc.arg$xi.part[sample(1:n.part, 1, prob = mcmc.arg$w.part[, t]), t]
-  })
-  return(mcmc.arg)
-}
