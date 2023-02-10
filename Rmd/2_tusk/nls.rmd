@@ -58,8 +58,7 @@ A.B.max <- max(abs(Y)) + omega
 A.c <- runif(1, -A.B.max, A.B.max)
 B.c <- runif(1, -A.B.max, A.B.max)
 
-ssp <- spectrum(Y)
-a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+a.est <- init.a(Y)
 a.c <- a.est
 
 b.est <- init.b(Y, a.est)
@@ -90,6 +89,24 @@ b.c <- c[[4]]
 plot(Y, type = "l")
 lines(f(x, xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
       type = "l", col = "red")
+
+# no estimation of b
+b.c <- runif(1, min = 0, max = pi / 2)
+
+phi.nls <- nls(Y ~ f.min(A, B, a, b),
+               start = list(A = A.c, B = B.c, a = a.c, b = b.c),
+               control = nls.control(warnOnly = TRUE))
+c <- coef(phi.nls)
+print(c)
+
+A.c <- c[[1]]
+B.c <- c[[2]]
+a.c <- c[[3]]
+b.c <- c[[4]]
+
+plot(Y, type = "l")
+lines(f(x, xi, A.arg = A.c, B.arg = B.c, a.arg = a.c, b.arg = b.c),
+      type = "l", col = "red")
 ```
 
 ```{r}
@@ -97,8 +114,7 @@ A.B.max <- max(abs(Y)) + omega
 A.c <- runif(1, -A.B.max, A.B.max)
 B.c <- runif(1, -A.B.max, A.B.max)
 
-ssp <- spectrum(Y)
-a.est <- 2 * pi * ssp$freq[[which.max(ssp$spec)]]
+a.est <- init.a(Y)
 a.c <- a.est
 
 b.est <- init.b(Y, a.est)
