@@ -19,7 +19,7 @@ library(reshape2)
 
 ```{r}
 source("../../R/2_tusk/utils/simulation.R")
-source("../../R/2_tusk/utils/APF.R")
+source("../../R/2_tusk/utils/SMC.R")
 source("../../R/2_tusk/utils/MCMC.R")
 ```
 
@@ -196,108 +196,21 @@ lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
 lines(f(x, p2), type = "l", col = 4)
 ```
 
-#### APF
+#### SMC
 
 ```{r}
-M <- 500
-apf.obj <- apf.alg(Y, M)
+M <- 1000
+smc.obj <- smc.alg(Y, M)
 ```
 
 **Tirage**
 
 ```{r}
+smc.obj$xi.c <- apply(smc.obj$xi.part * smc.obj$w.part, 2, sum) / apply(smc.obj$w.part, 2, sum)
 plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(apf.obj$xi.c), min(xi)), max(max(apf.obj$xi.c), max(xi))))
-lines(apf.obj$xi.c, type = "l", col = "red")
+     ylim = c(min(min(smc.obj$xi.c), min(xi)), max(max(smc.obj$xi.c), max(xi))))
+lines(smc.obj$xi.c, type = "l", col = "red")
 
 plot(Y, type = "l", col = "blue")
-lines(f(x, apf.obj$xi.c), type = "l", col = "red")
-```
-
-#### PMCMC
-
-```{r}
-M <- 50
-pmcmc.obj <- pmcmc.alg(Y, M)
-```
-
-**Tirage**
-
-```{r}
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(pmcmc.obj$xi.c), min(xi)), max(max(pmcmc.obj$xi.c), max(xi))))
-lines(pmcmc.obj$xi.c, type = "l", col = "red")
-
-plot(Y, type = "l", col = "blue")
-lines(f(x, pmcmc.obj$xi.c), type = "l", col = "red")
-```
-
-```{r}
-plot(pmcmc.obj$acceptance.rate[pmcmc.obj$n.it,])
-abline(h = acceptance.target, lty = "dashed", col = "red")
-```
-
-*Ecarts*
-
-```{r}
-worst.idx <- which.max(abs(xi - pmcmc.obj$xi.c))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$xi[, worst.idx]), color = "blue") +
-  geom_line(aes(y = pmcmc.obj$xi.p[, worst.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[worst.idx]])) +
-  ylab("Y")
-
-best.idx <- which.min(abs(xi[2:n] - pmcmc.obj$xi.c[2:n]))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$xi[, best.idx]), color = "blue") +
-  geom_line(aes(y = pmcmc.obj$xi.p[, best.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[best.idx]])) +
-  ylab("Y")
-
-farest.idx <- which.max(abs(xi))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$xi[, farest.idx]), color = "blue") +
-  geom_line(aes(y = pmcmc.obj$xi.p[, farest.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[farest.idx]])) +
-  ylab("Y")
-```
-
-```{r}
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
-  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate")
-
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$acceptance.rate[, best.idx]), color = "red") +
-  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate")
-
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = pmcmc.obj$acceptance.rate[, farest.idx]), color = "red") +
-  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate")
-```
-
-*xi au fil des k*
-
-```{r}
-par(mfrow = c(2, 2))
-for (k.ind in round(seq(1, M, length.out = 10))) {
-  plot(xi, type = "l", col = "blue",
-       ylim = c(min(min(pmcmc.obj$xi[k.ind,]), min(xi)), max(max(pmcmc.obj$xi[k.ind,]), max(xi))),
-       main = paste("k=", k.ind))
-  lines(pmcmc.obj$xi[k.ind,], type = "l", col = "red")
-}
-```
-
-*f au fil des k*
-
-```{r}
-par(mfrow = c(2, 2))
-for (k.ind in round(seq(1, M, length.out = 10))) {
-  plot(Y, type = "l", col = "blue",
-       main = paste("k=", k.ind))
-  lines(f(x, pmcmc.obj$xi[k.ind,]), type = "l", col = "red")
-}
+lines(f(x, smc.obj$xi.c), type = "l", col = "red")
 ```

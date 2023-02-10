@@ -19,7 +19,7 @@ library(reshape2)
 
 ```{r}
 source("../../R/2_tusk/utils/simulation.R")
-source("../../R/2_tusk/utils/APF.R")
+source("../../R/2_tusk/utils/SMC.R")
 source("../../R/2_tusk/utils/MCMC.R")
 source("../../R/2_tusk/utils/SAEM.R")
 ```
@@ -152,55 +152,10 @@ plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a
 abline(h = a, col = 'red')
 ```
 
-#### APF
+#### SMC
 
 ```{r}
-saem.obj <- saem.alg(Y, apf = TRUE)
-```
-
-```{r}
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(saem.obj$mcmc$xi.c), min(xi)), max(max(saem.obj$mcmc$xi.c), max(xi))))
-lines(saem.obj$mcmc$xi.c, type = "l", col = "red")
-
-plot(Y, type = "l", col = "blue")
-lines(f(x, saem.obj$mcmc$xi.c, A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
-      type = "l", col = "red")
-
-plot(f(x, rep(0, n)), type = "l")
-lines(f(x, rep(0, n), A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
-      type = "l", col = "red")
-```
-
-```{r}
-par(mfrow = c(2, 2))
-
-plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega", ylim = c(min(c(saem.obj$omega, omega)), max(saem.obj$omega, omega)))
-abline(h = omega, col = 'red')
-
-plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi", ylim = c(min(c(saem.obj$psi, psi)), max(saem.obj$psi, psi)))
-abline(h = psi, col = 'red')
-
-plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma", ylim = c(min(c(saem.obj$gamma, gamma)), max(saem.obj$gamma, gamma)))
-abline(h = gamma, col = 'red')
-
-plot(saem.obj$A, type = 'l', col = 'blue', main = "A", ylim = c(min(c(saem.obj$A, A)), max(saem.obj$A, A)))
-abline(h = A, col = 'red')
-
-plot(saem.obj$B, type = 'l', col = 'blue', main = "B", ylim = c(min(c(saem.obj$B, B)), max(saem.obj$B, B)))
-abline(h = B, col = 'red')
-
-plot(saem.obj$b, type = 'l', col = 'blue', main = "b", ylim = c(min(c(saem.obj$b, b)), max(saem.obj$b, b)))
-abline(h = b, col = 'red')
-
-plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a, a)), max(saem.obj$a, a)))
-abline(h = a, col = 'red')
-```
-
-#### PMCMC
-
-```{r}
-saem.obj <- saem.alg(Y, n.rep = 250, pmcmc = TRUE, n.mcmc = 5, n.alpha = 2)
+saem.obj <- saem.alg(Y, smc = TRUE)
 ```
 
 ```{r}
