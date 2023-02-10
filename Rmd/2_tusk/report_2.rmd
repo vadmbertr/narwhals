@@ -1,0 +1,359 @@
+---
+title: "Modélisation de l'information contenue dans les défenses des narvals dans le but d'estimer leur durée de vie."
+author: "Yanis BEN BELGACEM, Vadim BERTRAND, Angélique SAILLET"
+output:
+  bookdown::pdf_document2:
+    toc: true
+    toc_depth: 3
+    citation_package: biblatex
+toc-title: "Sommaire"
+urlcolor: blue
+linkcolor: blue
+biblatexoptions: [backend=biber,style=numeric,sorting=none]
+bibliography: references.bib
+header-includes:
+    \usepackage{algorithm}
+    \usepackage{algpseudocode}
+    \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+\newpage
+
+Comme nous avons pu le voir précédemment, le narval est une espèce de cétacés vivant dans l’océan Arctique. Ces animaux d’une durée de vie moyenne de 50 ans, possèdent deux dents. Chez les femelles, les dents restent à l’intérieur de la boîte crânienne, tandis que pour les mâles, la canine gauche s’allonge et prend la forme d’une corne (voir figure 1). Elle commence à pousser au travers de la lèvre supérieure gauche dès l'âge d’un an lors de la puberté et croît jusqu'à la maturité sexuelle, entre 8 et 9 ans. Cette défense torsadée possède des fonctionnalités et propriétés uniques dans la nature. Elle contient des millions de terminaisons nerveuses, et devient donc un organe de détection sensorielle très sensible.[1]
+
+
+```{r,fig.align='center',fig.cap="Vue de face d'un narval et de sa dent. [3]",out.width="40%"}
+knitr::include_graphics('./img/img.928.png')
+```
+
+Parmis les chercheurs danois, certains d'entre eux comme Eva Garde s'intérèssent plus particulièrement à l'étude de cette défense. Leur objectif est d'estimer la durée de vie du narval à travers l’information contenue dans cette dent. Pour mener cette étude, plusieurs découpes latérales des dents d'animaux décédés ont été récupérées. Ces découpes se présentent sous la forme d’une séquence de sillons ou de couches (cf figure 2) et détiennent plusieurs types d’informations. En effet, on remarque la présence de marqueurs saisonniers sur les sillons au cours de la croissance des dents. Ces derniers créent des motifs sinusoïdaux. La fréquence et la forme de ces sinusoïdes varient d’une saison à une autre relativement à la variabilité de durée ou de conditions des saisons pour chaque année. [2]  L’information portée par ces motifs à l’intérieur d’une dent est donc logiquement liée à la durée de vie de l’animal.  
+
+```{r,fig.align='center',fig.cap="Présentation de l’allure d’une section en longueur d’une dent de narval. [2]"}
+knitr::include_graphics('./img/1-thenarwhalst.jpg')
+```
+
+Le premier objectif pour cette problématique est le choix d’un modèle sinusoïdal pouvant être à l’origine de l’information contenue dans la dent de l’animal. À partir de cette forme de modèle et d’observations, le deuxième objectif sur lequel nous allons nous concentrer est celui relatif à l’estimation des paramètres de ce modèle sinusoïdal. Nous présentons donc dans les parties suivantes, le modèle envisagé ici ainsi que notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM.
+
+
+# Modèle sinusoïdal 
+
+Comme nous l’avons évoqué précédemment, les motifs sinusoïdaux observés sont le reflet de la variabilité des saisons, ainsi ce motif n’est pas répété identiquement en fonction du temps. Ces variations  complexifient donc la modélisation de cette information. 
+
+Les observations le long de la défense sont notées $Y_i$ pour $i=1, \ldots, n$, avec la position correspondante sur la dent notée $x_i$.
+Le modèle est le suivant : 
+$$Y_i = f(x_i, \varphi)+\varepsilon_i $$
+avec $\varepsilon_i$ un bruit aléatoire suivant une loi normale de moyenne $0$ et de variance $\omega^2$.
+
+La fonction de régression $f(x, \varphi)$ est une fonction périodique sinusoïdale telle que : 
+$$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
+avec $$g(x) = ax+\xi_x$$
+et  finalement $\xi_x$, un processus aléatoire d'Ornstein-Uhlenbeck, tel que 
+$$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
+Dans ce cadre là, l'objectif est donc d'estimer les paramètres $\theta$ :
+
+- $\varphi = (A,B,a,b)$
+- $\psi = e^{\beta\Delta}$, où $\Delta$ est l'intervalle de temps entre deux observations.
+
+- et $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
+
+Une réalisation de ce modèle est présentée sur la figure 3. 
+
+```{r,fig.align='center',fig.cap="Simulation des observations Y, avec les paramètres suivants : $A=0.5$, $B=-0.25$,  $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$.",out.width="60%"}
+set.seed(15)
+
+# parameters
+A <- 1 / 2
+B <- -1 / 4
+b <- 1
+a <- 0.1
+beta <- 0.05
+sigma <- 0.1
+omega <- 0.01
+Delta <- 1
+psi <- exp(-Delta * beta)
+gamma <- sigma/sqrt(2*beta)*sqrt(1-psi^2)
+
+n <- 500
+x <- 1:n
+
+# functions
+g <- function (xi, a.arg = a) {
+  a.arg * x + xi
+}
+f <- function (xi, A.arg = A, a.arg = a, B.arg = B, b.arg = b) {
+  A.arg * sin(g(xi, a.arg) + b.arg) +
+          B.arg * sin(2 * g(xi, a.arg) + 2 * b.arg + pi / 2)
+}
+rxi <- function (xi=rep(0,n), psi.arg = psi, gamma.arg = gamma) {
+  for (i in 2:length(xi)) {
+    xi[[i]] <- xi[[i - 1]] * psi.arg + rnorm(1, 0, gamma.arg)
+  }
+  return(xi)
+}
+
+
+xi <- rxi(rep(0, n))
+
+Y <- f(xi) + rnorm(n, 0, omega)
+
+plot(Y, type = "l",xlab="x")
+```
+
+# Estimation des paramètres à partir d'un algorithme SAEM 
+
+Le but de cette partie est de présenter la procédure que nous avons implémenté afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente. Cette procédure est, au final, implémentée à l'aide d'un algorithme SAEM. 
+Nous allons d'abord présenter le principe d'un algorithme EM, puis celui de son approximation stochastique : l'algorithme SAEM. Durant sa présentation, nous détaillerons l'algorithme MCMC et le filtre particulaire mis en place dans ce dernier avant de présenter l'algorithme appliqué complet. Nous présenterons ensuite, dans une dernière partie, la simulation ainsi que les résultats obtenus par l'algorithme MCMC, par le filtre particulaire, plus largement par l'algorithme SAEM et finalement par le plan d'expérience mis en place.  
+
+
+## Algorithme EM 
+
+L'algorithme EM est basé sur la log-vraisemblance complète du modèle.
+La solution du processus sous-jacent $\xi_x$ s'écrit 
+$$\xi_{x+\Delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+de sorte que la densité de transition soit définie telle que
+$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+
+Ainsi, la log-vraisemblance complète s'écrit de la manière suivante : 
+\begin{eqnarray*}
+\log L(Y,\xi,\theta)&=&\sum_{i=1}^n\log p(Y_i|\xi_i) +\sum_{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2) 
+\end{eqnarray*}
+
+Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^k$. 
+
+- étape E : calcul de $Q(\theta, \theta^k)$. [Expliquer ce que c'est ?]
+
+- étape M : Actualisation des paramètres $\theta^{k+1}=\arg\max_\theta Q(\theta, \theta^k)$. 
+
+Pour actualiser les paramètres, nous avons besoin des statistiques exhaustives. Ces statistiques sont obtenues à partir de [...] et contiennent donc toute l'information de la vraisemblance. Leurs définitions sont les suivantes : 
+
+\begin{eqnarray*}
+S_1(\xi_i)& =& \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi_i), \varphi))^2\\
+S_2(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}\xi_i\\
+S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
+S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
+\end{eqnarray*}
+
+L'actualisation des paramètres dépend directement de ces statistiques. 
+
+## Algorithme SAEM 
+
+Dans notre cas, la distribution conditionnelle $p(\xi|Y; \theta^k)$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$. Nous allons donc utiliser un algorithme MCMC pour simuler selon cette distribution. Cela conduit à une version stochastique de l'algorithme EM, à savoir l'algorithme SAEM. Cet algorithme utilise les étapes de l’algorithme EM auxquelles s'ajoute une étape d'apprentissage probabiliste. 
+
+Effectivement, pour chaque itération k, les étapes sont les suivantes : 
+
+- étape E : Simulation d'une nouvelle trajectoire de $\xi^k$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^k)$ comme une distribution stationnaire. 
+
+- étape SA : Approximation stochastique des statistiques exhaustives 
+
+\begin{eqnarray*}
+s_1^k &=& s_1^{k-1} + \alpha_k(S_1(\xi^k)-s_1^{k-1}) \\
+s_2^k &=& s_2^{k-1} + \alpha_k(S_2(\xi^k)-s_2^{k-1}) \\
+s_3^k &=& s_3^{k-1} + \alpha_k(S_3(\xi^k)-s_3^{k-1}) \\
+s_4^k &=& s_4^{k-1} + \alpha_k(S_4(\xi^k)-s_4^{k-1}) \\
+\end{eqnarray*}
+
+- étape M : Actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^k$. 
+
+\begin{eqnarray*}
+\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
+\\
+\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
+\widehat{\omega^{2}}^k &=& s_1^k\\
+\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
+\end{eqnarray*}
+
+
+### Simulation de $\xi^k$ 
+
+#### Identifiabilité 
+
+Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou d'un filtre particulaire, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal. On peut donc observer sur la figure 4, une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres fixées, obtenues selon le procédé suivant:
+
+
+\begin{algorithmic}
+\State $\xi \gets (0,\xi_2,...,\xi_n)$ \Comment{Initialisation de la première valeur}
+\For{$i \in \{1, ..., n\}$}
+  \State$\xi_i = \xi_{i-1}*\psi + \epsilon_{\xi}$, avec $\epsilon_{\xi} \sim N(0,\gamma^2)$
+\EndFor
+\end{algorithmic}
+
+
+Le bruit aléatoire $\epsilon_{\xi}$  présent dans cette définition semble prendre une place importante dans le signal des trajectoires de $\xi_k$. En effet on observe sur la figure 4 que les trois trajectoires simulées, sont relativement différentes de la trajectoire ciblée. Ce résultat a un impact direct sur les observations Y puisque comme nous pouvons le voir sur la figure 5, les observations Y correspondant à ces deux trajectoires ne s'ajustent pas parfaitement à la distribution cible. Effectivement, la variabilité de simulation du paramètre $\xi$ entraine une variabilité sur les observations Y qui va se traduire par quelque décalage avec la distribution cible. Les observations de Y sont donc sensibles à la trajectoire du processus $\xi_x$ associée. Comme nous le présentons sur ces deux figures, le but du recours à un algorithme MCMC est d'obtenir une trajectoire de $\xi_x$ plus ajustée afin de pouvoir approcher les observations de manière optimale. 
+
+L'utilisation de ce procédé n'est donc pas satisfaisant pour l'étape de simulation de $\xi_k$ de notre algorithme. C'est pour cette raison que nous avons implémenté un algorithme MCMC et un filtre particulaire à intégrer au sein de l'algorithme SAEM.
+
+
+```{r,fig.align='center',fig.cap="Présentation d'une trajectoire du processus $\\xi_x$ cible selon certains paramètres (en noir) et de trois autres trajectoires de ce processus simulées à partir des mêmes paramètres (en vert,bleu et rouge).",out.width="73%",fig.pos="H"}
+p1<-rxi()
+p2<-rxi()
+p3<-rxi()
+
+par(mfrow=c(2,2))
+
+plot(xi, type = "l", col = 1,ylim=c(min(xi),max(xi)),main="goal")
+
+plot(xi, type = "l", col = 1,ylim=c(min(c(min(xi),min(p1))),max(c(max(xi),max(p1)))),main="xi simulation 1")
+lines(p1, type = "l", col = 3)
+
+plot(xi, type = "l", col = 1,ylim=c(min(c(min(xi),min(p2))),max(c(max(xi),max(p2)))),main="xi simulation 2")
+lines(p2, type = "l", col = 4)
+
+plot(xi, type = "l", col = 1,ylim=c(min(c(min(xi),min(p3))),max(c(max(xi),max(p3)))),main="xi simulation 3")
+lines(p3, type = "l", col = 2)
+```
+
+
+```{r,fig.align='center',fig.cap="Distributions des Y calculées à partir des trajectoires de $\\xi_x$ présentées sur la figure 4.",out.width="73%",fig.pos="H"}
+par(mfrow=c(2,2))
+plot(Y, type = "l", col = 1,main="goal")
+
+plot(Y, type = "l", col = 1,main="xi simulation 1")
+lines(f(p1), type = "l", col = 3)
+plot(Y, type = "l", col = 1,main="xi simulation 2")
+lines(f(p2), type = "l", col = 4)
+
+plot(Y, type = "l", col = 1,main="xi simulation 3")
+lines(f(p3), type = "l", col = 2)
+```
+
+
+#### Algorithme MCMC 
+
+L'objectif de cet algorithme MCMC (Markov Chain Monte Carlo) est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y_i$ ainsi que des paramètres $\gamma^2$, $\psi$ et$\omega^2$.
+L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec une marche aléatoire. 
+
+Effectivement, après l'initialisation d'une trajectoire $\xi_0 = (\xi_1,...,\xi_n)$, l'algorithme procède à M itérations. La trajectoire du processus simulée peut donc s'écrire  $\xi_M = (\xi_1,...,\xi_n)$. 
+
+Plus précisément, pour chaque itération k, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_c$ avec la marche aléatoire de la méthode Metropolis Hasting c'est-à-dire  $\xi_c = \xi_k-1 + N(0,\delta_i^2)$. Cela introduit un nouveau paramètre $\delta=(\delta_1,....,\delta_n)$ relatif à cette simulation. Pour chacun de ses candidats, une log-probabilité d'acceptation est calculée de la façon suivante : $log(\alpha) = min(log(\frac{L(Y,\xi_c)}{L(Y,\xi_{k-1})}),1)$  
+
+avec 
+  \begin{eqnarray*}
+  \log(\frac{L(Y,\xi_c)}{L(Y,\xi_{k-1})})&=&log(L(Y,\xi_c))-log(L(Y,\xi_{k-1}))\\
+  &=& -\frac{1}{2 \omega^2}\sum_{i=1}^{n}(Y_i-f_\varphi(\xi_c))^2 -\frac{1}{2\frac{\gamma^2}{2}}\sum_{i=1}^{n}(\xi_c-\xi_{k-1}\psi)^2 \\
+  && +\frac{1}{2 \omega^2}\sum_{i=1}^{n}(Y_i-f_\varphi(\xi_{k-1}))^2 +\frac{1}{2\frac{\gamma^2}{2}}\sum_{i=1}^{n}(\xi_{k-1}-\xi_{k-2}\psi)^2\\
+  \end{eqnarray*}
+
+À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit accepté soit rejeté et donc ,dans ce cas, remplacé par la valeur acceptée à l'itération précédente k-1.  
+
+De plus, nous avons choisi de rendre le paramètre $\delta$ adaptatif en fonction du taux d'acceptation pour chaque point au fil des itérations k. Cette mise en place rajoute donc une partie d'actualisation à l'algorithme précédent, ce qui donne finalement l'Algorithme \@ref(alg:MCMC) à M itérations. 
+
+
+\begin{algorithm}
+\caption{Algorithme MCMC de simulation d'une trajectoire du processus $\xi_x$.}
+\label{alg:MCMC}
+\begin{algorithmic}
+\State $\delta \gets (\delta_1,....,\delta_n)$ \Comment{Initialisation du delta adaptatif}
+\State $\delta_{AR} \gets 0.1$ \Comment{Pas d'évolution du delta adaptatif}
+\State $Acc.Rate \gets (Acc.Rate_1,...Acc.Rate_n)$ \Comment{Initialisation du vecteur de taux d'acceptation pour chaque point}
+\State $Acc.Rate_{target} \gets 0.23$ \Comment{Taux d'acceptation visé}
+\For{$k \in \{1, ..., M\}$}
+  \For{$i \in \{1, ..., n\}$}
+    \State$\xi_c = \xi_k-1 + N(0,\delta_i^2)$ \Comment{Simulation de la valeur courante de $\xi$}
+    \State$log(\alpha) = min(log(\frac{L(Y,\xi_c)}{L(Y,\xi_{k-1})}),1)$\Comment{Calcul de la probabilité d'acceptation}
+    \State$U \sim U[0,1]$\Comment {Tirage d'une réalisation de loi uniforme}
+    \If{$\log{U}\leq\log{\alpha}$}
+      \State$\xi_k = \xi_c$
+    \Else
+      \State$\xi_k = \xi_{k-1}$
+    \EndIf
+    \State $Acc.Rate_i \gets$\Comment{Mise à jour du taux d'acceptation}
+    \If{$Acc.Rate_i < Acc.Rate_{target} * (1 - .1)$}
+      \State $ \delta_i \gets \delta_i * (1 - delta_{AR})$ \Comment{Réduction du delta adaptatif}
+    \ElsIf {$Acc.Rate_i > Acc.Rate_{target} * (1 - .1)$}
+      \State $ \delta_i \gets \delta_i * (1 + delta_{AR})$  \Comment{Augmentation du delta adaptatif}
+    \EndIf
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+#### Filtre particulaire
+
+## Algorithme SAEM complet  
+
+Au principe général d'un algorithme SAEM à Q itérations, nous avons ajouté deux paramètres $M_{max}$ & $\alpha_{min}$ : 
+\begin{itemize}
+\item Pour chaque itération q de l'algorithme SAEM, au moins une itération de l'algorithme MCMC est effectuée. Afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis ensuite l'algorithme effectue plus qu'une seule itération du MCMC. Le paramètre $M_{max}$ est donc un paramètre de l'algorithme SAEM à choisir au préalable.  
+
+\item Le deuxième paramètre concerne l'approximation stochastique effectuée pour chacune des itérations q. Effectivement, durant les premières itérations les approximations sont relativement éloignées de la valeur cible et donc sensiblement différentes entre elles. Au contraire, dans les dernières itérations, étant donné le phénomène de convergence que nous devons observer, les approximations sont censées être plus proches de la valeur cible et également entre elles. Afin de prendre en compte ce phénomène, nous faisons varier la valeur de $\alpha$ au fil des itérations à partir du paramètre $\alpha_{min}$ de la façon suivante : 
+\begin{itemize}
+  \item Dans un premier temps $\alpha = 1$ pour les $\alpha_{min}$ premières itérations, ce qui permet, d'appliquer la formule complète d'approximation.
+  \item Puis, pour les (Q-$\alpha_{min}$) dernières itérations, les alphas sont calculés de la façon suivante : 
+$$\alpha_{\alpha_{min}:Q} = \frac{1}{l^{0.8}}\text{, avec }l=1:(Q-\alpha_{min})$$
+\end{itemize}
+Ainsi le paramètre $\alpha$ décroît au fil des itérations à partir de la $\alpha_{min}$ième itération. Cette procédure permet de réduire l'importance du terme associé à $\alpha$ et d'augmenter donc l'influence de la valeur précédente pour ces itérations-là. 
+\end{itemize}
+
+En prenant en compte ces deux paramètres supplémentaires, l'algorithme se présente comme l'Algorithme \@ref(alg:SAEM). 
+
+\begin{algorithm}
+\caption{Algorithme SAEM complet}
+\label{alg:SAEM}
+\begin{algorithmic}
+\State $s_1 \gets (s_1^1,...s_1^Q)$
+\State $s_2 \gets (s_2^1,...s_2^Q)$
+\State $s_3 \gets (s_3^1,...s_3^Q)$
+\State $s_4 \gets (s_4^1,...s_4^Q)$
+
+\State $\widehat{\varphi} \gets (\widehat{\varphi}^1,...,\widehat{\varphi}^Q)$
+\State $\widehat{\psi} \gets (\widehat{\psi}^1,...,\widehat{\psi}^Q)$
+\State $\widehat{\omega^{2}} \gets (\widehat{\omega^{2}}^1,...,\widehat{\omega^{2}}^Q)$
+\State $\widehat{\gamma^{2}} \gets (\widehat{\gamma^{2}}^1,...,\widehat{\gamma^{2}}^Q)$
+
+\State $\alpha \gets (\alpha_1,...,\alpha_Q)$ \Comment{Itinitialisation du paramètre d'approximation $\alpha$}
+\State $\alpha_{1:\alpha_{min}} \gets 1$ ; $\alpha_{\alpha_{min}:Q} \gets \frac{1}{l^{0.8}}$ avec $l=1:(Q-\alpha_{min})$ 
+
+\State $M \gets (M_1,...,M_Q)$\Comment{Initialisation du nombre d'itérations du MCMC}
+\State $M_{1:M_{max}} \gets 5$ ; $M_{M_{max}+1:Q} \gets 1$ 
+\For{$q \in \{1, ..., Q\}$}
+  \State \Comment{Etape E} 
+    \State Run MCMC (cf Algorithme 1) avec $M = M_q$ itérations et $\theta^{q-1}$, pour récupérer une trajectoire de $\xi^q$
+  
+  \State \Comment{Etape SA} 
+    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi^q), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
+    \State $S_2 \gets \sum_{i=1}^n \xi_{i-1}^q\xi_i^q$
+    \State $S_3 \gets \sum_{i=1}^n (\xi_{i-1}^q)^2$
+    \State $S_4 \gets \sum_{i=1}^n (\xi_i^q)^2$
+    \State \Comment{Mise à jour des approximations stochastiques}
+    \State $s_1^q = s_1^{q-1} + \alpha_q(S_1(\xi^q)-s_1^{q-1})$
+    \State $s_2^q = s_2^{q-1} + \alpha_q(S_2(\xi^q)-s_2^{q-1})$
+    \State $s_3^q = s_3^{q-1} + \alpha_q(S_3(\xi^q)-s_3^{q-1})$
+    \State $s_4^q = s_4^{q-1} + \alpha_q(S_4(\xi^q)-s_4^{q-1})$
+    
+  \State \Comment{Etape M} 
+    \State $\widehat{\varphi}^q = \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^q), \varphi)\right)^2$\Comment{Actualisation de $\theta^q$}
+    \State $\widehat{\psi}^q = \frac{s_2^q}{s_3^q}$
+    \State $\widehat{\omega^{2}}^q = s_1^q$
+    \State $\widehat{\gamma^{2}}^q = \frac{1}{n}(\widehat{\psi^2}^qs_3^q-2\widehat{\psi}^qs_2^q+s_4^q)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+
+## Simulation & résultats 
+
+[Présentation de la methode de simulation ainsi que des résultats]
+
+### MCMC & Filtre particulaire
+
+### SAEM 
+
+### Plan d'expérience 
+
+\newpage
+
+# Références
+
+- [1] Wikipedia contributors. (2022, 14 décembre). Narval. https://fr.wikipedia.org/wiki/Narval 
+
+- [2] Bondo, P. (2021, 11 mars). The narwhal’s tusk reveals its past living conditions. https://phys.org/news/2021-03-narwhal-tusk-reveals-conditions.html 
+
+- [3] Sylvestre, J. (2018, 8 janvier). Dans l’Arctique canadien avec la licorne de mer. Peuple-Animal.com. https://www.peuple-animal.com/article,lecture,1160_dans-l-arctique-canadien-avec-la-licorne-de-mer.html 
