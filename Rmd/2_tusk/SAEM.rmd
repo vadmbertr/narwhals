@@ -1,5 +1,5 @@
 ---
-title: "Sinusoidal model"
+title: "SAEM"
 author: "Adeline Leclercq Samson"
 date: "2023-01-11"
 output:
@@ -17,6 +17,13 @@ library(ggplot2)
 library(reshape2)
 ```
 
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+source("../../R/2_tusk/utils/APF.R")
+source("../../R/2_tusk/utils/MCMC.R")
+source("../../R/2_tusk/utils/SAEM.R")
+```
+
 ## Description of the sinusoidal model
 
 The observations along the tusk are denoted $Y_i$ for $i=1, \ldots, n$, with the corresponding  position along the tusk  denoted $x_i$.
@@ -31,32 +38,6 @@ and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process
 $$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
 
 The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
-
-## Simulation of trajectories
-
-Let us start with some simulations.
-```{r}
-source("../../R/2_tusk/utils/simulation.R")
-```
-
-```{r}
-xi <- rxi()
-Y <- f(x, xi) + rnorm(n, 0, omega)
-```
-
-```{r}
-plot(A * sin(g(x, rep(0, n), a) + b), type = "l", lty = 2, col = "blue", ylim = c(-.5, .75))
-lines(B * sin(2 * g(x, rep(0, n), a) + 2 * b + pi / 2), type = "l", lty = 2, col = "red")
-lines(f(x, rep(0, n)), type = "l")
-```
-
-```{r}
-plot(xi, type = "l")
-```
-
-```{r}
-plot(Y, type = "l")
-```
 
 ## Estimation with the EM algorithm
 
@@ -129,181 +110,6 @@ s_4^k &=& s_4^{k-1} + (1-\alpha_k)(S_4(\xi^k)-s_4^{k-1}) \\
 #### MCMC
 
 ```{r}
-source("../../R/2_tusk/utils/MCMC.R")
-```
-
-```{r}
-M <- 150
-mcmc.obj <- mcmc.alg(Y, M)
-```
-
-**Tirage**
-
-```{r}
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(mcmc.obj$xi.c), min(xi)), max(max(mcmc.obj$xi.c), max(xi))))
-lines(mcmc.obj$xi.c, type = "l", col = "red")
-
-plot(Y, type = "l", col = "blue")
-lines(f(x, mcmc.obj$xi.c), type = "l", col = "red")
-```
-
-```{r}
-plot(mcmc.obj$acceptance.rate[mcmc.obj$n.it,])
-abline(h = acceptance.target, lty = "dashed", col = "red")
-```
-
-*Ecarts*
-
-```{r}
-worst.idx <- which.max(abs(xi - mcmc.obj$xi.c))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = mcmc.obj$xi[, worst.idx]), color = "blue") +
-  geom_line(aes(y = mcmc.obj$xi.p[, worst.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[worst.idx]])) +
-  ylab("Y")
-
-best.idx <- which.min(abs(xi - mcmc.obj$xi.c))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = mcmc.obj$xi[, best.idx]), color = "blue") +
-  geom_line(aes(y = mcmc.obj$xi.p[, best.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[best.idx]])) +
-  ylab("Y")
-
-farest.idx <- which.max(abs(xi))
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = mcmc.obj$xi[, farest.idx]), color = "blue") +
-  geom_line(aes(y = mcmc.obj$xi.p[, farest.idx]), color = "red") +
-  geom_hline(aes(yintercept = xi[[farest.idx]])) +
-  ylab("Y")
-```
-
-```{r}
-coeff <- max(mcmc.obj$acceptance.rate[, worst.idx]) / max(mcmc.obj$delta[, worst.idx])
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
-  geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff), color = "blue") +
-  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
-  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
-
-coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
-  geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
-  geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
-  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
-  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
-```
-
-*xi au fil des k*
-
-```{r}
-par(mfrow = c(2, 2))
-for (k.ind in round(seq(1, M, length.out = 10))) {
-  plot(xi, type = "l", col = "blue",
-       ylim = c(min(min(mcmc.obj$xi[k.ind,]), min(xi)), max(max(mcmc.obj$xi[k.ind,]), max(xi))),
-       main = paste("k=", k.ind))
-  lines(mcmc.obj$xi[k.ind,], type = "l", col = "red")
-}
-```
-
-*f au fil des k*
-
-```{r}
-par(mfrow = c(2, 2))
-for (k.ind in round(seq(1, M, length.out = 10))) {
-  plot(Y, type = "l", col = "blue",
-       main = paste("k=", k.ind))
-  lines(f(x, mcmc.obj$xi[k.ind,]), type = "l", col = "red")
-}
-```
-
-**Identifiabilité**
-
-```{r}
-p1 <- rxi()
-p2 <- rxi()
-p3 <- rxi()
-p4 <- rxi()
-
-par(mfrow = c(2, 2))
-
-plot(p1, type = "l", col = 1)
-
-plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p2))), max(c(max(p1), max(p2)))))
-lines(p2, type = "l", col = 2)
-
-plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p3))), max(c(max(p1), max(p3)))))
-lines(p3, type = "l", col = 3)
-
-plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p4))), max(c(max(p1), max(p4)))))
-lines(p4, type = "l", col = 4)
-```
-
-```{r}
-par(mfrow = c(2, 2))
-
-plot(f(x, p1), type = "l", col = 1)
-
-plot(f(x, p1), type = "l", col = 1)
-lines(f(x, p2), type = "l", col = 2)
-
-plot(f(x, p1), type = "l", col = 1)
-lines(f(x, p3), type = "l", col = 3)
-
-plot(f(x, p1), type = "l", col = 1)
-lines(f(x, p4), type = "l", col = 4)
-```
-
-```{r}
-par(mfrow = c(2, 2))
-plot(Y, type = "l", col = 1, main = "goal")
-
-plot(Y, type = "l", col = 1, main = "MCMC")
-lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
-
-plot(Y, type = "l", col = 1, main = "xi simulation")
-lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
-lines(f(x, p1), type = "l", col = 3)
-
-plot(Y, type = "l", col = 1, main = "xi simulation")
-lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
-lines(f(x, p2), type = "l", col = 4)
-```
-
-#### APF
-
-```{r}
-source("../../R/2_tusk/utils/simulation.R")
-source("../../R/2_tusk/utils/APF.R")
-```
-
-```{r}
-M <- 500
-apf.obj <- apf.alg(Y, M)
-```
-
-**Tirage**
-
-```{r}
-plot(xi, type = "l", col = "blue",
-     ylim = c(min(min(apf.obj$xi.c), min(xi)), max(max(apf.obj$xi.c), max(xi))))
-lines(apf.obj$xi.c, type = "l", col = "red")
-
-plot(Y, type = "l", col = "blue")
-lines(f(x, apf.obj$xi.c), type = "l", col = "red")
-```
-
-#### EM
-
-**MCMC**
-
-```{r}
-source("../../R/2_tusk/utils/SAEM.R")
-```
-
-```{r}
 saem.obj <- saem.alg(Y)
 ```
 
@@ -346,14 +152,66 @@ plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a
 abline(h = a, col = 'red')
 ```
 
-**APF**
+##### Plan d'expérience
+
+**Estimation of initial a**
 
 ```{r}
-source("../../R/2_tusk/utils/SAEM.R")
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
 ```
 
 ```{r}
-saem.obj <- saem.alg(Y, mcmc = FALSE)
+params.a.mean <- apply(params.a.est, 2, mean)
+params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mape <- apply(abs(params.a.pe), 2, mean)
+params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
+params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.a.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.a.mean
+params.a.mape
+params.a.rmse
+```
+
+**Estimation of initial a and b**
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
+```
+
+```{r}
+params.a.b.mean <- apply(params.a.b.est, 2, mean)
+params.a.b.pe <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.b.mape <- apply(abs(params.a.b.pe), 2, mean)
+params.a.b.se <- apply(params.a.b.est, 1, function (row) (params.true - row)^2)
+params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.a.b.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.a.b.mean
+params.a.b.mape
+params.a.b.rmse
+```
+
+##### APF
+
+```{r}
+saem.obj <- saem.alg(Y, apf = TRUE)
 ```
 
 ```{r}
@@ -395,58 +253,47 @@ plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a
 abline(h = a, col = 'red')
 ```
 
-**Plan d'expérience**
-
-*Estimation of initial a*
+##### PMCMC
 
 ```{r}
-params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
+saem.obj <- saem.alg(Y, n.rep = 250, pmcmc = TRUE, n.mcmc = 5, n.alpha = 2)
 ```
 
 ```{r}
-params.a.mean <- apply(params.a.est, 2, mean)
-params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.a.mape <- apply(abs(params.a.pe), 2, mean)
-params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
-params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(saem.obj$mcmc$xi.c), min(xi)), max(max(saem.obj$mcmc$xi.c), max(xi))))
+lines(saem.obj$mcmc$xi.c, type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue")
+lines(f(x, saem.obj$mcmc$xi.c, A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+      type = "l", col = "red")
+
+plot(f(x, rep(0, n)), type = "l")
+lines(f(x, rep(0, n), A.arg = saem.obj$A.c, B.arg = saem.obj$B.c, a.arg = saem.obj$a.c, b.arg = saem.obj$b.c),
+      type = "l", col = "red")
 ```
 
 ```{r}
-df <- melt(params.a.pe, varnames = c("it", "param"))
-ggplot(data = df) +
-  geom_boxplot(aes(x = param, y = value))
-```
+par(mfrow = c(2, 2))
 
-```{r}
-params.a.mean
-params.a.mape
-params.a.rmse
-```
+plot(saem.obj$omega, type = 'l', col = 'blue', main = "Omega", ylim = c(min(c(saem.obj$omega, omega)), max(saem.obj$omega, omega)))
+abline(h = omega, col = 'red')
 
-*Estimation of initial a and b*
+plot(saem.obj$psi, type = 'l', col = 'blue', main = "Psi", ylim = c(min(c(saem.obj$psi, psi)), max(saem.obj$psi, psi)))
+abline(h = psi, col = 'red')
 
-```{r}
-params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
-```
+plot(saem.obj$gamma, type = 'l', col = 'blue', main = "gamma", ylim = c(min(c(saem.obj$gamma, gamma)), max(saem.obj$gamma, gamma)))
+abline(h = gamma, col = 'red')
 
-```{r}
-params.a.b.mean <- apply(params.a.b.est, 2, mean)
-params.a.b.pe <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.a.b.mape <- apply(abs(params.a.b.pe), 2, mean)
-params.a.b.se <- apply(params.a.b.est, 1, function (row) (params.true - row)^2)
-params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
-```
+plot(saem.obj$A, type = 'l', col = 'blue', main = "A", ylim = c(min(c(saem.obj$A, A)), max(saem.obj$A, A)))
+abline(h = A, col = 'red')
 
-```{r}
-df <- melt(params.a.b.pe, varnames = c("it", "param"))
-ggplot(data = df) +
-  geom_boxplot(aes(x = param, y = value))
-```
+plot(saem.obj$B, type = 'l', col = 'blue', main = "B", ylim = c(min(c(saem.obj$B, B)), max(saem.obj$B, B)))
+abline(h = B, col = 'red')
 
-```{r}
-params.a.b.mean
-params.a.b.mape
-params.a.b.rmse
+plot(saem.obj$b, type = 'l', col = 'blue', main = "b", ylim = c(min(c(saem.obj$b, b)), max(saem.obj$b, b)))
+abline(h = b, col = 'red')
+
+plot(saem.obj$a, type = 'l', col = 'blue', main = "a", ylim = c(min(c(saem.obj$a, a)), max(saem.obj$a, a)))
+abline(h = a, col = 'red')
 ```

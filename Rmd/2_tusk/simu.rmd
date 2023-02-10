@@ -1,0 +1,51 @@
+---
+title: "Sinusoidal model"
+author: "Adeline Leclercq Samson"
+date: "2023-01-11"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(15)
+```
+
+## Description of the sinusoidal model
+
+The observations along the tusk are denoted $Y_i$ for $i=1, \ldots, n$, with the corresponding  position along the tusk  denoted $x_i$.
+The model is the following
+$$Y_i = f(x_i, \varphi)+\varepsilon_i $$
+with $\varepsilon_i$ a  random noise assumed to be normally distributed with mean $0$ and variance $\omega^2$.
+The regression function is a periodic sinusoidal function
+$$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
+with function $g$ defined as
+$$ g(x) = ax+\xi_x$$
+and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process
+$$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
+
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
+
+## Simulation of trajectories
+
+Let us start with some simulations.
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+```
+
+```{r}
+plot(A * sin(g(x, rep(0, n), a) + b), type = "l", lty = 2, col = "blue", ylim = c(-.5, .75))
+lines(B * sin(2 * g(x, rep(0, n), a) + 2 * b + pi / 2), type = "l", lty = 2, col = "red")
+lines(f(x, rep(0, n)), type = "l")
+```
+
+```{r}
+plot(xi, type = "l")
+```
+
+```{r}
+plot(Y, type = "l")
+```

@@ -1,0 +1,303 @@
+---
+title: "Xi"
+author: "Adeline Leclercq Samson"
+date: "2023-01-11"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(15)
+
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+source("../../R/2_tusk/utils/APF.R")
+source("../../R/2_tusk/utils/MCMC.R")
+```
+
+## Description of the sinusoidal model
+
+The observations along the tusk are denoted $Y_i$ for $i=1, \ldots, n$, with the corresponding  position along the tusk  denoted $x_i$.
+The model is the following
+$$Y_i = f(x_i, \varphi)+\varepsilon_i $$
+with $\varepsilon_i$ a  random noise assumed to be normally distributed with mean $0$ and variance $\omega^2$.
+The regression function is a periodic sinusoidal function
+$$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
+with function $g$ defined as
+$$ g(x) = ax+\xi_x$$
+and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process
+$$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
+
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
+
+## Estimation of $\xi_x$
+
+The solution of the hidden process $\xi_x$ is
+$$\xi_{x+\Delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+such that the transition density is
+$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+
+The complete log-likelihood is thus
+\begin{eqnarray*}
+\log L(Y,\xi,\theta)&=&\sum_{i=1}^n\log p(Y_i|\xi_i) +\sum_{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
+\end{eqnarray*}
+
+### MCMC
+
+```{r}
+M <- 150
+mcmc.obj <- mcmc.alg(Y, M)
+```
+
+**Tirage**
+
+```{r}
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(mcmc.obj$xi.c), min(xi)), max(max(mcmc.obj$xi.c), max(xi))))
+lines(mcmc.obj$xi.c, type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = "red")
+```
+
+```{r}
+plot(mcmc.obj$acceptance.rate[mcmc.obj$n.it,])
+abline(h = acceptance.target, lty = "dashed", col = "red")
+```
+
+*Ecarts*
+
+```{r}
+worst.idx <- which.max(abs(xi - mcmc.obj$xi.c))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$xi[, worst.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, worst.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[worst.idx]])) +
+  ylab("Y")
+
+best.idx <- which.min(abs(xi - mcmc.obj$xi.c))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$xi[, best.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, best.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[best.idx]])) +
+  ylab("Y")
+
+farest.idx <- which.max(abs(xi))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$xi[, farest.idx]), color = "blue") +
+  geom_line(aes(y = mcmc.obj$xi.p[, farest.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[farest.idx]])) +
+  ylab("Y")
+```
+
+```{r}
+coeff <- max(mcmc.obj$acceptance.rate[, worst.idx]) / max(mcmc.obj$delta[, worst.idx])
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
+
+coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))
+```
+
+*xi au fil des k*
+
+```{r}
+par(mfrow = c(2, 2))
+for (k.ind in round(seq(1, M, length.out = 10))) {
+  plot(xi, type = "l", col = "blue",
+       ylim = c(min(min(mcmc.obj$xi[k.ind,]), min(xi)), max(max(mcmc.obj$xi[k.ind,]), max(xi))),
+       main = paste("k=", k.ind))
+  lines(mcmc.obj$xi[k.ind,], type = "l", col = "red")
+}
+```
+
+*f au fil des k*
+
+```{r}
+par(mfrow = c(2, 2))
+for (k.ind in round(seq(1, M, length.out = 10))) {
+  plot(Y, type = "l", col = "blue",
+       main = paste("k=", k.ind))
+  lines(f(x, mcmc.obj$xi[k.ind,]), type = "l", col = "red")
+}
+```
+
+**Identifiabilité**
+
+```{r}
+p1 <- rxi()
+p2 <- rxi()
+p3 <- rxi()
+p4 <- rxi()
+
+par(mfrow = c(2, 2))
+
+plot(p1, type = "l", col = 1)
+
+plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p2))), max(c(max(p1), max(p2)))))
+lines(p2, type = "l", col = 2)
+
+plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p3))), max(c(max(p1), max(p3)))))
+lines(p3, type = "l", col = 3)
+
+plot(p1, type = "l", col = 1, ylim = c(min(c(min(p1), min(p4))), max(c(max(p1), max(p4)))))
+lines(p4, type = "l", col = 4)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+
+plot(f(x, p1), type = "l", col = 1)
+
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p2), type = "l", col = 2)
+
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p3), type = "l", col = 3)
+
+plot(f(x, p1), type = "l", col = 1)
+lines(f(x, p4), type = "l", col = 4)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+plot(Y, type = "l", col = 1, main = "goal")
+
+plot(Y, type = "l", col = 1, main = "MCMC")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
+
+plot(Y, type = "l", col = 1, main = "xi simulation")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
+lines(f(x, p1), type = "l", col = 3)
+
+plot(Y, type = "l", col = 1, main = "xi simulation")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = 2)
+lines(f(x, p2), type = "l", col = 4)
+```
+
+#### APF
+
+```{r}
+M <- 500
+apf.obj <- apf.alg(Y, M)
+```
+
+**Tirage**
+
+```{r}
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(apf.obj$xi.c), min(xi)), max(max(apf.obj$xi.c), max(xi))))
+lines(apf.obj$xi.c, type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue")
+lines(f(x, apf.obj$xi.c), type = "l", col = "red")
+```
+
+#### PMCMC
+
+```{r}
+M <- 50
+pmcmc.obj <- pmcmc.alg(Y, M)
+```
+
+**Tirage**
+
+```{r}
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(pmcmc.obj$xi.c), min(xi)), max(max(pmcmc.obj$xi.c), max(xi))))
+lines(pmcmc.obj$xi.c, type = "l", col = "red")
+
+plot(Y, type = "l", col = "blue")
+lines(f(x, pmcmc.obj$xi.c), type = "l", col = "red")
+```
+
+```{r}
+plot(pmcmc.obj$acceptance.rate[pmcmc.obj$n.it,])
+abline(h = acceptance.target, lty = "dashed", col = "red")
+```
+
+*Ecarts*
+
+```{r}
+worst.idx <- which.max(abs(xi - pmcmc.obj$xi.c))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$xi[, worst.idx]), color = "blue") +
+  geom_line(aes(y = pmcmc.obj$xi.p[, worst.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[worst.idx]])) +
+  ylab("Y")
+
+best.idx <- which.min(abs(xi[2:n] - pmcmc.obj$xi.c[2:n]))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$xi[, best.idx]), color = "blue") +
+  geom_line(aes(y = pmcmc.obj$xi.p[, best.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[best.idx]])) +
+  ylab("Y")
+
+farest.idx <- which.max(abs(xi))
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$xi[, farest.idx]), color = "blue") +
+  geom_line(aes(y = pmcmc.obj$xi.p[, farest.idx]), color = "red") +
+  geom_hline(aes(yintercept = xi[[farest.idx]])) +
+  ylab("Y")
+```
+
+```{r}
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
+  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate")
+
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$acceptance.rate[, best.idx]), color = "red") +
+  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate")
+
+ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = pmcmc.obj$acceptance.rate[, farest.idx]), color = "red") +
+  geom_hline(aes(yintercept = acceptance.target), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate")
+```
+
+*xi au fil des k*
+
+```{r}
+par(mfrow = c(2, 2))
+for (k.ind in round(seq(1, M, length.out = 10))) {
+  plot(xi, type = "l", col = "blue",
+       ylim = c(min(min(pmcmc.obj$xi[k.ind,]), min(xi)), max(max(pmcmc.obj$xi[k.ind,]), max(xi))),
+       main = paste("k=", k.ind))
+  lines(pmcmc.obj$xi[k.ind,], type = "l", col = "red")
+}
+```
+
+*f au fil des k*
+
+```{r}
+par(mfrow = c(2, 2))
+for (k.ind in round(seq(1, M, length.out = 10))) {
+  plot(Y, type = "l", col = "blue",
+       main = paste("k=", k.ind))
+  lines(f(x, pmcmc.obj$xi[k.ind,]), type = "l", col = "red")
+}
+```

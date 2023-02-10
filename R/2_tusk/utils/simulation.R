@@ -30,3 +30,6 @@ rxi <- function(xi.arg = rep(0, n), psi.arg = psi, gamma.arg = gamma) {
   }
   return(xi.arg)
 }
+
+xi <- rxi()
+Y <- f(x, xi) + rnorm(n, 0, omega)

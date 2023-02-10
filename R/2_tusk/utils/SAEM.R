@@ -25,7 +25,7 @@ init.b <- function (Y.arg, a.arg) {
   return((7 * pi / 8) - find.x0(Y.arg) * a.arg)
 }
 
-saem.alg <- function(Y.obs, n.rep = 500, n.part = 500, n.mcmc = 20, mcmc = TRUE, n.alpha = 90) {
+saem.alg <- function(Y.obs, n.rep = 500, n.part = 100, pmcmc = FALSE, apf = FALSE, n.mcmc = 20, n.alpha = 90) {
   s1.c <- 0
   s1 <- rep(s1.c, n.rep)
   s2.c <- 0
@@ -66,10 +66,12 @@ saem.alg <- function(Y.obs, n.rep = 500, n.part = 500, n.mcmc = 20, mcmc = TRUE,
 
   for (k in 1:n.rep) {
     # XI
-    if (mcmc) {
-      xi.obj <- mcmc.alg(Y.obs, mcmc.rep[[k]], xi.obj, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
-    } else {
+    if (apf) {
       xi.obj <- apf.alg(Y.obs, n.part, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
+    } else if (pmcmc) {
+      xi.obj <- pmcmc.alg(Y.obs, mcmc.rep[[k]], n.part, xi.obj, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
+    } else {
+      xi.obj <- mcmc.alg(Y.obs, mcmc.rep[[k]], xi.obj, omega.c, psi.c, gamma.c, A.c, B.c, a.c, b.c)
     }
 
     # E

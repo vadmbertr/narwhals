@@ -1,6 +1,7 @@
 ---
 title: "nls - sin"
-output: html_notebook
+output:
+  html_document: default
 ---
 
 # a and b estimation
