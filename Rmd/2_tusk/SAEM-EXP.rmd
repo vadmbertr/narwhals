@@ -1,0 +1,162 @@
+---
+title: "SAEM"
+author: "Adeline Leclercq Samson"
+date: "2023-01-11"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(15)
+
+library(ggplot2)
+library(reshape2)
+```
+
+```{r}
+source("../../R/2_tusk/utils/simulation.R")
+```
+
+## Description of the sinusoidal model
+
+The observations along the tusk are denoted $Y_i$ for $i=1, \ldots, n$, with the corresponding  position along the tusk  denoted $x_i$.
+The model is the following
+$$Y_i = f(x_i, \varphi)+\varepsilon_i $$
+with $\varepsilon_i$ a  random noise assumed to be normally distributed with mean $0$ and variance $\omega^2$.
+The regression function is a periodic sinusoidal function
+$$f(x, \varphi) = A \sin(g(x)+b) + B\sin(2g(x)+2b+\pi/2) $$
+with function $g$ defined as
+$$ g(x) = ax+\xi_x$$
+and finally $\xi_x$ is assumed to be a random Ornstein-Uhlenbeck process
+$$d\xi_x = -\beta \xi_xdx+\sigma dW_x $$
+
+The objective is to estimate the parameters $\varphi = (A,B,a,b)$; $\psi = e^{\beta\Delta}$ where $\Delta$ is the step size between two observations and $\gamma^2 = \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})$.
+
+## Estimation with the EM algorithm
+
+The EM algorithm is based on the complete log-likelihood of the model.
+The solution of the hidden process $\xi_x$ is
+$$\xi_{x+\Delta} = \xi_x e^{-\beta\Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+such that the transition density is
+$$p(\xi_{x+\delta}|\xi_x) = \mathcal{N}(\xi_x e^{-\beta\Delta}, \frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta}))$$
+
+The complete log-likelihood is thus
+\begin{eqnarray*}
+\log L(Y,\xi,\theta)&=&\sum_{i=1}^n\log p(Y_i|\xi_i) +\sum_{i=1}^n\log p(\xi_{i}|\xi_{i-1}) +\log p(\xi_1)\\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}e^{-\beta\Delta})^2}{\frac{\sigma^2}{\beta}(1-e^{-2\beta\Delta})} - \frac{n}{2}\log(\frac{\sigma^2}{2\beta}(1-e^{-2\beta\Delta})) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2}-\frac{n}{2}\log(\omega^2)\\
+&&- \sum_{i=1}^n\frac{(\xi_i-\xi_{i-1}\psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
+\end{eqnarray*}
+
+The EM algorithm proceeds at iteration $k$ with the two following steps, given the current value of the parameters $\theta^k$
+
+- E step: calculation of $Q(\theta, \theta^k)$
+- M step: update of the parameters $\theta^{k+1}=\arg\max_\theta Q(\theta, \theta^k)$
+
+### E step
+
+The condition distribution $p(\xi|Y; \theta^k)$ is not explicit because the regression function is not linear. We should proceed with a MCMC algorithm to sample from this distribution. This will lead to a stochastic version of the EM algorithm, namely the SAEM algorithm.
+
+### M step
+
+We need the sufficient statistics to update the algorithm.
+
+The statistics are
+
+
+\begin{eqnarray*}
+S_1(\xi_i)& =& \frac{1}{n}\sum_{i=1}^n (Y_i -f(x_i(\xi_i), \varphi))^2\\
+S_2(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}\xi_i\\
+S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
+S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
+\end{eqnarray*}
+
+
+The update of the parameters are based on these statistics.
+
+### SAEM algorithm
+
+The steps of the SAEM algorithm are
+
+- E step: simulation of a new trajectory $\xi^k$ with a MCMC algorithm targeting $p(\xi|Y; \theta^k)$ as stationary distribution
+
+- SA step: stochastic approximation of the sufficient statistics
+
+\begin{eqnarray*}
+s_1^k &=& s_1^{k-1} + (1-\alpha_k)(S_1(\xi^k)-s_1^{k-1}) \\
+s_2^k &=& s_2^{k-1} + (1-\alpha_k)(S_2(\xi^k)-s_2^{k-1}) \\
+s_3^k &=& s_3^{k-1} + (1-\alpha_k)(S_3(\xi^k)-s_3^{k-1}) \\
+s_4^k &=& s_4^{k-1} + (1-\alpha_k)(S_4(\xi^k)-s_4^{k-1}) \\
+\end{eqnarray*}
+
+- M step: update of $\theta^{k}$ using the sufficient statistics $s^k$
+
+\begin{eqnarray*}
+\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
+\\
+\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
+\widehat{\omega^{2}}^k &=& s_1^k\\
+\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
+\end{eqnarray*}
+
+
+#### Plan d'expérience
+
+**Estimation of initial a**
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
+```
+
+```{r}
+params.a.mean <- apply(params.a.est, 2, mean)
+params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mape <- apply(abs(params.a.pe), 2, mean)
+params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
+params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.a.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.a.mean
+params.a.mape
+params.a.rmse
+```
+
+**Estimation of initial a and b**
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
+```
+
+```{r}
+params.a.b.mean <- apply(params.a.b.est, 2, mean)
+params.a.b.pe <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.b.mape <- apply(abs(params.a.b.pe), 2, mean)
+params.a.b.se <- apply(params.a.b.est, 1, function (row) (params.true - row)^2)
+params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.a.b.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.a.b.mean
+params.a.b.mape
+params.a.b.rmse
+```
