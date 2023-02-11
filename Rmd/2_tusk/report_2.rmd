@@ -243,7 +243,7 @@ avec
 
 À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit accepté soit rejeté et donc ,dans ce cas, remplacé par la valeur acceptée à l'itération précédente k-1.  
 
-De plus, nous avons choisi de rendre le paramètre $\delta$ adaptatif en fonction du taux d'acceptation pour chaque point au fil des itérations k. Cette mise en place rajoute donc une partie d'actualisation à l'algorithme précédent, ce qui donne finalement l'Algorithme \@ref(alg:MCMC) à M itérations. 
+De plus, nous avons choisi de rendre le paramètre $\delta$ adaptatif en fonction du taux d'acceptation $Acc.Rate_i$ pour chaque point au fil des itérations k. Cette mise en place rajoute donc une partie d'actualisation à l'algorithme précédent, ce qui donne finalement l'Algorithme \@ref(alg:MCMC) à M itérations. 
 
 
 \begin{algorithm}
@@ -294,7 +294,7 @@ Ainsi le paramètre $\alpha$ décroît au fil des itérations à partir de la $\
 
 En prenant en compte ces deux paramètres supplémentaires, l'algorithme se présente comme l'Algorithme \@ref(alg:SAEM). 
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Algorithme SAEM complet}
 \label{alg:SAEM}
 \begin{algorithmic}
@@ -340,13 +340,73 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 
 ## Simulation & résultats 
 
-[Présentation de la methode de simulation ainsi que des résultats]
+[Phrase d'introduction a la partie]
 
-### MCMC & Filtre particulaire
+### MCMC indépendant
+
+Nous avons, dans un premier temps, testé l'efficacité de l'algorithme MCMC programmé indépendamment de l'algorithme SAEM. Pour ce faire, nous avons utilisé des valeurs fixes de paramètres : $A=0.5$, $B=-0.25$,  $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$. Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution Y associée selon le modèle sinusoïdal. L'algorithme MCMC a été réalisé avec M=150 itérations et obtient, à partir de ces mêmes valeurs de paramètres et des observations Y, les résultats présentés sur la figure 6. 
+
+```{r,fig.cap="Superposition de la distribution Y cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution Y qui l'utilise (en rouge).",fig.align='center',fig.height=4,fig.width=10,fig.pos="H"}
+source("../../R/2_tusk/utils/simulation.R")
+source("../../R/2_tusk/utils/SMC.R")
+source("../../R/2_tusk/utils/MCMC.R")
+
+set.seed(15)
+M <- 150
+mcmc.obj <- mcmc.alg(Y, M)
+
+par(mfrow=c(1,2))
+
+plot(Y, type = "l", col = "blue",main="Y")
+lines(f(x, mcmc.obj$xi.c), type = "l", col = "red") 
+
+plot(xi, type = "l", col = "blue",
+     ylim = c(min(min(mcmc.obj$xi.c), min(xi)), max(max(mcmc.obj$xi.c), max(xi))),main="xi")
+lines(mcmc.obj$xi.c, type = "l", col = "red")
+
+
+```
+
+La trajectoire de $\xi_x$ obtenue par le MCMC (en rouge) est très proche de celle à l'origine des observations Y. Nous remarquons cependant que quelques points de $\xi$ sont très mal approchés par l'algorithme. Effectivement pour plusieurs positions $x_i$, la distance entre la valeur originelle de $\xi_i$ et la valeur estimée par l'algorithme semble grande. Cependant, ces différences n'influencent que très peu l'allure du signal Y, qui reste très satisfaisant. Afin de comprendre la raison de ces erreurs, nous nous sommes intéressés au comportement du $\delta_i$ au fil des itérations, relativement à celui du taux d'acceptation $Acc.Rate_i$ pour un des points concernés. Nous avons comparé ces deux distributions pour la position $x_i$  où l'erreur est maximale et celle ou elle est minimale (cf figure 7).
+
+```{r,warning=F,fig.cap="Distributions du taux d'acceptation et du delta adaptatif au fil des itérations pour deux positions différentes : celle pour laquelle l'erreur d'estimation est maximale et celle où elle est minimale.",fig.align='center',fig.height=4,fig.width=10,fig.pos="H"}
+library(cowplot)
+library(ggplot2)
+worst.idx <- which.max(abs(xi - mcmc.obj$xi.c))
+best.idx <- which.min(abs(xi - mcmc.obj$xi.c))
+
+coeff1 <- max(mcmc.obj$acceptance.rate[, worst.idx]) / max(mcmc.obj$delta[, worst.idx])
+g1<-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff1), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff1, name = "Delta"))+ggtitle("Erreur maximale")+xlab("Itérations")
+
+coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
+g2<-ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff, name = "Delta"))+ggtitle("Erreur minimale")+xlab("Itérations")
+
+plot_grid(g1, g2, ncol = 2, nrow = 1,axis="none")
+```
+On peut voir sur cette figure, que dans les deux cas, le delta adaptif évolue correctement. Effectivement le taux d'acceptation est premièrement supérieur à la borne supérieure de notre seuil ce qui entraine l'augmentation du delta. Cette augmentation permet alors au taux de diminuer et donc de rentrer dans nos deux bornes de seuil, alors le delta stagne durant cette période. Le taux d'acceptation devient ensuite trop bas, ce qui a pour effet de diminuer la valeur de delta afin de le faire augmenter à nouveau. Nous remarquons seulement que, dans le cas concernant l'erreur maximale, l'évolution du taux d'acceptation est moins rapide que dans le cas de l'erreur minimale, par exemple il atteint l'intervalle de seuil environ vers la 40ième itération contre environ la 20ième dans le cas non erroné. Cela entraine une valeur maximale de delta bien plus haute d'environ 1.6 contre 0.3, dans le cas contraire. Malgré cette observation, nous n'identifions pas la source de ces erreurs. Cependant, étant donné que la localisation de ces erreurs n'impacte pas gravement l'estimation de la distribution des observations Y, l'algorithme MCMC programmée reste satisfaisant à notre avis. 
+
+
+### Filtre particulaire 
 
 ### SAEM 
 
+Dire que les parametre alpha min et Mmax ont été fixé en fonction de l'allure des courbes 
+
+[Présentation des graphes de xi, Y et des chaines des coefs]
+
 ### Plan d'expérience 
+
+[Présentation de ce que c'est et des boxplots ]
 
 \newpage
 
