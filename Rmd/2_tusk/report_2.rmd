@@ -459,7 +459,42 @@ Les estimations faites par l'algorithme sont donc satisfaisantes pour les param�
 
 ## Plan d'expérience 
 
-[Présentation de ce que c'est et des boxplots ]
+Afin de se rendre compte de la variation de nos estimateurs vis-à-vis de la valeur initiale, nous avons éffectué un plan d'expérience. En effet, notre objectif est d'estimer sur un grand nombre d'itération, nos paramètres, afin d'analyser leurs variations autour de leur valeur fixée. Les paramètres à estimer sont $A$, $B$, $a$, $b$, ainsi que  $\gamma$, $\psi$ et$\omega$. Nous avons choisi d'effectuer 1000 estimations de chacun de ses paramètres, et calculer la "root-mean-square error" (RMSE) sur chacune d'entre elles, avec pour formule : 
+
+$$RMSE = \frac{\sqrt(\hat{\theta}-\theta)^{2}} {\theta} $$ 
+Avec $\hat{\theta}$ notre paramètre éstimé et $\theta$ notre paramètre initial fixé. 
+
+En vu que l'estimation de chacun de nos paramètres doit se rapprocher et varier autour de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ variant autour de nos $\hat{\theta}$, soit une $RMSE$ variant autour de 0. A travers ces 1000 itérations, nous avons effectué des boxplots de nos valeurs pour la RMSE pour chacun de nos sept paramètres.
+
+```{r}
+library(ggplot2)
+library(reshape2)
+source("../../R/2_tusk/utils/simulation.R")
+```
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
+```
+
+```{r}
+params.a.mean <- apply(params.a.est, 2, mean)
+params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mape <- apply(abs(params.a.pe), 2, mean)
+params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
+params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
+```
+
+```{r fig.cap="Boxplot des estimations de la RMSE pour chacun de nos paramètres.",fig.align='center',fig.height=4,fig.width=10,fig.pos="H"}
+df <- melt(params.a.pe, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value)) + 
+  labs(x="Paramètres",y="Valeurs")
+```
+Comme attendu, nous avons la RSME proche et variant autour de 0 pour tout nos paramètres hormis $\omega$. En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande. Cependant, nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, il est donc plus probable que les variations soient plus importantes en terme de pourcentage. 
+
+Pour conclure sur le plan d'expérience, mise à part pour $\omega$,l'estimation de nos paramètres semble varier autour de nos paramètres initiaux fixés. Nous pouvons penser que nos estimations semble être assez proche de la réalité. Cependant, nous devons comprendre comment mieux estimer $\omega$.
+
 
 \newpage
 
