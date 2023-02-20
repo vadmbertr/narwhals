@@ -106,7 +106,6 @@ ggplot() +
 Afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente, nous avons implémenté une procedure reposant sur l'algorithme SAEM.
 Nous allons d'abord présenter le principe d'un algorithme EM, puis celui de son approximation stochastique : l'algorithme SAEM.
 Durant sa présentation, nous détaillerons les algorithmes MCMC et SMC avant de présenter l'algorithme complet.
-Nous présenterons ensuite, dans une dernière partie, la simulation ainsi que les résultats obtenus par les algorithmes MCMC et SMC, plus largement par l'algorithme SAEM et finalement par le plan d'expérience mis en place.
 
 ## Algorithme EM 
 
@@ -271,9 +270,9 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
     \EndIf
     \State $acc\_rate_i \gets$ mise à jour du taux d'acceptation
     \If{$acc\_rate_i < acc\_rate_{target} * (1 - .1)$}
-      \State $ \delta_i \gets \delta_i * (1 - delta_{AR})$ \Comment{Réduction du delta adaptatif}
+      \State $ \delta_i \gets \delta_i * (1 - \delta_{AR})$ \Comment{Réduction du delta adaptatif}
     \ElsIf {$acc\_rate_i > acc\_rate_{target} * (1 - .1)$}
-      \State $ \delta_i \gets \delta_i * (1 + delta_{AR})$  \Comment{Augmentation du delta adaptatif}
+      \State $ \delta_i \gets \delta_i * (1 + \delta_{AR})$  \Comment{Augmentation du delta adaptatif}
     \EndIf
   \EndFor
 \EndFor
@@ -371,9 +370,9 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 \end{algorithmic}
 \end{algorithm}
 
-# Simulation & résultats 
+# Simulation & résultats
 
-[Phrase d'introduction a la partie]
+Dans cette dernière partie, nous présentons les résultats d'estimation de $\xi_x$ par les algorithmes MCMC et SMC ; et plus largement de l'ensemble de coefficients $\theta$ par l'algorithme SAEM, ainsi que du plan d'expérience mis en place pour les valider.
 
 ## Estimation de $\xi_x$ par MCMC
 
