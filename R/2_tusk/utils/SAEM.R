@@ -25,7 +25,7 @@ init.b <- function (Y.arg, a.arg) {
   return((7 * pi / 8) - find.x0(Y.arg) * a.arg)
 }
 
-saem.alg <- function(Y.obs, n.rep = 500, n.part = 1000, smc = FALSE, n.mcmc = 20, n.alpha = 90) {
+saem.alg <- function(Y.obs, n.rep = 500, n.part = 500, smc = FALSE, n.mcmc = 20, n.alpha = 90) {
   s1.c <- 0
   s1 <- rep(s1.c, n.rep)
   s2.c <- 0
