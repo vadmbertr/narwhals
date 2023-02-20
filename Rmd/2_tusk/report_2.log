@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  20 FEB 2023 15:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2023.2.20)  20 FEB 2023 15:58
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -842,12 +842,12 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 [1
 
 {/home/vadim/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<./img/img.928.png, id=79, 679.53876pt x 541.02126pt>
+<./img/img.928.png, id=89, 679.53876pt x 541.02126pt>
 File: ./img/img.928.png Graphic file (type png)
 <use ./img/img.928.png>
 Package pdftex.def Info: ./img/img.928.png  used on input line 122.
 (pdftex.def)             Requested size: 234.87662pt x 186.99925pt.
-<./img/1-thenarwhalst.jpg, id=84, 157.0668pt x 117.8001pt>
+<./img/1-thenarwhalst.jpg, id=94, 157.0668pt x 117.8001pt>
 File: ./img/1-thenarwhalst.jpg Graphic file (type jpg)
 <use ./img/1-thenarwhalst.jpg>
 Package pdftex.def Info: ./img/1-thenarwhalst.jpg  used on input line 140.
@@ -857,87 +857,89 @@ LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 17
 (/home/vadim/.TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf, id=97, 433.62pt x 216.81pt>
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf, id=107, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf>
 Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf  used on input line 190.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-[3] [4 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf>] [5]
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf, id=128, 433.62pt x 216.81pt>
+[3] [4 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/mdl-1.pdf>]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf, id=133, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf  used on input line 297.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf  used on input line 261.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf, id=131, 433.62pt x 216.81pt>
+[5]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf, id=145, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf  used on input line 313.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf  used on input line 277.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
 
-LaTeX Warning: Reference `(' on page 6 undefined on input line 317.
+LaTeX Warning: Reference `(' on page 6 undefined on input line 281.
 
 
-LaTeX Warning: Reference `(' on page 6 undefined on input line 317.
+LaTeX Warning: Reference `(' on page 6 undefined on input line 281.
 
-[6 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf>]
-Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 346.
-[7 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf>] [8] [9]
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf, id=185, 433.62pt x 216.81pt>
+[6 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-xis-1.pdf> </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/sim-ys-1.pdf>]
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 310.
+[7] [8] [9]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf, id=189, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf  used on input line 459.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf  used on input line 457.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf, id=186, 433.62pt x 216.81pt>
+[10]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf, id=197, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf  used on input line 475.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf  used on input line 473.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-[10 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf>]
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf, id=200, 433.62pt x 216.81pt>
+[11 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-MCMC-1.pdf> </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf>]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf, id=216, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf  used on input line 505.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf  used on input line 503.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-[11 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/errors-1.pdf>]
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf, id=215, 433.62pt x 216.81pt>
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf, id=218, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf  used on input line 519.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf  used on input line 517.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf, id=216, 433.62pt x 216.81pt>
+[12 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf>]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf, id=233, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf  used on input line 528.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf  used on input line 526.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
-[12 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/result-SAEM-1.pdf> </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf>] [13 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf>]
-</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf, id=248, 433.62pt x 216.81pt>
+[13 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef1-SAEM-1.pdf> </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/coef2-SAEM-1.pdf>]
+</home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf, id=253, 433.62pt x 216.81pt>
 File: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf Graphic file (type pdf)
 <use /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf>
-Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf  used on input line 563.
+Package pdftex.def Info: /home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf  used on input line 561.
 (pdftex.def)             Requested size: 433.63878pt x 216.81938pt.
 [14 </home/vadim/Documents/Master/M2/projet-tut/narwhals/Rmd/2_tusk/report_2_files/figure-latex/params-ape-1.pdf>] [15] [16] (./report_2.aux)
 
 LaTeX Warning: There were undefined references.
 
 Package rerunfilecheck Info: File `report_2.out' has not changed.
-(rerunfilecheck)             Checksum: 94A3DB361C83C377A8F046899AAE4BE8;2012.
+(rerunfilecheck)             Checksum: B7B0FE3CC201EA19D1A03261C10D9F1A;2256.
 Package logreq Info: Writing requests to 'report_2.run.xml'.
 \openout1 = `report_2.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 21175 strings out of 477989
- 372617 string characters out of 5839365
+ 21174 strings out of 477989
+ 372600 string characters out of 5839365
  1871346 words of memory out of 5000000
- 40951 multiletter control sequences out of 15000+600000
+ 40952 multiletter control sequences out of 15000+600000
  571074 words of font info for 76 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  66i,12n,68p,744b,1624s stack positions out of 10000i,1000n,20000p,200000b,200000s
-{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}</home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb>
-Output written on report_2.pdf (16 pages, 1187458 bytes).
+{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/vadim/.TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}</home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy5.pfb></home/vadim/.TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb>
+Output written on report_2.pdf (16 pages, 1187605 bytes).
 PDF statistics:
- 385 PDF objects out of 1000 (max. 8388607)
- 303 compressed objects within 4 object streams
- 65 named destinations out of 1000 (max. 500000)
- 152 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 391 PDF objects out of 1000 (max. 8388607)
+ 309 compressed objects within 4 object streams
+ 63 named destinations out of 1000 (max. 500000)
+ 168 words of extra memory for PDF output out of 10000 (max. 10000000)
 

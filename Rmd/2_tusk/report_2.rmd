@@ -121,8 +121,8 @@ L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'é
 
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^k$. 
 
-- étape E : calcul de $Q(\theta, \theta^k)$, [Expliquer ce que c'est ?]
-- étape M : actualisation des paramètres $\theta^{k+1}=\arg\max_\theta Q(\theta, \theta^k)$.
+- étape E : calcul de $Q(\theta, \theta^k)$, l'espérance de la log-vraisemblance du modèle,
+- étape M : actualisation des paramètres $\theta^{k+1} = \arg\max_\theta Q(\theta, \theta^k)$.
 
 Pour actualiser les paramètres, nous avons besoin des statistiques exhaustives.
 Ces statistiques sont obtenues à partir du théorème de factorisation [?] et contiennent toute l'information de la vraisemblance.
@@ -135,40 +135,14 @@ S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
 S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
 \end{eqnarray*}
 
-L'actualisation des paramètres dépend directement de ces statistiques. 
+L'actualisation des paramètres dépend directement de ces statistiques.
 
-## Algorithme SAEM
+## Simulation de $\xi_x$
 
 Dans notre cas, la distribution conditionnelle $p(\xi|Y; \theta^k)$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
-Nous allons donc utiliser un algorithme MCMC pour simuler selon cette distribution.
-Cela conduit à une version stochastique de l'algorithme EM, à savoir l'algorithme SAEM.
-Cet algorithme utilise les étapes de l’algorithme EM auxquelles s'ajoute une étape d'apprentissage probabiliste.
+Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler selon cette distribution.
 
-Effectivement, pour chaque itération k, les étapes sont les suivantes : 
-
-- étape E : simulation d'une nouvelle trajectoire de $\xi^k$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^k)$ comme une distribution stationnaire,
-- étape SA : approximation stochastique des statistiques exhaustives :
-
-\begin{eqnarray*}
-s_1^k &=& s_1^{k-1} + \alpha_k(S_1(\xi^k) - s_1^{k-1}) \\
-s_2^k &=& s_2^{k-1} + \alpha_k(S_2(\xi^k) - s_2^{k-1}) \\
-s_3^k &=& s_3^{k-1} + \alpha_k(S_3(\xi^k) - s_3^{k-1}) \\
-s_4^k &=& s_4^{k-1} + \alpha_k(S_4(\xi^k) - s_4^{k-1}) \\
-\end{eqnarray*}
-
-- étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^k$ :
-
-\begin{eqnarray*}
-\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
-\\
-\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
-\widehat{\omega^{2}}^k &=& s_1^k\\
-\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
-\end{eqnarray*}
-
-### Simulation de $\xi^k$ 
-
-#### Identifiabilité 
+### Identifiabilité
 
 Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou SMC, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal.
 Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres fixées, obtenues selon le procédé suivant :
@@ -253,7 +227,7 @@ g4 <- ggplot() +
 (g1 + g2) / (g3 + g4)
 ```
 
-#### Algorithme MCMC
+### Algorithme MCMC
 
 L'objectif de cet algorithme MCMC (Markov Chain Monte Carlo) est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y_i$ ainsi que des paramètres $\gamma^2$, $\psi$ et $\omega^2$.
 L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire.
@@ -272,12 +246,12 @@ avec :
 && + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi_{k-1}))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi_{k-1} - \xi_{k-2} \psi)^2\\
 \end{eqnarray*}
 
-À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit rejeté, soit accepté auquel cas, il remplace la valeur considérée à l'itération $k - 1$.
+À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit rejeté, soit accepté, auquel cas, il remplace la valeur considérée à l'itération $k - 1$.
 
 De plus, nous avons choisi de rendre le paramètre $\delta$ adaptatif en fonction du taux d'acceptation $acc\_rate_i$ pour chaque point au fil des itérations $k$.
 Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui donne finalement l'Algorithme \@ref(alg:MCMC) :
 
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Algorithme MCMC de simulation d'une trajectoire du processus $\xi_x$.}
 \label{alg:MCMC}
 \begin{algorithmic}
@@ -306,13 +280,38 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 \end{algorithmic}
 \end{algorithm}
 
-#### Algorithme SMC
+### Algorithme SMC
 
-## Algorithme SAEM complet  
+## Algorithme SAEM
 
-Au principe général d'un algorithme SAEM à $Q$ itérations, nous avons ajouté deux paramètres $M_{max}$ & $\alpha_{min}$ :
+L'introduction d'une étape MCMC ou SMC conduit à la version stochastique de l'algorithme EM, à savoir l'algorithme SAEM.
+Cet algorithme utilise les étapes de l’algorithme EM auxquelles s'ajoute une étape d'approximation stochastique.
+
+Effectivement, pour chaque itération k, les étapes sont les suivantes :
+
+- étape E : simulation d'une nouvelle trajectoire de $\xi^k$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^k)$ comme une distribution stationnaire,
+- étape SA : approximation stochastique des statistiques exhaustives :
+
+\begin{eqnarray*}
+s_1^k &=& s_1^{k-1} + \alpha_k(S_1(\xi^k) - s_1^{k-1}) \\
+s_2^k &=& s_2^{k-1} + \alpha_k(S_2(\xi^k) - s_2^{k-1}) \\
+s_3^k &=& s_3^{k-1} + \alpha_k(S_3(\xi^k) - s_3^{k-1}) \\
+s_4^k &=& s_4^{k-1} + \alpha_k(S_4(\xi^k) - s_4^{k-1}) \\
+\end{eqnarray*}
+
+- étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^k$ :
+
+\begin{eqnarray*}
+\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
+\\
+\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
+\widehat{\omega^{2}}^k &=& s_1^k\\
+\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
+\end{eqnarray*}
+
+Au principe général d'un algorithme SAEM à $Q$ itérations, nous avons ajouté deux hyper-paramètres $M_{max}$ & $\alpha_{min}$ :
 \begin{itemize}
-\item Pour chaque itération q de l'algorithme SAEM, au moins une itération de l'algorithme MCMC est effectuée.
+\item Pour chaque itération $q$ de l'algorithme SAEM, au moins une itération de l'algorithme MCMC est effectuée.
 Afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis ensuite l'algorithme n'accomplis plus qu'une seule itération du MCMC.
 Le paramètre $M_{max}$ est donc un hyper-paramètre de l'algorithme SAEM à choisir au préalable.
 \item Le deuxième paramètre concerne l'approximation stochastique effectuée pour chacune des itérations $q$.
