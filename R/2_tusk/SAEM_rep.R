@@ -24,7 +24,7 @@ set.seed(15)
 run.saem <- function (i) {
   xi <- rxi()
   Y <- f(x, xi) + rnorm(n, 0, omega)
-  saem.obj <- saem.alg(Y, smc = TRUE)
+  saem.obj <- saem.alg(Y, n.rep = 100, n.part = 500, smc = TRUE, n.alpha = 25)
   return(data.frame(omega = saem.obj$omega.c, psi = saem.obj$psi.c, gamma = saem.obj$gamma.c,
                     A = saem.obj$A.c, B = saem.obj$B.c, a = saem.obj$a.c, b = saem.obj$b.c))
 }

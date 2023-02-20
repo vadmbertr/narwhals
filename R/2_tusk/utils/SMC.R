@@ -18,6 +18,10 @@ smc.alg <- function (Y.obs, n.part, omega.arg = omega, psi.arg = psi, gamma.arg 
 
     # exclude almost zero probalities
     plausible.idx <- which(W1 >= 1e-8)
+    if (length(plausible.idx) == 0) {
+      plausible.idx <- 1:n.part
+      W1 <- rep(1, n.part)
+    }
     xi.part <- xi.part[plausible.idx]
     W1 <- W1[plausible.idx]
 
