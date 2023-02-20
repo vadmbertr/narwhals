@@ -107,18 +107,20 @@ s_4^k &=& s_4^{k-1} + (1-\alpha_k)(S_4(\xi^k)-s_4^{k-1}) \\
 
 #### Plan d'expérience
 
+##### MCMC
+
 **Estimation of initial a**
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
+params.smc.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
 ```
 
 ```{r}
-params.a.mean <- apply(params.a.est, 2, mean)
-params.a.ape <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mean <- apply(params.smc.est, 2, mean)
+params.a.ape <- t(apply(params.smc.est, 1, function (row) (params.true - row) / params.true) * 100)
 params.a.mape <- apply(abs(params.a.ape), 2, mean)
-params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
+params.a.se <- apply(params.smc.est, 1, function (row) (params.true - row)^2)
 params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
 ```
 
@@ -138,7 +140,7 @@ params.a.rmse
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
+params.a.b.est <- readRDS("../../data/2_tusk/params.est.mcmc.rds")
 ```
 
 ```{r}
@@ -159,4 +161,31 @@ ggplot(data = df) +
 params.a.b.mean
 params.a.b.mape
 params.a.b.rmse
+```
+
+##### SMC
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.smc.est <- readRDS("../../data/2_tusk/params.est.smc.rds")
+```
+
+```{r}
+params.smc.mean <- apply(params.smc.est, 2, mean)
+params.smc.ape <- t(apply(params.smc.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.smc.mape <- apply(abs(params.smc.ape), 2, mean)
+params.smc.se <- apply(params.smc.est, 1, function (row) (params.true - row)^2)
+params.smc.rmse <- sqrt(apply(params.smc.se, 1, mean))
+```
+
+```{r}
+df <- melt(params.smc.ape, varnames = c("it", "param"))
+ggplot(data = df) +
+  geom_boxplot(aes(x = param, y = value))
+```
+
+```{r}
+params.smc.mean
+params.smc.mape
+params.smc.rmse
 ```

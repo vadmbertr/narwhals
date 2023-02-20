@@ -90,7 +90,7 @@ Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
 
 Une réalisation de ce modèle est présentée sur la Figure \@ref(fig:mdl). 
 
-```{r mdl, fig.cap = "Simulation des observations Y, avec les paramètres suivants : $A=0.5$, $B=-0.25$, $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$."}
+```{r mdl, fig.cap = "Simulation des observations $Y$, avec les paramètres suivants : $A=0.5$, $B=-0.25$, $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$."}
 ggplot() +
   geom_line(aes(x = x, y = Y))
 ```
@@ -222,7 +222,7 @@ Les observations de $Y$ sont donc sensibles à la trajectoire du processus $\xi_
 
 Nous ne pouvons donc pas nous contenter de tirer une réalisation de $\xi_k$ dans l'étape de simulation de notre algorithme, c'est pour cette raison que nous avons intégré à l'algorithme SAEM une étape MCMC ou filtre particulaire.
 
-```{r sim-ys, fig.cap = "Distributions des Y calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref(fig:sim-xis)."}
+```{r sim-ys, fig.cap = "Distributions des $Y$ calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref(fig:sim-xis)."}
 g1 <- ggplot() +
   geom_line(aes(x = x, y = Y)) +
   labs(caption = "Référence", y = TeX("$Y$")) +
@@ -380,10 +380,10 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 
 Nous avons, dans un premier temps, testé l'efficacité de l'algorithme MCMC programmé indépendamment de l'algorithme SAEM.
 Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0.25$,  $b = 1$, $a = 0.1$, $\beta = 0.05$, $\sigma = 0.1$, $\omega = 0.01$ et $\delta = 1$.
-Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution Y associée selon le modèle sinusoïdal.
+Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution $Y$ associée selon le modèle sinusoïdal.
 L'algorithme MCMC a été réalisé avec $M = 150$ itérations et obtient, à partir de ces mêmes valeurs de paramètres et des observations $Y$, les résultats présentés sur la Figure \@ref(fig:result-MCMC).
 
-```{r result-MCMC, fig.cap = "Superposition de la distribution Y cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution Y qui l'utilise (en rouge)."}
+```{r result-MCMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution $Y$ qui l'utilise (en rouge)."}
 source("../../R/2_tusk/utils/MCMC.R")
 
 M <- 150
@@ -421,9 +421,13 @@ g1 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
   geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff1), color = "blue") +
   geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
   geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
-  scale_y_continuous(name = "Acceptance rate", sec.axis = sec_axis(~. / coeff1, name = "")) +
+  scale_y_continuous(name = "Taux d'acceptation", sec.axis = sec_axis(~. / coeff1, name = "")) +
   labs(caption = "Erreur maximale", x = "Itérations") +
-  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"),
+        axis.title.y.left = element_text(colour="blue"),
+        axis.text.y.left = element_text(colour="blue"),
+        axis.title.y.right = element_blank(),
+        axis.text.y.right = element_text(colour="red"))
 
 coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
 g2 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
@@ -433,7 +437,11 @@ g2 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
   geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
   scale_y_continuous(name = "", sec.axis = sec_axis(~. / coeff, name = "Delta")) +
   labs(caption = "Erreur minimale", x = "Itérations") +
-  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"),
+        axis.title.y.left = element_blank(),
+        axis.text.y.left = element_text(colour="blue"),
+        axis.title.y.right = element_text(colour="red"),
+        axis.text.y.right = element_text(colour="red"))
 
 g1 + g2
 ```
@@ -464,7 +472,7 @@ Q <- 500
 saem.obj <- saem.alg(Y, Q)
 ```
 
-```{r result-SAEM, fig.cap = "Superposition de la distribution Y cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme SAEM et la distribution Y qui l'utilise (en rouge)."}
+```{r result-SAEM, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
 
 g1 <- ggplot() +
   geom_line(aes(x = x, y = xi), color = "blue") +
@@ -565,48 +573,77 @@ $$MAPE = \frac{\sum^M_{i=1} APE_i}{M}$$
 $$APE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
 Avec $\hat{\theta}$ les paramètres estimés et $\theta$ le paramètre initial fixé.
 
+Nous avons également utilisé le plan d'expérience pour comparer les résultats obtenus en utilisant une étape MCMC ou une étape SMC pour estimer $\xi_x$.
+
 Puisque l'estimation de chacun de nos paramètres doit se rapprocher et varier autour de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des erreurs moyennes relativement proches de $0$.
 À partir des résultats obtenus par les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des APE pour chacun des 7 paramètres.
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
+params.est.mcmc <- readRDS("../../data/2_tusk/params.est.mcmc.rds")
+params.est.smc <- readRDS("../../data/2_tusk/params.est.smc.rds")
 ```
 
 ```{r}
-params.mean <- apply(params.est, 2, mean)
-params.ape <- t(apply(params.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.mape <- apply(abs(params.ape), 2, mean)
-params.se <- apply(params.est, 1, function (row) (params.true - row)^2)
-params.rmse <- sqrt(apply(params.se, 1, mean))
+params.mean.mcmc <- apply(params.est.mcmc, 2, mean)
+params.ape.mcmc <- t(apply(params.est.mcmc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.mcmc <- apply(abs(params.ape.mcmc), 2, mean)
+params.se.mcmc <- apply(params.est.mcmc, 1, function (row) (params.true - row)^2)
+params.rmse.mcmc <- sqrt(apply(params.se.mcmc, 1, mean))
+
+params.mean.smc <- apply(params.est.smc, 2, mean)
+params.ape.smc <- t(apply(params.est.smc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.smc <- apply(abs(params.ape.smc), 2, mean)
+params.se.smc <- apply(params.est.smc, 1, function (row) (params.true - row)^2)
+params.rmse.smc <- sqrt(apply(params.se.smc, 1, mean))
 ```
 
 ```{r params-ape, fig.cap = "Boxplot des $APE$ de chacun des paramètres."}
-df <- melt(params.ape, varnames = c("it", "param"))
-ggplot(data = df) +
-  geom_boxplot(aes(x = param, y = value)) + 
-  labs(x = "Paramètres", y = "APE")
+df.mcmc <- melt(params.ape.mcmc, varnames = c("it", "param"))
+df.mcmc$method <- "MCMC"
+
+df.smc <- melt(params.ape.smc, varnames = c("it", "param"))
+df.smc$method <- "SMC"
+
+ggplot(data = rbind(df.mcmc, df.smc)) +
+  geom_boxplot(aes(x = param, y = value, fill = as.factor(method))) +
+  labs(x = "Paramètres", y = "APE", fill = "Algorithme")
 ```
 
 Comme attendu, les $APE$ varient autour 0 pour tous nos paramètres hormis $\omega$.
 En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
 Cependant, nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes.
 
-```{r params-sum}
-df <- data.frame(theta = params.true, est = params.mean, mape = params.mape, rmse = params.rmse)
+```{r params-sum-mcmc}
+df <- data.frame(theta = params.true, est = params.mean.mcmc, mape = params.mape.mcmc, rmse = params.rmse.mcmc)
 colnames(df) <- c("$\\theta$", "$\\hat{\\theta}$", "MAPE", "RMSE")
 rownames(df) <- c("$\\omega$", "$\\psi$", "$\\gamma$", "A", "B", "a", "b")
 kable(t(df), "latex",
-      label = "params-sum",
-      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres.",
+      label = "params-sum-mcmc",
+      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres, en utilisant une étape MCMC dans l'algorithme SAEM.",
       digits = 3,
       escape = FALSE) %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
-Au regard de la Table \@ref(tab:params-sum) il convient de relativiser l'erreur réaliser sur le paramètre $\omega$ : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean[[1]], 3)`.
-La $MAPE$ peut sembler élevée, mais encore une fois il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme le montre la $RMSE$.
-Finalement, nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
+```{r params-sum-smc}
+df <- data.frame(theta = params.true, est = params.mean.smc, mape = params.mape.smc, rmse = params.rmse.smc)
+colnames(df) <- c("$\\theta$", "$\\hat{\\theta}$", "MAPE", "RMSE")
+rownames(df) <- c("$\\omega$", "$\\psi$", "$\\gamma$", "A", "B", "a", "b")
+kable(t(df), "latex",
+      label = "params-sum-smc",
+      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres, en utilisant une étape SMC dans l'algorithme SAEM.",
+      digits = 3,
+      escape = FALSE) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+Au regard des Tables \@ref(tab:params-sum-mcmc) et \@ref(tab:params-sum-smc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.smc[[1]], 3)`.
+La $MAPE$ peut sembler élevée, mais encore une fois, il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme l'indique la $RMSE$.
+Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
+
+Finalement, les versions MCMC et SMC donnent des estimations extrêmement similaires.
+Peut-être qu'il serait possible d'améliorer encore les résultats de version SMC en jouant sur ses hyper-paramètres, mais cette démarche serait très coûteuse en temps de calcul, et potentiellement sensible aux choix des valeurs fixées des paramètres de la simulation.
 
 \newpage
 
