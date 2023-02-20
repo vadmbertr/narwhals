@@ -82,11 +82,17 @@ $$f(x, \varphi) = A \sin(g(x)  +b) + B \sin(2g(x) + 2b + \frac{\pi}{2})$$
 avec $$g(x) = ax + \xi_x$$
 et  finalement $\xi_x$, un processus aléatoire d'Ornstein-Uhlenbeck, tel que :
 $$d\xi_x = -\beta \xi_xdx + \sigma dW_x$$
+Dont la solution est donnée par :
+$$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+de sorte que la densité de transition soit définie telle que :
+$$p(\xi_{x + \delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - \psi^2))$$
+
 Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
 
 - $\varphi = (A, B, a, b)$,
+- $\omega$,
 - $\psi = e^{-\beta \Delta}$, où $\Delta$ est l'intervalle de temps entre deux observations,
-- et $\gamma^2 = \frac{\sigma^2}{2\beta}(1 - \psi^2)$.
+- $\gamma^2 = \frac{\sigma^2}{2\beta}(1 - \psi^2)$.
 
 Une réalisation de ce modèle est présentée sur la Figure \@ref(fig:mdl). 
 
@@ -104,13 +110,7 @@ Nous présenterons ensuite, dans une dernière partie, la simulation ainsi que l
 
 ## Algorithme EM 
 
-L'algorithme EM est basé sur la log-vraisemblance complète du modèle.
-La solution du processus sous-jacent $\xi_x$ s'écrit 
-$$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
-de sorte que la densité de transition soit définie telle que
-$$p(\xi_{x + \delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - \psi^2))$$
-
-Ainsi, la log-vraisemblance complète s'écrit de la manière suivante : 
+L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'écrit de la manière suivante :
 \begin{eqnarray*}
 \log L(Y, \xi, \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
 &=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
