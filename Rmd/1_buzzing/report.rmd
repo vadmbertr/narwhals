@@ -1,6 +1,6 @@
 ---
 title: "Effet des perturbations humaines sur l'alimentation des narvals"
-author: "Yanis BEN BELGACEM, Vadim BERTRAND, Alicia LORANDI, Angélique SAILLET"
+author: "Yanis BEN BELGACEM, Vadim BERTRAND, Angélique SAILLET"
 output:
   bookdown::pdf_document2:
     toc: true
@@ -40,10 +40,10 @@ library(patchwork)
 library(reshape2)
 library(splines)
 
+set.seed(15)
+
 source("../../R/1_buzzing/utils/biexp.R")
 source("../../R/1_buzzing/utils/monte_carlo_conf_int.R")
-
-set.seed(15)
 ```
 
 \newpage

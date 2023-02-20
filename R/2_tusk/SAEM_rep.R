@@ -24,7 +24,7 @@ set.seed(15)
 run.saem <- function (i) {
   xi <- rxi()
   Y <- f(x, xi) + rnorm(n, 0, omega)
-  saem.obj <- saem.alg(Y)
+  saem.obj <- saem.alg(Y, smc = TRUE)
   return(data.frame(omega = saem.obj$omega.c, psi = saem.obj$psi.c, gamma = saem.obj$gamma.c,
                     A = saem.obj$A.c, B = saem.obj$B.c, a = saem.obj$a.c, b = saem.obj$b.c))
 }
@@ -33,4 +33,4 @@ n.rep <- as.numeric(args[[1]])
 blas_set_num_threads(1)
 n.jobs <- as.numeric(args[[2]])
 parameters.est <- do.call(rbind, mclapply(1:n.rep, run.saem, mc.cores = n.jobs))
-saveRDS(parameters.est, paste0(args[[3]], "/parameters.est.rds"))
+saveRDS(parameters.est, paste0(args[[3]], "/parameters.est.smc.rds"))
