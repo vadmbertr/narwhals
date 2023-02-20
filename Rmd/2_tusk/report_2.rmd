@@ -281,6 +281,32 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 
 ### Algorithme SMC
 
+Comme pour l'algorithme MCMC, le filtre particulaire à pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y_i$ accompagnée des paramètres $\gamma^2$, $\psi$ et$\omega^2$. Cet algorithme est éffectué via un algorithme "Sequential Monte Carlo" (SMC).
+
+Les méthodes SMC sont basées sur la simulation afin de calculer des approximations de distributions postérieures. Elles permettent d'éviter les hypothèses de linéarité ou de normalité requises par d'autres méthodes. 
+
+L'algorithme SMC consiste donc à utiliser un échantillonnage d'importance en incluant une étape d'anticipation. En effet, pour chaque instant $t$, le filtre particulaire calcule les poids $W_{t|t-1}$ pour les particules à partir du temps $t-1$. Ces poids sont calculés en utilisant une estimation de la probabilité des données actuelles étant donné chaque particule du point de temps précedent soit $P(Y_k(t)|\hat{\xi_kt))}$. Les particules avec un des poids de premier degré élevés correspondent à des valeurs de l'état latent à l'instant t-1 susceptibles de générer les données observées au temps t. En fonction des poids W.
+
+
+\begin{algorithm}
+\caption{Algorithme de filtre particulaire pour la simulation d'une trajectoire du processus $\xi_x$.}
+\label{alg:SMC}
+\begin{algorithmic}
+\State $w \gets (w_1,....,w_n)$ \Comment{Initialisation du w adaptatif}
+\State $w \gets 1/M$ \Comment{Initialisation du w adaptatif}
+\For{$t \in \{1, ..., n\}$}
+  \State$\hat{\xi_t} = f(\xi_t|\xi_{t-1})$ \Comment{Simulation de la valeur courante de $\xi$}
+  \Comment{draw} \State$\hat{\xi_t} | \hat\xi_{t-1}$
+  \State$W1 \gets P(Y(t)|\hat{\xi_t))}$ 
+  \comment{Selectionner les indices pour $\xi_t$ et $W_t$ lorsque $W_t$ non nul}
+  \State$W \gets \frac{W_t}{\sum{W_t}}$
+  \State$idx \gets$ \Comment{Tirage probabiliste des particules en fonction de leur poids W}
+  \Comment{Séléction des $\xi_k$ à l'indice $idx$ en fonction du tirage précedent}
+\EndFor
+\Comment{Tirage du dernier $\xi_n$ en fonction des poids $W_n$}
+\end{algorithmic}
+\end{algorithm}
+
 ## Algorithme SAEM
 
 L'introduction d'une étape MCMC ou SMC conduit à la version stochastique de l'algorithme EM, à savoir l'algorithme SAEM.
