@@ -455,6 +455,27 @@ Cependant, étant donné que ceux-ci n'impactent pas l'estimation de la distribu
 
 ## Estimation de $\xi_x$ par SMC
 
+```{r result-SMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution $Y$ qui l'utilise (en rouge)."}
+source("../../R/2_tusk/utils/SMC.R")
+
+P <- 500
+smc.obj <- smc.alg(Y, n.part = P)
+
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = Y), color = "blue") +
+  geom_line(aes(x = x, y = f(x, smc.obj$xi.c)), color = "red") +
+  labs(caption = TeX("$Y$"), y = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = xi), color = "blue") +
+  geom_line(aes(x = x, y = smc.obj$xi.c), color = "red") +
+  labs(caption = TeX("$\\xi$"), y = TeX("$\\xi$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g1 + g2
+```
+
 ## SAEM 
 
 En gardant l'objectif d'estimer optimalement les paramètres utilisés pour obtenir une réalisation des observations $Y$ cibles, nous avons effectué $Q=500$ itérations de l'algorithme SAEM présenté précédemment.
