@@ -155,7 +155,7 @@ abline(h = a, col = 'red')
 #### SMC
 
 ```{r}
-saem.obj <- saem.alg(Y, smc = TRUE)
+saem.obj <- saem.alg(Y, n.rep = 100, n.part = 500, smc = TRUE, n.alpha = 25)
 ```
 
 ```{r}
