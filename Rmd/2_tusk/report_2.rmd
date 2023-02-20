@@ -27,6 +27,7 @@ knitr::opts_chunk$set(fig.width = 6, fig.height = 3, fig.align = "center")
 
 ```{r}
 library(ggplot2)
+library(kableExtra)
 library(latex2exp)
 library(patchwork)
 library(reshape2)
@@ -556,36 +557,56 @@ Il n'arrive cependant pas à estimer convenablement le paramètre $b$.
 
 ## Plan d'expérience
 
-Afin de se rendre compte de la variation de nos estimateurs vis-à-vis de la valeur initiale, nous avons éffectué un plan d'expérience. En effet, notre objectif est d'estimer sur un grand nombre d'itération, nos paramètres, afin d'analyser leurs variations autour de leur valeur fixée. Les paramètres à estimer sont $A$, $B$, $a$, $b$, ainsi que  $\gamma$, $\psi$ et$\omega$. Nous avons choisi d'effectuer 1000 estimations de chacun de ses paramètres, et calculer la "root-mean-square error" (RMSE) sur chacune d'entre elles, avec pour formule : 
+Afin de se rendre compte de la variation de nos estimateurs vis-à-vis de la valeur initiale, nous avons effectué un plan d'expérience. En effet, notre objectif est d'estimer nos paramètres sur un grand nombre d'itérations, afin d'analyser leurs variations autour des valeurs fixées.
+Les paramètres à estimer sont $A$, $B$, $a$, $b$, ainsi que  $\gamma$, $\psi$ et $\omega$.
+Nous avons choisi d'effectuer $M = 1000$ estimations de chacun de ces paramètres, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur absolue en pourcentage ($APE$) et sa moyenne ($MAPE$), à partir des formules suivantes :
+$$RMSE = \sqrt{\frac{\sum^M_{i=1} (\hat{\theta}_i - \theta)^{2}}{M}}$$
+$$MAPE = \frac{\sum^M_{i=1} APE_i}{M}$$
+$$APE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
+Avec $\hat{\theta}$ les paramètres estimés et $\theta$ le paramètre initial fixé.
 
-$$RMSE = \frac{\sqrt(\hat{\theta}-\theta)^{2}} {\theta}$$
-Avec $\hat{\theta}$ notre paramètre éstimé et $\theta$ notre paramètre initial fixé. 
-
-En vu que l'estimation de chacun de nos paramètres doit se rapprocher et varier autour de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ variant autour de nos $\hat{\theta}$, soit une $RMSE$ variant autour de 0. A travers ces 1000 itérations, nous avons effectué des boxplots de nos valeurs pour la RMSE pour chacun de nos sept paramètres.
+Puisque l'estimation de chacun de nos paramètres doit se rapprocher et varier autour de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des erreurs moyennes relativement proches de $0$.
+À partir des résultats obtenus par les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des APE pour chacun des 7 paramètres.
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
-params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
+params.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
 ```
 
 ```{r}
-params.a.mean <- apply(params.a.est, 2, mean)
-params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.a.mape <- apply(abs(params.a.pe), 2, mean)
-params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
-params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
+params.mean <- apply(params.est, 2, mean)
+params.ape <- t(apply(params.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape <- apply(abs(params.ape), 2, mean)
+params.se <- apply(params.est, 1, function (row) (params.true - row)^2)
+params.rmse <- sqrt(apply(params.se, 1, mean))
 ```
 
-```{r fig.cap = "Boxplot des estimations de la RMSE pour chacun de nos paramètres."}
-df <- melt(params.a.pe, varnames = c("it", "param"))
+```{r params-ape, fig.cap = "Boxplot des $APE$ de chacun des paramètres."}
+df <- melt(params.ape, varnames = c("it", "param"))
 ggplot(data = df) +
   geom_boxplot(aes(x = param, y = value)) + 
-  labs(x="Paramètres",y="Valeurs")
+  labs(x = "Paramètres", y = "APE")
 ```
-Comme attendu, nous avons la RSME proche et variant autour de 0 pour tout nos paramètres hormis $\omega$. En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande. Cependant, nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, il est donc plus probable que les variations soient plus importantes en terme de pourcentage. 
 
-Pour conclure sur le plan d'expérience, mise à part pour $\omega$,l'estimation de nos paramètres semble varier autour de nos paramètres initiaux fixés. Nous pouvons penser que nos estimations semble être assez proche de la réalité. Cependant, nous devons comprendre comment mieux estimer $\omega$.
+Comme attendu, les $APE$ varient autour 0 pour tous nos paramètres hormis $\omega$.
+En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
+Cependant, nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes.
 
+```{r params-sum}
+df <- data.frame(theta = params.true, est = params.mean, mape = params.mape, rmse = params.rmse)
+colnames(df) <- c("$\\theta$", "$\\hat{\\theta}$", "MAPE", "RMSE")
+rownames(df) <- c("$\\omega$", "$\\psi$", "$\\gamma$", "A", "B", "a", "b")
+kable(t(df), "latex",
+      label = "params-sum",
+      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres.",
+      digits = 3,
+      escape = FALSE) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+Au regard de la Table \@ref(tab:params-sum) il convient de relativiser l'erreur réaliser sur le paramètre $\omega$ : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean[[1]], 3)`.
+La $MAPE$ peut sembler élevée, mais encore une fois il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme le montre la $RMSE$.
+Finalement, nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
 
 \newpage
 

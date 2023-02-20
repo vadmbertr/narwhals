@@ -116,14 +116,14 @@ params.a.est <- readRDS("../../data/2_tusk/params.est.nls.a.rds")
 
 ```{r}
 params.a.mean <- apply(params.a.est, 2, mean)
-params.a.pe <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.a.mape <- apply(abs(params.a.pe), 2, mean)
+params.a.ape <- t(apply(params.a.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.mape <- apply(abs(params.a.ape), 2, mean)
 params.a.se <- apply(params.a.est, 1, function (row) (params.true - row)^2)
 params.a.rmse <- sqrt(apply(params.a.se, 1, mean))
 ```
 
 ```{r}
-df <- melt(params.a.pe, varnames = c("it", "param"))
+df <- melt(params.a.ape, varnames = c("it", "param"))
 ggplot(data = df) +
   geom_boxplot(aes(x = param, y = value))
 ```
@@ -143,14 +143,14 @@ params.a.b.est <- readRDS("../../data/2_tusk/params.est.nls.a.b.rds")
 
 ```{r}
 params.a.b.mean <- apply(params.a.b.est, 2, mean)
-params.a.b.pe <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
-params.a.b.mape <- apply(abs(params.a.b.pe), 2, mean)
+params.a.b.ape <- t(apply(params.a.b.est, 1, function (row) (params.true - row) / params.true) * 100)
+params.a.b.mape <- apply(abs(params.a.b.ape), 2, mean)
 params.a.b.se <- apply(params.a.b.est, 1, function (row) (params.true - row)^2)
 params.a.b.rmse <- sqrt(apply(params.a.b.se, 1, mean))
 ```
 
 ```{r}
-df <- melt(params.a.b.pe, varnames = c("it", "param"))
+df <- melt(params.a.b.ape, varnames = c("it", "param"))
 ggplot(data = df) +
   geom_boxplot(aes(x = param, y = value))
 ```
