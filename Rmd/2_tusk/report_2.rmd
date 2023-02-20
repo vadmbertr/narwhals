@@ -105,8 +105,8 @@ ggplot() +
 
 Afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente, nous avons implémenté une procedure reposant sur l'algorithme SAEM.
 Nous allons d'abord présenter le principe d'un algorithme EM, puis celui de son approximation stochastique : l'algorithme SAEM.
-Durant sa présentation, nous détaillerons l'algorithme MCMC et le filtre particulaire avant de présenter l'algorithme complet.
-Nous présenterons ensuite, dans une dernière partie, la simulation ainsi que les résultats obtenus par l'algorithme MCMC, par le filtre particulaire, plus largement par l'algorithme SAEM et finalement par le plan d'expérience mis en place.
+Durant sa présentation, nous détaillerons les algorithmes MCMC et SMC avant de présenter l'algorithme complet.
+Nous présenterons ensuite, dans une dernière partie, la simulation ainsi que les résultats obtenus par les algorithmes MCMC et SMC, plus largement par l'algorithme SAEM et finalement par le plan d'expérience mis en place.
 
 ## Algorithme EM 
 
@@ -170,7 +170,7 @@ s_4^k &=& s_4^{k-1} + \alpha_k(S_4(\xi^k) - s_4^{k-1}) \\
 
 #### Identifiabilité 
 
-Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou d'un filtre particulaire, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal.
+Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou SMC, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal.
 Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres fixées, obtenues selon le procédé suivant :
 
 \begin{algorithmic}
@@ -220,7 +220,7 @@ Ce résultat a un impact direct sur les observations $Y$ puisque comme nous pouv
 Effectivement, la variabilité de simulation du paramètre $\xi$ entraine une variabilité sur les observations $Y$ qui se traduire par un décalage avec la distribution cible.
 Les observations de $Y$ sont donc sensibles à la trajectoire du processus $\xi_x$ associé.
 
-Nous ne pouvons donc pas nous contenter de tirer une réalisation de $\xi_k$ dans l'étape de simulation de notre algorithme, c'est pour cette raison que nous avons intégré à l'algorithme SAEM une étape MCMC ou filtre particulaire.
+Nous ne pouvons donc pas nous contenter de tirer une réalisation de $\xi_k$ dans l'étape de simulation de notre algorithme, c'est pour cette raison que nous avons intégré à l'algorithme SAEM une étape MCMC ou SMC.
 
 ```{r sim-ys, fig.cap = "Distributions des $Y$ calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref(fig:sim-xis)."}
 g1 <- ggplot() +
@@ -306,7 +306,7 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 \end{algorithmic}
 \end{algorithm}
 
-#### Filtre particulaire
+#### Algorithme SMC
 
 ## Algorithme SAEM complet  
 
@@ -376,7 +376,7 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 
 [Phrase d'introduction a la partie]
 
-## MCMC indépendant
+## Estimation de $\xi_x$ par MCMC
 
 Nous avons, dans un premier temps, testé l'efficacité de l'algorithme MCMC programmé indépendamment de l'algorithme SAEM.
 Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0.25$,  $b = 1$, $a = 0.1$, $\beta = 0.05$, $\sigma = 0.1$, $\omega = 0.01$ et $\delta = 1$.
@@ -455,7 +455,7 @@ Cela entraine une valeur maximale de $\delta$ bien plus élevée, d'environ 1.6 
 Malgré cette observation, nous n'identifions pas la source de ces points aberrants.
 Cependant, étant donné que ceux-ci n'impactent pas l'estimation de la distribution des observations $Y$, l'algorithme MCMC programmé reste selon nous satisfaisant.
 
-## Filtre particulaire 
+## Estimation de $\xi_x$ par SMC
 
 ## SAEM 
 
