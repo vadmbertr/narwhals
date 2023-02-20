@@ -662,7 +662,7 @@ La $MAPE$ peut sembler élevée, mais encore une fois, il faut observer qu'en va
 Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
 
 Finalement, les versions MCMC et SMC donnent des estimations extrêmement similaires.
-Peut-être qu'il serait possible d'améliorer encore les résultats de version SMC en jouant sur ses hyper-paramètres, mais cette démarche serait très coûteuse en temps de calcul, et potentiellement sensible aux choix des valeurs fixées des paramètres de la simulation.
+Peut-être qu'il serait possible d'améliorer encore les résultats de la version SMC en jouant sur ses hyper-paramètres, mais cette démarche serait très coûteuse en temps de calcul, et potentiellement sensible aux choix des valeurs fixées des paramètres de la simulation.
 
 \newpage
 
