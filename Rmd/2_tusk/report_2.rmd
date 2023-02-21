@@ -415,7 +415,7 @@ Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0
 Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution $Y$ associée selon le modèle sinusoïdal.
 L'algorithme MCMC a été réalisé avec $M = 150$ itérations et obtient, à partir de ces mêmes valeurs de paramètres et des observations $Y$, les résultats présentés sur la Figure \@ref(fig:result-MCMC).
 
-```{r result-MCMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution $Y$ qui l'utilise (en rouge)."}
+```{r result-MCMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\widehat{\\xi_x}$ obtenue par l'algorithme MCMC et la distribution $\\hat{Y}$ qui l'utilise (en rouge)."}
 source("../../R/2_tusk/utils/MCMC.R")
 
 M <- 150
@@ -489,7 +489,11 @@ Cependant, étant donné que ceux-ci n'impactent pas l'estimation de la distribu
 
 ## Estimation de $\xi_x$ par SMC
 
-```{r result-SMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire xi réellement utilisée (en bleu) ainsi que de la trajectoire de xi obtenue par l'algorithme MCMC et la distribution $Y$ qui l'utilise (en rouge)."}
+Nous avons repris la trajectoire $\xi_x$ à estimer dans la partie précédente et nous cette fois-ci tenté de la générer par notre algorithme SMC en utilisant $P = 500$ particules.
+
+La Figure \@ref(fig:result-SMC) permet de constater que cette approche semble plus précise que la MCMC, les points aberrants ont disparu et l'allure de $\xi_x$ est bien reconstruite.
+
+```{r result-SMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\widehat{\\xi_x}$ obtenue par l'algorithme SMC et la distribution $\\hat{Y}$ qui l'utilise (en rouge)."}
 source("../../R/2_tusk/utils/SMC.R")
 
 P <- 500
@@ -619,16 +623,16 @@ Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne rem
 ### Plan d'expérience
 
 Les estimations de $\theta$ et $\xi_x$ comportent une part d'aléatoire, ainsi afin d'évaluer les performances de notre algorithme SAEM il convient de répéter un grand nombre de fois ces estimations à partir de réalisations de $\xi_x$ différentes. En effet, notre objectif est d'estimer nos paramètres sur un grand nombre d'itérations, afin d'analyser leurs variations autour des valeurs fixées.
-Nous avons choisi d'effectuer $M = 1000$ estimations de chacun des paramètres $\gamma, \psi, \omega, A, B, a, b$, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur absolue en pourcentage ($APE$) et sa moyenne ($MAPE$), à partir des formules suivantes :
+Nous avons choisi d'effectuer $M = 1000$ estimations de chacun des paramètres $\gamma, \psi, \omega, A, B, a, b$, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur en pourcentage ($PE$) et sa moyenne en valeur absolue ($MAPE$), à partir des formules suivantes :
 $$RMSE = \sqrt{\frac{\sum^M_{i=1} (\hat{\theta}_i - \theta)^{2}}{M}}$$
-$$MAPE = \frac{\sum^M_{i=1} APE_i}{M}$$
-$$APE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
+$$MAPE = \frac{\sum^M_{i=1} \vert PE_i \vert}{M}$$
+$$PE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
 Avec $\hat{\theta}$ les paramètres estimés et $\theta$ les paramètres initiaux.
 
 Nous avons également utilisé ce plan d'expérience pour comparer les résultats obtenus en utilisant une étape MCMC ou une étape SMC pour estimer $\xi_x$.
 
-Puisque l'estimation de chacun de nos paramètres doit se rapprocher de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des $APE$ relativement proches de $0$.
-À partir des résultats obtenus pour les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des APE pour chacun des 7 paramètres et pour les deux méthodes de simulation de $\xi_x$.
+Puisque l'estimation de chacun de nos paramètres doit se rapprocher de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des $PE$ relativement proches de $0$.
+À partir des résultats obtenus pour les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des PE pour chacun des 7 paramètres et pour les deux méthodes de simulation de $\xi_x$.
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
@@ -638,31 +642,31 @@ params.est.smc <- readRDS("../../data/2_tusk/params.est.smc.rds")
 
 ```{r}
 params.mean.mcmc <- apply(params.est.mcmc, 2, mean)
-params.ape.mcmc <- t(apply(params.est.mcmc, 1, function (row) (params.true - row) / params.true) * 100)
-params.mape.mcmc <- apply(abs(params.ape.mcmc), 2, mean)
+params.pe.mcmc <- t(apply(params.est.mcmc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.mcmc <- apply(abs(params.pe.mcmc), 2, mean)
 params.se.mcmc <- apply(params.est.mcmc, 1, function (row) (params.true - row)^2)
 params.rmse.mcmc <- sqrt(apply(params.se.mcmc, 1, mean))
 
 params.mean.smc <- apply(params.est.smc, 2, mean)
-params.ape.smc <- t(apply(params.est.smc, 1, function (row) (params.true - row) / params.true) * 100)
-params.mape.smc <- apply(abs(params.ape.smc), 2, mean)
+params.pe.smc <- t(apply(params.est.smc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.smc <- apply(abs(params.pe.smc), 2, mean)
 params.se.smc <- apply(params.est.smc, 1, function (row) (params.true - row)^2)
 params.rmse.smc <- sqrt(apply(params.se.smc, 1, mean))
 ```
 
-```{r params-ape, fig.cap = "Boxplot des $APE$ des 1000 estimations de chacun des paramètres."}
-df.mcmc <- melt(params.ape.mcmc, varnames = c("it", "param"))
+```{r params-ape, fig.cap = "Boxplot des $PE$ des 1000 estimations de chacun des paramètres."}
+df.mcmc <- melt(params.pe.mcmc, varnames = c("it", "param"))
 df.mcmc$method <- "MCMC"
 
-df.smc <- melt(params.ape.smc, varnames = c("it", "param"))
+df.smc <- melt(params.pe.smc, varnames = c("it", "param"))
 df.smc$method <- "SMC"
 
 ggplot(data = rbind(df.mcmc, df.smc)) +
   geom_boxplot(aes(x = param, y = value, color = as.factor(method))) +
-  labs(x = "Paramètres", y = "APE", color = "Algorithme")
+  labs(x = "Paramètres", y = "PE", color = "Algorithme")
 ```
 
-Nous pouvons remarquer qu'avec la version MCMC d'estimation de $\xi_x$, hormis $\omega$, les $APE$ de l'ensemble des paramètres varient autour de $0$.
+Nous pouvons remarquer qu'avec la version MCMC d'estimation de $\xi_x$, hormis $\omega$, les $PE$ de l'ensemble des paramètres varient autour de $0$.
 En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
 Nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes, qui sont elles bien estimées.
 
