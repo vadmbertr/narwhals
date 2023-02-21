@@ -120,7 +120,8 @@ L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'é
 
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^k$. 
 
-- étape E : calcul de $Q(\theta, \theta^k)$, l'espérance de la log-vraisemblance du modèle,
+- étape E : calcul de $Q(\theta, \theta^k)$, l'espérance conditionnelle de la log-vraisemblance du modèle : 
+$Q(\theta, \theta^k) \gets E(\log L(Y, \xi, \theta)|Y, \theta_k)$
 - étape M : actualisation des paramètres $\theta^{k+1} = \arg\max_\theta Q(\theta, \theta^k)$.
 
 Pour actualiser les paramètres, nous avons besoin des statistiques exhaustives.
@@ -144,7 +145,7 @@ Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler 
 ### Identifiabilité
 
 Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou SMC, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal.
-Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres fixées, obtenues selon le procédé suivant :
+Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres $\psi$ et $\gamma$ variant, obtenues selon le procédé suivant :
 
 \begin{algorithmic}
 \State $\xi \gets (0,\xi_2,...,\xi_n)$ \Comment{Initialisation de la première valeur}
@@ -154,9 +155,9 @@ Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du proces
 \end{algorithmic}
 
 ```{r sim-xis, fig.cap = "Présentation d'une trajectoire du processus $\\xi_x$ cible selon certains paramètres (en noir) et de trois autres trajectoires de ce processus simulées à partir des mêmes paramètres (en vert, bleu et rouge)."}
-p1 <- rxi()
-p2 <- rxi()
-p3 <- rxi()
+p1 <- rxi(psi.arg = 1 )
+p2 <- rxi( gamma.arg = 1)
+p3 <- rxi(psi.arg = 1, gamma.arg = 1)
 
 g1 <- ggplot() +
   geom_line(aes(x = x, y = xi)) +
@@ -167,7 +168,7 @@ g1 <- ggplot() +
 g2 <- ggplot() +
   geom_line(aes(x = x, y = xi)) +
   geom_line(aes(x = x, y = p1), color = "green") +
-  labs(caption = TeX("$\\xi_x^{(2)}$")) +
+  labs(caption = TeX("$\\psi$")) +
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
@@ -175,25 +176,27 @@ g2 <- ggplot() +
 g3 <- ggplot() +
   geom_line(aes(x = x, y = xi)) +
   geom_line(aes(x = x, y = p2), color = "blue") +
-  labs(caption = TeX("$\\xi_x^{(3)}$"), y = TeX("$\\xi$")) +
+  labs(caption = TeX("$\\gamma$"), y = TeX("$\\xi$")) +
   theme(plot.margin = margin(0, 0, 0, 0, "pt"))
 
 g4 <- ggplot() +
   geom_line(aes(x = x, y = xi)) +
   geom_line(aes(x = x, y = p3), color = "red") +
-  labs(caption = TeX("$\\xi_x^{(4)}$")) +
+  labs(caption = TeX("$\\psi, gamma$")) +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
 (g1 + g2) / (g3 + g4)
 ```
+ 
+Nous observons sur la Figure \@ref(fig:sim-xis) que plusieurs réalisations du processus $\xi$ conduisent à des trajectoires différentes. Comme attendu via la formule, la modification de $\psi$ impact la valeurs moyenne de $\xi$, et $\gamma$ sur la variance.
+Ce résultat a un impact direct sur les observations $Y$ puisque comme nous pouvons le voir sur la Figure \@ref(fig:sim-ys), les observations $Y$ correspondant à des réalisations provenant d'un $\psi$ et d'un $\gamma$ modifiés, ne collent pas du tout à la distribution cible. Effectivement, la variabilité de simulation du paramètre $\xi$ entraine une variabilité sur les observations $Y$ qui se traduire par un décalage avec la distribution cible.
+De plus, en faisant varier les paramètres $A$, $B$, $a$, et $b$, une différence sinusoïdale s'installe et éloignant fortement l'estimation de la distribution cible.
 
-Nous observons sur la Figure \@ref(fig:sim-xis) que plusieurs réalisations du processus $\xi$ conduisent à des trajectoires sensiblement différentes.
-Ce résultat a un impact direct sur les observations $Y$ puisque comme nous pouvons le voir sur la Figure \@ref(fig:sim-ys), les observations $Y$ correspondant à des réalisations différentes ne collent pas parfaitement à la distribution cible.
-Effectivement, la variabilité de simulation du paramètre $\xi$ entraine une variabilité sur les observations $Y$ qui se traduire par un décalage avec la distribution cible.
-Les observations de $Y$ sont donc sensibles à la trajectoire du processus $\xi_x$ associé.
+Les observations de $Y$ sont donc sensibles à la trajectoire du processus $\xi_x$ associé, ainsi que des paramètre $A$, $B$, $a$, et $b$.
 
-Nous ne pouvons donc pas nous contenter de tirer une réalisation de $\xi_k$ dans l'étape de simulation de notre algorithme, c'est pour cette raison que nous avons intégré à l'algorithme SAEM une étape MCMC ou SMC.
+Nous pouvons donc conclure que nos données sont identifiables. En effet, si nos paramètres sont proches de la réalité, notre estimation sera proche du signal réel. En revanche, si un des paramètres est mauvais, l'estimation sera faussé.
+
 
 ```{r sim-ys, fig.cap = "Distributions des $Y$ calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref(fig:sim-xis)."}
 g1 <- ggplot() +
@@ -204,22 +207,22 @@ g1 <- ggplot() +
 
 g2 <- ggplot() +
   geom_line(aes(x = x, y = Y)) +
-  geom_line(aes(x = x, y = f(x, p1)), color = "green") +
-  labs(caption = TeX("$Y^{(2)}$")) +
+  geom_line(aes(x = x, y = f(x, p3, A.arg = 1)), color = "green") +
+  labs(caption = TeX("$\\psi, gamma$")) +
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 1, 0, "pt"))
 
 g3 <- ggplot() +
   geom_line(aes(x = x, y = Y)) +
-  geom_line(aes(x = x, y = f(x, p2)), color = "blue") +
-  labs(caption = TeX("$Y^{(3)}$"), y = TeX("$Y$")) +
+  geom_line(aes(x = x, y = f(x, xi,A.arg = 1, B.arg = -0.5, a.arg = 0.2, b.arg = 2 )), color = "blue") +
+  labs(caption = TeX("$A, B, a, b$"), y = TeX("$Y$")) +
   theme(plot.margin = margin(0, 0, 0, 0, "pt"))
 
 g4 <- ggplot() +
   geom_line(aes(x = x, y = Y)) +
-  geom_line(aes(x = x, y = f(x, p3)), color = "red") +
-  labs(caption = TeX("$Y^{(4)}$")) +
+  geom_line(aes(x = x, y = f(x, p3,A.arg = 1, B.arg = -0.5, a.arg = 0.2, b.arg = 2 )), color = "red") +
+  labs(caption = TeX("$\\psi,gamma, A, B, a, b$")) +
   theme(axis.title.y = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "pt"))
 
