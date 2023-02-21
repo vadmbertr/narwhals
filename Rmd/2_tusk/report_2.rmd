@@ -152,7 +152,7 @@ g4 <- ggplot() +
 ```
 
 Ce résultat a un impact direct sur les observations $Y$ puisque, comme nous pouvons le voir sur la Figure \@ref(fig:sim-ys), les observations $Y$ correspondant à des réalisations $\xi_x$ pour des valeurs de $\psi$ et $\gamma$ différentes ne collent pas du tout à la distribution cible.
-De plus, une variation des paramètres $A$, $B$, $a$, et $b$ entraine une différence encore plus forte : $A$ et $B$ jouant sur l'amplitude de la sinusoïde, $a$ sur sa fréquence et $b$ sur son décalage de phase.
+De plus, une variation des paramètres $A$, $B$, $a$, et $b$ entraine une différence encore plus forte : $A$ et $B$ jouant sur l'amplitude de la sinusoïde, $a$ sur sa pulsation et $b$ sur son décalage de phase.
 
 ```{r sim-ys, fig.cap = "Distributions $Y$ pour différentes trajectoires de $\\xi_x$ et différentes valeurs de $A, B, a, b$ (en vert, bleu et rouge)."}
 g1 <- ggplot() +
@@ -544,10 +544,10 @@ g2 <- ggplot() +
 g1 + g2
 ```
 
-Concernant l'estimation des autres paramètres du modèle, les chaines de Markov obtenues au fil des itérations pour les coefficients $\omega$, $\psi$ et $\gamma$ sont présentées sur la Figure \@ref(fig:coef1-SAEM).
+Concernant l'estimation des autres paramètres du modèle, l'évolution des valeurs obtenues au fil des itérations pour $\omega, \psi, \gamma$ est présentée sur la Figure \@ref(fig:coef1-SAEM).
 Nous avons fait le choix d'initialiser ces 3 valeurs à $0.5$ pour la première itération.
-Comme nous pouvons le voir sur cette figure, les chaines des paramètres $\omega$ et $\psi$ convergent correctement vers les vraies valeurs des paramètres.
-Cependant, celle du paramètre $\gamma$ semble converger plus doucement ce qui entraine une légère surestimation de ce paramètre.
+Comme nous pouvons le voir sur cette figure, les paramètres $\omega$ et $\psi$ convergent correctement vers les vraies valeurs des paramètres.
+Cependant, celle du paramètre $\gamma$ ne converge pas exactement vers la valeur attendue et est légèrement surestimée.
 
 ```{r coef1-SAEM, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
 g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
@@ -606,30 +606,29 @@ g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 (g1 + g2) / (g3 + g4)
 ```
 
-Afin de favoriser la convergence de l'algorithme, les paramètres A et B ont été initialisés selon une réalisation de loi uniforme définie entre $-max(|Y|) - \omega$ et $max(|Y|) + \omega$.
-Cette initialisation prend du sens quant à la définition du modèle sinusoïdal.
-Dans le même objectif, le paramètre $a$ a été initialisé comme [initialisation de a à préciser] et le paramètre $b$, en fonction de l'initialisation de $a$ comme [initialisation de b à préciser].
-Comme nous pouvons le voir sur la Figure \@ref(fig:coef2-SAEM), les estimations des coefficients $A$ et $B$ convergent normalement vers la valeur attendue des paramètres.
-Nous observons, cependant, que bien que très proche de la "vraie" valeur, l'estimation du paramètre $a$ ne converge pas à proprement parler.
-Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne remarquons pas de convergence vers la valeur attendue et l'estimation finale apparaît éloignée de la valeur fixée initialement.
-
-Les estimations faites par l'algorithme sont donc satisfaisantes pour les paramètres $\omega$, $\psi$, $\gamma$, $A$, $B$ et $a$.
-Il n'arrive cependant pas à estimer convenablement le paramètre $b$.
+A chaque itération de l'algorithme, les paramètres $A, B, a, b$ sont estimés en minimisant les moindres carrés non linéaires.
+Sous **R**, cela se fait au moyen de la fonction *nls* qui nécessite des valeurs initiales des paramètres à estimer.
+Afin de favoriser la convergence de l'algorithme Gauss-Newton de résolution du problème des moindres carrées non linéaires, nous avons tenu compte de l'influence des paramètres $A$ et $B$ sur l'amplitude de $Y$ en les initialisant selon une réalisation de loi uniforme $\mathcal{U}(-max(|Y|) - \omega$, $max(|Y|) + \omega)$.
+Dans le même objectif, puisque le paramètre $a$ est lié à la pulsation de la sinusoïde, il est initialisé selon $a_{init} = 2 * pi * f_{max}$ où $f_{max}$ est la fréquence de $Y$ avec la plus grande densité spectrale.
+Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $b_{init} = (7 * pi / 8) - x_0 * a_{init}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul.
+Comme nous pouvons le voir sur la Figure \@ref(fig:coef2-SAEM), l'estimation du coefficient $A$ converge assez normalement vers $0.5$.
+Bien qu'elle se rapproche de $-0.25$, celle de $B$ semble avoir du mal à converger réellement et stagne au-dessus de ce que nous souhaiterions.
+Par ailleurs, nous observons, que l'estimation du paramètre $a$ est très proche de la "vraie" valeur, mais nous ne voyons pas de convergence à proprement parler.
+Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne remarquons pas de convergence vers la valeur attendue et l'estimation finale apparaît un peu éloignée de la valeur fixée initialement.
 
 ### Plan d'expérience
 
-Afin de se rendre compte de la variation de nos estimateurs vis-à-vis de la valeur initiale, nous avons effectué un plan d'expérience. En effet, notre objectif est d'estimer nos paramètres sur un grand nombre d'itérations, afin d'analyser leurs variations autour des valeurs fixées.
-Les paramètres à estimer sont $A$, $B$, $a$, $b$, ainsi que  $\gamma$, $\psi$ et $\omega$.
-Nous avons choisi d'effectuer $M = 1000$ estimations de chacun de ces paramètres, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur absolue en pourcentage ($APE$) et sa moyenne ($MAPE$), à partir des formules suivantes :
+Les estimations de $\theta$ et $\xi_x$ comportent une part d'aléatoire, ainsi afin d'évaluer les performances de notre algorithme SAEM il convient de répéter un grand nombre de fois ces estimations à partir de réalisations de $\xi_x$ différentes. En effet, notre objectif est d'estimer nos paramètres sur un grand nombre d'itérations, afin d'analyser leurs variations autour des valeurs fixées.
+Nous avons choisi d'effectuer $M = 1000$ estimations de chacun des paramètres $\gamma, \psi, \omega, A, B, a, b$, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur absolue en pourcentage ($APE$) et sa moyenne ($MAPE$), à partir des formules suivantes :
 $$RMSE = \sqrt{\frac{\sum^M_{i=1} (\hat{\theta}_i - \theta)^{2}}{M}}$$
 $$MAPE = \frac{\sum^M_{i=1} APE_i}{M}$$
 $$APE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
-Avec $\hat{\theta}$ les paramètres estimés et $\theta$ le paramètre initial fixé.
+Avec $\hat{\theta}$ les paramètres estimés et $\theta$ les paramètres initiaux.
 
-Nous avons également utilisé le plan d'expérience pour comparer les résultats obtenus en utilisant une étape MCMC ou une étape SMC pour estimer $\xi_x$.
+Nous avons également utilisé ce plan d'expérience pour comparer les résultats obtenus en utilisant une étape MCMC ou une étape SMC pour estimer $\xi_x$.
 
-Puisque l'estimation de chacun de nos paramètres doit se rapprocher et varier autour de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des erreurs moyennes relativement proches de $0$.
-À partir des résultats obtenus par les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des APE pour chacun des 7 paramètres et pour les deux méthodes de simulation de $\xi_x$.
+Puisque l'estimation de chacun de nos paramètres doit se rapprocher de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des $APE$ relativement proches de $0$.
+À partir des résultats obtenus pour les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des APE pour chacun des 7 paramètres et pour les deux méthodes de simulation de $\xi_x$.
 
 ```{r}
 params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
@@ -651,7 +650,7 @@ params.se.smc <- apply(params.est.smc, 1, function (row) (params.true - row)^2)
 params.rmse.smc <- sqrt(apply(params.se.smc, 1, mean))
 ```
 
-```{r params-ape, fig.cap = "Boxplot des $APE$ de chacun des paramètres."}
+```{r params-ape, fig.cap = "Boxplot des $APE$ des 1000 estimations de chacun des paramètres."}
 df.mcmc <- melt(params.ape.mcmc, varnames = c("it", "param"))
 df.mcmc$method <- "MCMC"
 
