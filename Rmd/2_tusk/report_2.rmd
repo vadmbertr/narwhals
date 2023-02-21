@@ -32,6 +32,8 @@ library(latex2exp)
 library(patchwork)
 library(reshape2)
 
+theme_set(theme_light(base_size = 9))
+
 set.seed(15)
 
 source("../../R/2_tusk/utils/simulation.R")
@@ -44,17 +46,15 @@ Ces animaux d’une durée de vie moyenne de 50 ans, possèdent deux dents.
 Chez les femelles, les dents restent à l’intérieur de la boîte crânienne, tandis que pour les mâles, la canine gauche s’allonge et prend la forme d’une corne, comme le montre la Figure \@ref(fig:img1).
 Elle commence à pousser au travers de la lèvre supérieure gauche dès l'âge d’un an lors de la puberté et croît jusqu'à la maturité sexuelle, entre 8 et 9 ans.
 Cette défense torsadée possède des fonctionnalités et propriétés uniques dans la nature.
-Elle contient des millions de terminaisons nerveuses, ce qui en fait un organe de sensoriel très développé [@narval].
+Elle contient des millions de terminaisons nerveuses, ce qui en fait un organe sensoriel très développé [@narval].
 
 ```{r img1, out.width = "50%", fig.cap = "Vue de face d'un narval et de sa dent. \\cite{narval-img}"}
 knitr::include_graphics('./img/img.928.png')
 ```
 
-Certains chercheurs danois, comme Eva Garde, s'intéressent plus particulièrement à l'étude de cette défense.
-Leur objectif est d'estimer la durée de vie du narval à travers l’information contenue dans cette dent.
+Certains chercheurs danois, comme Eva Garde, s'intéressent plus particulièrement à l'estimation de la durée de des narvals via l’information contenue dans cette dent.
 Pour mener cette étude, plusieurs découpes latérales des dents d'animaux décédés ont été réalisées.
-Comme nous pouvons le voir sur la Figure \@ref(fig:img2), ces découpes se présentent sous la forme d’une séquence de sillons ou de couches et détiennent plusieurs types d’informations.
-En effet, nous remarquons la présence de marqueurs saisonniers sur les sillons au cours de la croissance des dents.
+Comme nous pouvons le voir sur la Figure \@ref(fig:img2), ces découpes se présentent sous la forme d’une séquence de sillons ou de couches comportant des marqueurs saisonniers au cours de la croissance des dents.
 Ces derniers créent des motifs sinusoïdaux.
 La fréquence et la forme de ces sinusoïdes varient d’une année à l'autre selon la variabilité de la durée ou de l'intensité des saisons [@tusk].
 L’information portée par les motifs à l’intérieur des défenses est donc logiquement liée à la durée de vie de l’animal.
@@ -65,7 +65,7 @@ knitr::include_graphics('./img/1-thenarwhalst.jpg')
 
 Le premier objectif pour cette problématique est le choix d’un modèle sinusoïdal pouvant représenter l’information contenue dans la dent de l’animal.
 À partir de cette forme de modèle et d’observations, le deuxième objectif sur lequel nous allons nous concentrer est celui de l’estimation des paramètres du modèle sinusoïdal.
-Nous présentons donc dans les parties suivantes, le modèle envisagé ici ainsi que notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM.
+Nous présentons donc dans les parties suivantes, le modèle envisagé ainsi que notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM.
 
 # Modèle sinusoïdal
 
@@ -78,13 +78,13 @@ $$Y_i = f(x_i, \varphi) + \varepsilon_i$$
 avec $\varepsilon_i$ un bruit aléatoire suivant une loi normale de moyenne $0$ et de variance $\omega^2$.
 
 La fonction de régression $f(x, \varphi)$ est une fonction périodique sinusoïdale telle que : 
-$$f(x, \varphi) = A \sin(g(x)  +b) + B \sin(2g(x) + 2b + \frac{\pi}{2})$$
+$$f(x, \varphi) = A \sin(g(x) + b) + B \sin(2g(x) + 2b + \frac{\pi}{2})$$
 avec $$g(x) = ax + \xi_x$$
 et  finalement $\xi_x$, un processus aléatoire d'Ornstein-Uhlenbeck, tel que :
 $$d\xi_x = -\beta \xi_xdx + \sigma dW_x$$
 Dont la solution est donnée par :
 $$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
-de sorte que la densité de transition soit définie telle que :
+de sorte que la densité de transition est :
 $$p(\xi_{x + \delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - \psi^2))$$
 
 Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
@@ -104,24 +104,24 @@ ggplot() +
 # Estimation des paramètres à partir d'un algorithme SAEM 
 
 Afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente, nous avons implémenté une procedure reposant sur l'algorithme SAEM.
-Nous allons d'abord présenter le principe d'un algorithme EM, puis celui de son approximation stochastique : l'algorithme SAEM.
-Durant sa présentation, nous détaillerons les algorithmes MCMC et SMC avant de présenter l'algorithme complet.
+Nous allons d'abord présenter le principe d'un algorithme EM [@EM], puis celui de son approximation stochastique : l'algorithme SAEM [@SAEM].
+Durant sa présentation, nous détaillerons les étapes MCMC [@MCMC] et SMC [@SMC] avant de présenter l'algorithme complet.
 
-## Algorithme EM 
+## Algorithme EM
 
 L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'écrit de la manière suivante :
 \begin{eqnarray*}
-\log L(Y, \xi, \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
+\log L(Y, \xi_x, \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
 &=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
 &&- \sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{\frac{\sigma^2}{\beta}(1 - \psi^2)} - \frac{n}{2} \log(\frac{\sigma^2}{2\beta}(1 - \psi^2)) \\
 &=& -\sum_{i=1}^n \frac{(Y_i - f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2} \log(\omega^2) \\
 && -\sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
 \end{eqnarray*}
 
-Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^k$. 
+Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k})$. 
 
-- étape E : calcul de $Q(\theta, \theta^k)$, l'espérance de la log-vraisemblance du modèle,
-- étape M : actualisation des paramètres $\theta^{k+1} = \arg\max_\theta Q(\theta, \theta^k)$.
+- étape E : calcul de $Q(\theta, \theta^{(k}))$, l'espérance de la log-vraisemblance du modèle,
+- étape M : actualisation des paramètres $\theta^{k+1} = \arg\max_\theta Q(\theta, \theta^{(k}))$.
 
 Pour actualiser les paramètres, nous avons besoin des statistiques exhaustives.
 Ces statistiques sont obtenues à partir du théorème de factorisation [?] et contiennent toute l'information de la vraisemblance.
@@ -138,16 +138,16 @@ L'actualisation des paramètres dépend directement de ces statistiques.
 
 ## Simulation de $\xi_x$
 
-Dans notre cas, la distribution conditionnelle $p(\xi|Y; \theta^k)$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
+Dans notre cas, la distribution conditionnelle $p(\xi_x | Y; \theta^{(k}))$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
 Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler selon cette distribution.
 
 ### Identifiabilité
 
-Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou SMC, nous nous sommes intéressé à l'identifiabilité du modèle sinusoïdal.
+Afin de justifier l'intérêt de l'utilisation d'un algorithme MCMC ou SMC, nous nous sommes intéressés à l'identifiabilité du modèle sinusoïdal.
 Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres fixées, obtenues selon le procédé suivant :
 
 \begin{algorithmic}
-\State $\xi \gets (0,\xi_2,...,\xi_n)$ \Comment{Initialisation de la première valeur}
+\State $\xi_{1:n} \gets 0$ \Comment{Initialisation de la première valeur}
 \For{$i \in \{1, ..., n\}$}
   \State$\xi_i = \xi_{i-1}*\psi + \epsilon_{\xi}$, avec $\epsilon_{\xi} \sim N(0,\gamma^2)$
 \EndFor
@@ -195,7 +195,7 @@ Les observations de $Y$ sont donc sensibles à la trajectoire du processus $\xi_
 
 Nous ne pouvons donc pas nous contenter de tirer une réalisation de $\xi_k$ dans l'étape de simulation de notre algorithme, c'est pour cette raison que nous avons intégré à l'algorithme SAEM une étape MCMC ou SMC.
 
-```{r sim-ys, fig.cap = "Distributions des $Y$ calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref(fig:sim-xis)."}
+```{r sim-ys, fig.cap = "Distributions des $Y$ calculées à partir des trajectoires de $\\xi_x$ présentées sur la Figure \\ref{fig:sim-xis}."}
 g1 <- ggplot() +
   geom_line(aes(x = x, y = Y)) +
   labs(caption = "Référence", y = TeX("$Y$")) +
@@ -228,21 +228,21 @@ g4 <- ggplot() +
 
 ### Algorithme MCMC
 
-L'objectif de cet algorithme MCMC (Markov Chain Monte Carlo) est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y_i$ ainsi que des paramètres $\gamma^2$, $\psi$ et $\omega^2$.
+L'objectif de cet algorithme MCMC (Markov Chain Monte Carlo) est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y$ ainsi que des paramètres $\theta$.
 L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire.
 
-Effectivement, après l'initialisation d'une trajectoire $\xi_0 = (\xi_1,...,\xi_n)$, l'algorithme procède à M itérations.
-La trajectoire du processus simulée peut donc s'écrire  $\xi_M = (\xi_1,...,\xi_n)$.
+Effectivement, après l'initialisation d'une trajectoire $\xi^{(0)} = (\xi^{(0)}_1,...,\xi^{(0)}_n)$, l'algorithme procède à $M$ itérations.
+La trajectoire du processus simulée peut donc s'écrire  $\xi^{(M)} = (\xi^{(M)}_1,...,\xi^{(M)}_n)$.
 
-Plus précisément, pour chaque itération k, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_c$ avec une marche aléatoire : $\xi_c = \xi_k-1 + N(0, \delta_i^2)$.
+Plus précisément, pour chaque itération $k$, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_c$ avec une marche aléatoire : $\xi^{(c)}_i = \xi^{(k-1)}_i + N(0, \delta_i^2)$.
 Cela introduit un nouveau paramètre $\delta = (\delta_1,....,\delta_n)$ contrôlant la variance de la marche aléatoire.
 Pour chacun de ses candidats, une log-probabilité d'acceptation est calculée de la façon suivante :
-$$log(\alpha) = min(log(\frac{L(Y, \xi_c)}{L(Y, \xi_{k-1})}), 1)$$
+$$\log(\alpha) = min(\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}), 1)$$
 avec :
 \begin{eqnarray*}
-\log(\frac{L(Y, \xi_c)}{L(Y, \xi_{k-1})}) &=& log(L(Y, \xi_c)) - log(L(Y, \xi_{k-1})) \\
-&=& -\frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi_c))^2 - \frac{1}{2 \frac{\gamma^2}{2}} \sum_{i=1}^{n} (\xi_c - \xi_{k-1} \psi)^2 \\
-&& + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi_{k-1}))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi_{k-1} - \xi_{k-2} \psi)^2\\
+\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}) &=& \log(L(Y, \xi^{(c)})) - \log(L(Y, \xi^{(k-1)})) \\
+&=& -\frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(c)}))^2 - \frac{1}{2 \frac{\gamma^2}{2}} \sum_{i=1}^{n} (\xi^{(c)} - \xi^{(k-1)} \psi)^2 \\
+&& + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(k-1)}))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi^{(k-1)} - \xi^{(k-2)} \psi)^2\\
 \end{eqnarray*}
 
 À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit rejeté, soit accepté, auquel cas, il remplace la valeur considérée à l'itération $k - 1$.
@@ -254,34 +254,35 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 \caption{Algorithme MCMC de simulation d'une trajectoire du processus $\xi_x$.}
 \label{alg:MCMC}
 \begin{algorithmic}
-\State $\delta \gets (\delta_1,....,\delta_n)$ \Comment{Initialisation du delta adaptatif}
+\State $\xi_{1:n} \gets 0$ \Comment{Initialisation du processus}
+\State $\delta_{1:n} \gets 0.05$ \Comment{Initialisation du delta adaptatif}
 \State $\delta_{AR} \gets 0.1$ \Comment{Pas d'évolution du delta adaptatif}
-\State $acc\_rate \gets (acc\_rate_1, ..., acc\_rate_n)$ \Comment{Initialisation du vecteur de taux d'acceptation}
+\State $acc\_rate_{1:n} \gets 0$ \Comment{Initialisation du vecteur de taux d'acceptation}
 \State $acc\_rate_{target} \gets 0.23$ \Comment{Taux d'acceptation visé}
 \For{$k \in \{1, ..., M\}$}
   \For{$i \in \{1, ..., n\}$}
-    \State$\xi_c \sim \xi_{k-1} + \mathcal{N}(0, \delta_i^2)$ \Comment{Simulation de la valeur courante de $\xi$}
-    \State$log{\alpha} \gets min(log(\frac{L(Y, \xi_c)}{L(Y, \xi_{k-1})}), 1)$\Comment{Calcul de la probabilité d'acceptation}
-    \State$u \sim U[0,1]$\Comment {Tirage d'une réalisation de loi uniforme}
-    \If{$\log{u} \leq \log{\alpha}$}
-      \State$\xi_k = \xi_c$
-    \Else
-      \State$\xi_k = \xi_{k-1}$
+    \State$\xi^{(c)} \gets \xi$
+    \State$\xi^{(c)}_i \sim \xi_i + \mathcal{N}(0, \delta_i^2)$ \Comment{Simulation du candidat pour $\xi_i$}
+    \State$\alpha_{\log} \gets min(\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi)}), 1)$\Comment{Calcul de la probabilité d'acceptation}
+    \State$u \sim \mathcal{U}(0, 1)$\Comment {Tirage d'une réalisation de loi uniforme}
+    \If{$\log{u} \leq \alpha_{\log}$}
+      \State$\xi \gets \xi^{(c)}$
     \EndIf
     \State $acc\_rate_i \gets$ mise à jour du taux d'acceptation
-    \If{$acc\_rate_i < acc\_rate_{target} * (1 - .1)$}
+    \If{$acc\_rate_i < acc\_rate_{target} * (1 - 0.1)$}
       \State $ \delta_i \gets \delta_i * (1 - \delta_{AR})$ \Comment{Réduction du delta adaptatif}
-    \ElsIf {$acc\_rate_i > acc\_rate_{target} * (1 - .1)$}
+    \ElsIf {$acc\_rate_i > acc\_rate_{target} * (1 + 0.1)$}
       \State $ \delta_i \gets \delta_i * (1 + \delta_{AR})$  \Comment{Augmentation du delta adaptatif}
     \EndIf
   \EndFor
 \EndFor
+\State $\widehat{\xi_x} \gets \xi$
 \end{algorithmic}
 \end{algorithm}
 
 ### Algorithme SMC
 
-Comme pour l'algorithme MCMC, l'algorithme Sequential Monte-Carlo (SMC) - ou filtre particulaire - a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\gamma^2$, $\psi$ et $\omega^2$.
+Comme pour l'algorithme MCMC, l'algorithme Sequential Monte-Carlo (SMC) - ou filtre particulaire - a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
 
 Cependant son fonctionnement est assez différent : plutôt que d'accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance comme le fait l'approche MCMC, le SMC propose pour chaque instant $P$ réalisations (les particules) selon les $P$ estimations réalisées à l'instant précédent et associe à chacune des nouvelles réalisations un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant conditionnellement à la réalisation simulée.
 Il est alors possible de tirer avec remise parmi les particules en utilisant les poids normalisés comme probabilités de tirage et de conserver ainsi les particules permettant d'observer avec les plus fortes probabilités $Y$.
@@ -291,27 +292,25 @@ Une fois que le dernier instant du processus est atteint, il suffit de tirer un 
 \caption{Algorithme SMC pour la simulation d'une trajectoire du processus $\xi_x$.}
 \label{alg:SMC}
 \begin{algorithmic}
-\State $P \gets 500$ \Comment{Nombre de particules}
-\State $w \gets []$ \Comment{Initialisation des poids associés aux particules}
-\State $\hat{\xi} \gets [][]$ \Comment{Initialisation des trajectoires du processus}
-\State $\widehat{\xi_c} \gets [0, ..., 0]$ \Comment{Initialisation des particules au premier instant du processus}
-\State $\hat{\xi}[][1] \gets \widehat{\xi_c}$
+\State $w_{1:P} \gets 1/P$ \Comment{Initialisation des poids associés aux particules}
+\State $\xi_c^{(1:P)} \gets 0$ \Comment{Initialisation des particules au premier instant du processus}
+\State $\xi_{1:n} \gets \xi_c$ \Comment{Initialisation des trajectoires du processus}
 \For{$i \in \{2, ..., n\}$}
     \For{$j \in \{1, ..., P\}$}
-      \State $\widehat{\xi_c[j]} \sim \widehat{\xi[j][i-1]} * \psi + \mathcal{N}(0, \gamma^2)$ \Comment{Simulation d'une valeur courante de $\xi_i$ selon $\xi_{i-1}$}
-      \State $w[j] \gets P(Y[i] | f(i, \widehat{\xi_c[j]}))$
-      \Comment{Poids égale à la probabilité de $Y[i]$ conditionnellement à $\widehat{\xi_c[j]}$}
+      \State $\xi_c^{(j)} \sim \xi^{(j)}_{i-1} * \psi + \mathcal{N}(0, \gamma^2)$ \Comment{Simulation d'une valeur courante selon $\xi_{i-1}^{(j)}$}
+      \State $w_j \gets P(Y_i | f(i, \xi_c^{(j)}))$
+      \Comment{Poids égale à la probabilité de $Y_i$ conditionnellement à $\xi_c^{(j)}$}
     \EndFor
     \For{$j \in \{1, ..., P\}$}
-      \State $w[j] \gets \frac{w[j]}{\sum_{k=1}^P w[k]}$ \Comment{Normalisation}
+      \State $w_j \gets \frac{w_j}{\sum_{k=1}^P w_k}$ \Comment{Normalisation}
     \EndFor
     \For{$j \in \{1, ..., P\}$}
-      \State $idx \gets$ tirage probabiliste d'une particule en fonction des poids w
-      \State $\widehat{\xi[j][i]} \gets \widehat{\xi_c[idx]}$ \Comment{Conservation de la particule $idx$}
+      \State $idx \gets$ tirage probabiliste d'une particule en fonction des poids $w$
+      \State $\xi^{(j)}_i \gets \xi_c^{(idx)}$ \Comment{Conservation de la particule $idx$}
     \EndFor
 \EndFor
-\State $idx \gets$ tirage probabiliste d'une trajectoire en fonction des poids w
-\State $\widehat{\xi_x} \gets \widehat{\xi[idx][]}$
+\State $idx \gets$ tirage probabiliste d'une trajectoire en fonction des poids $w$
+\State $\widehat{\xi_x} \gets \xi^{(idx)}$
 \end{algorithmic}
 \end{algorithm}
 
@@ -320,32 +319,32 @@ Une fois que le dernier instant du processus est atteint, il suffit de tirer un 
 L'introduction d'une étape MCMC ou SMC conduit à la version stochastique de l'algorithme EM, à savoir l'algorithme SAEM.
 Cet algorithme utilise les étapes de l’algorithme EM auxquelles s'ajoute une étape d'approximation stochastique.
 
-Effectivement, pour chaque itération k, les étapes sont les suivantes :
+Effectivement, pour chaque itération $k$, les étapes sont les suivantes :
 
-- étape E : simulation d'une nouvelle trajectoire de $\xi^k$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^k)$ comme une distribution stationnaire,
+- étape E : simulation d'une nouvelle trajectoire de $\xi^{(k)}$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^{(k)})$ comme une distribution stationnaire,
 - étape SA : approximation stochastique des statistiques exhaustives :
 
 \begin{eqnarray*}
-s_1^k &=& s_1^{k-1} + \alpha_k(S_1(\xi^k) - s_1^{k-1}) \\
-s_2^k &=& s_2^{k-1} + \alpha_k(S_2(\xi^k) - s_2^{k-1}) \\
-s_3^k &=& s_3^{k-1} + \alpha_k(S_3(\xi^k) - s_3^{k-1}) \\
-s_4^k &=& s_4^{k-1} + \alpha_k(S_4(\xi^k) - s_4^{k-1}) \\
+s_1^{(k)} &=& s_1^{(k-1)} + \alpha_k(S_1(\xi^{(k)}) - s_1^{(k-1)}) \\
+s_2^{(k)} &=& s_2^{(k-1)} + \alpha_k(S_2(\xi^{(k)}) - s_2^{(k-1)}) \\
+s_3^{(k)} &=& s_3^{(k-1)} + \alpha_k(S_3(\xi^{(k)}) - s_3^{(k-1)}) \\
+s_4^{(k)} &=& s_4^{(k-1)} + \alpha_k(S_4(\xi^{(k)}) - s_4^{(k-1)}) \\
 \end{eqnarray*}
 
-- étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^k$ :
+- étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^{(k})$ :
 
 \begin{eqnarray*}
-\widehat{\varphi}^k &=& \arg\min_\varphi \sum_{i=1}^n \left(y_i - f(x_i(\xi_i^k), \varphi)\right)^2
+\widehat{\varphi}^{(k}) &=& \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(k})), \varphi)\right)^2
 \\
-\widehat{\psi}^k &=& \frac{s_2^k}{s_3^k}\\
-\widehat{\omega^{2}}^k &=& s_1^k\\
-\widehat{\gamma^{2}}^k &=& \frac{1}{n}(\widehat{\psi^2}^ks_3^k-2\widehat{\psi}^ks_2^k+s_4^k)
+\widehat{\psi}^{(k)} &=& \frac{s_2^{(k)}}{s_3^{(k)}}\\
+\widehat{\omega^{2}}^{(k}) &=& s_1^{(k})\\
+\widehat{\gamma^{2}}^{(k}) &=& \frac{1}{n}(\widehat{\psi^2}^{(k})s_3^{(k})-2\widehat{\psi}^{(k})s_2^{(k})+s_4^{(k}))
 \end{eqnarray*}
 
 Au principe général d'un algorithme SAEM à $Q$ itérations, nous avons ajouté deux hyper-paramètres $M_{max}$ & $\alpha_{min}$ :
 \begin{itemize}
-\item Pour chaque itération $q$ de l'algorithme SAEM, au moins une itération de l'algorithme MCMC est effectuée.
-Afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis ensuite l'algorithme n'accomplis plus qu'une seule itération du MCMC.
+\item Pour chaque itération $q$ de l'algorithme SAEM, au moins une itération de l'algorithme MCMC ou SMC est effectuée.
+Dans le cas de l'utilisation d'une étape MCMC, afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis ensuite l'algorithme n'accomplit plus qu'une seule itération du MCMC.
 Le paramètre $M_{max}$ est donc un hyper-paramètre de l'algorithme SAEM à choisir au préalable.
 \item Le deuxième paramètre concerne l'approximation stochastique effectuée pour chacune des itérations $q$.
 Effectivement, durant les premières itérations les approximations sont relativement éloignées de la valeur cible et donc sensiblement différentes entre elles.
@@ -365,41 +364,39 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 \caption{Algorithme SAEM complet}
 \label{alg:SAEM}
 \begin{algorithmic}
-\State $s_1 \gets (s_1^1, ..., s_1^Q)$
-\State $s_2 \gets (s_2^1, ..., s_2^Q)$
-\State $s_3 \gets (s_3^1, ..., s_3^Q)$
-\State $s_4 \gets (s_4^1, ..., s_4^Q)$
+\State $s_1 \gets (s_1^{(1)}, ..., s_1^{(Q)})$
+\State $s_2 \gets (s_2^{(1)}, ..., s_2^{(Q)})$
+\State $s_3 \gets (s_3^{(1)}, ..., s_3^{(Q)})$
+\State $s_4 \gets (s_4^{(1)}, ..., s_4^{(Q)})$
 
-\State $\widehat{\varphi} \gets (\widehat{\varphi}^1, ..., \widehat{\varphi}^Q)$
-\State $\widehat{\psi} \gets (\widehat{\psi}^1, ..., \widehat{\psi}^Q)$
-\State $\widehat{\omega^2} \gets (\widehat{\omega^2}^1, ..., \widehat{\omega^2}^Q)$
-\State $\widehat{\gamma^2} \gets (\widehat{\gamma^2}^1, ..., \widehat{\gamma^2}^Q)$
+\State $\widehat{\varphi} \gets (\widehat{\varphi}^{(1)}, ..., \widehat{\varphi}^{(Q)})$
+\State $\widehat{\psi} \gets (\widehat{\psi}^{(1)}, ..., \widehat{\psi}^{(Q)})$
+\State $\widehat{\omega^2} \gets (\widehat{\omega^2}^{(1)}, ..., \widehat{\omega^2}^{(Q)})$
+\State $\widehat{\gamma^2} \gets (\widehat{\gamma^2}^{(1)}, ..., \widehat{\gamma^2}^{(Q)})$
 
-\State $\alpha \gets (\alpha_1, ..., \alpha_Q)$ \Comment{Initialisation du paramètre d'approximation $\alpha$}
-\State $\alpha_{1:\alpha_{min}} \gets 1$ ; $\alpha_{\alpha_{min}:Q} \gets \frac{1}{l^{0.8}}$ avec $l=1:(Q - \alpha_{min})$
+\State $\alpha_{1:\alpha_{min} - 1} \gets 1$ ; $\alpha_{\alpha_{min}:Q} \gets \frac{1}{l^{0.8}}$ avec $l=1:(Q - \alpha_{min} + 1)$ \Comment{Initialisation du paramètre mémoire}
 
-\State $M \gets (M_1, ..., M_Q)$\Comment{Initialisation du nombre d'itérations du MCMC}
-\State $M_{1:M_{max}} \gets 5$ ; $M_{M_{max}+1:Q} \gets 1$ 
-\For{$q \in \{1, ..., Q\}$}
+\State $M_{1:M_{max}} \gets 5$ ; $M_{M_{max}+1:Q} \gets 1$ \Comment{Initialisation du nombre d'itérations du MCMC}
+\For{$q \in \{2, ..., Q\}$}
   \State \Comment{Etape E}
-    \State $\xi^q \gets$ MCMC (cf Algorithme \ref{alg:MCMC}) avec $M = M_q$ itérations et $\theta^{q-1}$, pour récupérer une trajectoire de $\xi$
+    \State $\xi^{(q)} \gets \xi$ avec $\theta^{(q-1)}$, par $M = M_q$ itérations MCMC (Algorithme \ref{alg:MCMC}), ou par SCM (Algorithme \ref{alg:SMC})
   
   \State \Comment{Etape SA}
-    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f(x_i(\xi^q), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
-    \State $S_2 \gets \sum_{i=1}^n \xi_{i-1}^q\xi_i^q$
-    \State $S_3 \gets \sum_{i=1}^n (\xi_{i-1}^q)^2$
-    \State $S_4 \gets \sum_{i=1}^n (\xi_i^q)^2$
+    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f(x_i(\xi^{(q)}_i), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
+    \State $S_2 \gets \sum_{i=1}^n \xi_{i-1}^{(q)}\xi_i^{(q)}$
+    \State $S_3 \gets \sum_{i=1}^n (\xi_{i-1}^{(q)})^2$
+    \State $S_4 \gets \sum_{i=1}^n (\xi_i^{(q)})^2$
     \State \Comment{Mise à jour des approximations stochastiques}
-    \State $s_1^q \gets s_1^{q-1} + \alpha_q(S_1(\xi^q) - s_1^{q-1})$
-    \State $s_2^q \gets s_2^{q-1} + \alpha_q(S_2(\xi^q) - s_2^{q-1})$
-    \State $s_3^q \gets s_3^{q-1} + \alpha_q(S_3(\xi^q) - s_3^{q-1})$
-    \State $s_4^q \gets s_4^{q-1} + \alpha_q(S_4(\xi^q) - s_4^{q-1})$
+    \State $s_1^{(q)} \gets s_1^{(q-1)} + \alpha_q(S_1(\xi^{(q)}) - s_1^{(q-1)})$
+    \State $s_2^{(q)} \gets s_2^{(q-1)} + \alpha_q(S_2(\xi^{(q)}) - s_2^{(q-1)})$
+    \State $s_3^{(q)} \gets s_3^{(q-1)} + \alpha_q(S_3(\xi^{(q)}) - s_3^{(q-1)})$
+    \State $s_4^{(q)} \gets s_4^{(q-1)} + \alpha_q(S_4(\xi^{(q)}) - s_4^{(q-1)})$
     
   \State \Comment{Etape M} 
-    \State $\widehat{\varphi}^q \gets \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^q), \varphi)\right)^2$\Comment{Actualisation de $\theta^q$}
-    \State $\widehat{\psi}^q \gets \frac{s_2^q}{s_3^q}$
-    \State $\widehat{\omega^{2}}^q \gets s_1^q$
-    \State $\widehat{\gamma^{2}}^q \gets \frac{1}{n}(\widehat{\psi^2}^q s_3^q - 2\widehat{\psi}^q s_2^q + s_4^q)$
+    \State $\widehat{\varphi}^{(q)} \gets \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(q)}), \varphi)\right)^2$\Comment{Actualisation de $\theta^{(q)}$}
+    \State $\widehat{\psi}^{(q)} \gets \frac{s_2^{(q)}}{s_3^{(q)}}$
+    \State $\widehat{\omega^{2}}^{(q)} \gets s_1^{(q)}$
+    \State $\widehat{\gamma^{2}}^{(q)} \gets \frac{1}{n}(\widehat{\psi^2}^{(q)} s_3^{(q)} - 2\widehat{\psi}^{(q)} s_2^{(q)} + s_4^{(q)})$
 \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -456,10 +453,10 @@ g1 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
   scale_y_continuous(name = "Taux d'acceptation", sec.axis = sec_axis(~. / coeff1, name = "")) +
   labs(caption = "Erreur maximale", x = "Itérations") +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"),
-        axis.title.y.left = element_text(colour="blue"),
-        axis.text.y.left = element_text(colour="blue"),
+        axis.title.y.left = element_text(colour="red"),
+        axis.text.y.left = element_text(colour="red"),
         axis.title.y.right = element_blank(),
-        axis.text.y.right = element_text(colour="red"))
+        axis.text.y.right = element_text(colour="blue"))
 
 coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
 g2 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
@@ -471,9 +468,9 @@ g2 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
   labs(caption = "Erreur minimale", x = "Itérations") +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"),
         axis.title.y.left = element_blank(),
-        axis.text.y.left = element_text(colour="blue"),
-        axis.title.y.right = element_text(colour="red"),
-        axis.text.y.right = element_text(colour="red"))
+        axis.text.y.left = element_text(colour="red"),
+        axis.title.y.right = element_text(colour="blue"),
+        axis.text.y.right = element_text(colour="blue"))
 
 g1 + g2
 ```
