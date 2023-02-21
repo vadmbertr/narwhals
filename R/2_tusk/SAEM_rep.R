@@ -7,6 +7,7 @@ library(RhpcBLASctl)
 source("utils/simulation.R")
 source("utils/MCMC.R")
 source("utils/SAEM.R")
+source("utils/SMC.R")
 
 #---------------------------------------------------------------------------------
 # Read script arguments
@@ -33,4 +34,4 @@ n.rep <- as.numeric(args[[1]])
 blas_set_num_threads(1)
 n.jobs <- as.numeric(args[[2]])
 parameters.est <- do.call(rbind, mclapply(1:n.rep, run.saem, mc.cores = n.jobs))
-saveRDS(parameters.est, paste0(args[[3]], "/parameters.est.smc.rds"))
+saveRDS(parameters.est, paste0(args[[3]], "/params.est.smc.rds"))
