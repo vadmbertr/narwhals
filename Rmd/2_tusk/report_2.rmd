@@ -671,7 +671,7 @@ En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
 Nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes, qui sont elles bien estimées.
 
 En revanche, il semblerait qu'avec la méthode SMC d'estimation de $\xi_x$, l'estimation de $\omega$ est meilleure, mais celles de $\psi$ et $\gamma$ est nettement moins bonne.
-L'erreur réalisée sur l'estimation des paramètres $A$, $B$, $a$ et $b$ paraît similaire pour les deux approches d'estimation de $\xi_x$.
+L'erreur réalisée sur l'estimation des paramètres $A, B, a, b$ paraît similaire pour les deux approches d'estimation de $\xi_x$.
 
 ```{r params-sum-mcmc}
 df <- data.frame(theta = params.true, est = params.mean.mcmc, mape = params.mape.mcmc, rmse = params.rmse.mcmc)
