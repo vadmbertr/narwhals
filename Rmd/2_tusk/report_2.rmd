@@ -422,14 +422,14 @@ M <- 150
 mcmc.obj <- mcmc.alg(Y, M)
 
 g1 <- ggplot() +
-  geom_line(aes(x = x, y = Y), color = "blue") +
-  geom_line(aes(x = x, y = f(x, mcmc.obj$xi.c)), color = "red") +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, mcmc.obj$xi.c)), size = .25, color = "red") +
   labs(caption = TeX("$Y$"), y = TeX("$Y$")) +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g2 <- ggplot() +
-  geom_line(aes(x = x, y = xi), color = "blue") +
-  geom_line(aes(x = x, y = mcmc.obj$xi.c), color = "red") +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = mcmc.obj$xi.c), size = .25, color = "red") +
   labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"))
 
@@ -496,14 +496,14 @@ P <- 500
 smc.obj <- smc.alg(Y, n.part = P)
 
 g1 <- ggplot() +
-  geom_line(aes(x = x, y = Y), color = "blue") +
-  geom_line(aes(x = x, y = f(x, smc.obj$xi.c)), color = "red") +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, smc.obj$xi.c)), size = .25, color = "red") +
   labs(caption = TeX("$Y$"), y = TeX("$Y$")) +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g2 <- ggplot() +
-  geom_line(aes(x = x, y = xi), color = "blue") +
-  geom_line(aes(x = x, y = smc.obj$xi.c), color = "red") +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = smc.obj$xi.c), size = .25, color = "red") +
   labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"))
 
@@ -528,16 +528,16 @@ saem.obj <- saem.alg(Y, Q)
 ```{r result-SAEM, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
 
 g1 <- ggplot() +
-  geom_line(aes(x = x, y = xi), color = "blue") +
-  geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), color = "red") +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), size = .25, color = "red") +
   labs(y = TeX("$\\xi_x$"), caption = TeX("$\\xi_x$")) +
   theme(plot.margin = margin(0, 1, 0, 0, "pt"))
 
 g2 <- ggplot() +
-  geom_line(aes(x = x, y = Y), color = "blue") +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
   geom_line(aes(x = x, y = f(x, saem.obj$mcmc$xi.c,
                              A.arg = saem.obj$A.c, B.arg = saem.obj$B.c,
-                             a.arg = saem.obj$a.c, b.arg = saem.obj$b.c)), color = "red") +
+                             a.arg = saem.obj$a.c, b.arg = saem.obj$b.c)), size = .25, color = "red") +
   labs(y = TeX("$Y$"), caption = TeX("$Y$")) +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"))
 
@@ -659,8 +659,8 @@ df.smc <- melt(params.ape.smc, varnames = c("it", "param"))
 df.smc$method <- "SMC"
 
 ggplot(data = rbind(df.mcmc, df.smc)) +
-  geom_boxplot(aes(x = param, y = value, fill = as.factor(method))) +
-  labs(x = "Paramètres", y = "APE", fill = "Algorithme")
+  geom_boxplot(aes(x = param, y = value, color = as.factor(method))) +
+  labs(x = "Paramètres", y = "APE", color = "Algorithme")
 ```
 
 Nous pouvons remarquer qu'avec la version MCMC d'estimation de $\xi_x$, hormis $\omega$, les $APE$ de l'ensemble des paramètres varient autour de $0$.
