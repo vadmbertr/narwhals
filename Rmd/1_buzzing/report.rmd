@@ -138,16 +138,16 @@ Pour éviter de parcourir tout l'ensemble $\{K_{min}, ..., K_{max}\}$, nous avon
 \State $from_k \gets K_{min};\ to_k \gets K_{max}$ \Comment{Bornes de l'intervalle de recherche}
 \State $M \gets 10$ \Comment{Nombre d'éléments évalués dans l'intervalle}
 \While{$(to_k - from_k > 2)$} \Comment{On s'arrête quand on évalué l'ensemble du voisinage du minimum}
-    \State $K \gets []$
-    \State $BIC \gets []$
+    \State $K_{1:M} \gets NA$
+    \State $BIC_{1:M} \gets NA$
     \For{$i \in \{1, ..., M\}$}
-        \State $K[i] \gets from_k + (i - 1) * \lfloor\frac{to_k - from_k}{M - 1}\rceil$ \Comment{Découpage en $M$ éléments équidistants}
-        \State $\mathcal{M} \gets$ ajustement du modèle de l'Equation \@ref(eq:m-ard) avec $K[i]$ éléments mémoire
-        \State $BIC[i] \gets$ calcul du BIC de $\mathcal{M}$
+        \State $K_i \gets from_k + (i - 1) * \lfloor\frac{to_k - from_k}{M - 1}\rceil$ \Comment{Découpage en $M$ éléments équidistants}
+        \State $\mathcal{M} \gets$ ajustement du modèle de l'Equation \eqref{eq:m-ard} avec $K_i$ éléments mémoire
+        \State $BIC_i \gets$ calcul du BIC de $\mathcal{M}$
     \EndFor
     \State $i_{opt} \gets argmin\ BIC$
-    \State $K_{opt} \gets K[i_{opt}]$
-    \State $from_k \gets K[i_{opt} - 1];\ to_k \gets K[i_{opt} + 1]$ \Comment{Mise à jour des bornes en encadrant le minimum}
+    \State $K_{opt} \gets K_{i_{opt}}$
+    \State $from_k \gets K_{i_{opt} - 1};\ to_k \gets K_{i_{opt} + 1}$ \Comment{Mise à jour des bornes en encadrant le minimum}
 \EndWhile
 \end{algorithmic}
 \end{algorithm}
@@ -216,23 +216,23 @@ La matrice de variance-covariance permettant de tirer les coefficients $\widehat
 \State $K \gets 1000$ \Comment{Nombre de répétitions des procédures}
 
 \Comment{1ère procédure}
-\State $\widehat{\beta_{A_{1:2}}} \gets []$
-\State $\widehat{\beta_{lrc_{1:2}}} \gets []$
+\State $\widehat{\beta_{A_{1:2}}}^{(1:K)} \gets NA$
+\State $\widehat{\beta_{lrc_{1:2}}}^{(1:K)} \gets NA$
 \For{$k \in \{1, ..., K\}$}
-    \State $\widehat{\alpha} \gets \mathcal{N}(\mu_{AR},\ \Sigma_{AR})$ \Comment{Tirage des coefficients autorégressifs}
-    \State $\mathcal{M}_{exp} \gets$ ajustement de la régression double bi-exponentielle utilisant $\widehat{\alpha}$
-    \State $\widehat{\beta_{A_{1:2}}}[k],\ \widehat{\beta_{lrc_{1:2}}}[k] \gets$ coefficients de $\mathcal{M}_{exp}$
+    \State $\hat{\alpha} \gets \mathcal{N}(\mu_{AR},\ \Sigma_{AR})$ \Comment{Tirage des coefficients autorégressifs}
+    \State $\mathcal{M}_{exp} \gets$ ajustement de la régression double bi-exponentielle utilisant $\hat{\alpha}$
+    \State $\widehat{\beta_{A_{1:2}}}^{(k)},\ \widehat{\beta_{lrc_{1:2}}}^{(k)} \gets$ coefficients de $\mathcal{M}_{exp}$
 \EndFor
 \State $\mu_{exp},\ \Sigma_{exp} \gets$ calculés à partir de $\widehat{\beta_{A_{1:2}}},\ \widehat{\beta_{lrc_{1:2}}}$
 
 \Comment{2ème procédure}
-\State $\widehat{\beta_{E}} \gets []$
+\State $\widehat{\beta_{E}}^{(1:K)} \gets NA$
 \For{$k \in \{1, ..., K\}$}
     \State $\widehat{\beta_{D}} \gets \mathcal{N}(\mu_D,\ \Sigma_D)$ \Comment{Tirage des coefficients de profondeur}
     \State $\widehat{A_{1:2}},\ \widehat{lrc_{1:2}} \gets \mathcal{N}(\mu_{exp},\ \Sigma_{exp})$ \Comment{Tirage des coefficients de la double bi-exponentielle}
     \State calcul de l'offset selon l'Equation \eqref{eq:offset} avec $\widehat{\beta_{D}},\ \widehat{A_{1:2}},\ \widehat{lrc_{1:2}}$
     \State $\mathcal{M} \gets$ ajustement du modèle donné par l'Equation \eqref{eq:m} en fixant l'offset
-    \State $\widehat{\beta_{E}}[k] \gets$ coefficients de profondeur de $\mathcal{M}$
+    \State $\widehat{\beta_{E}}^{(k)} \gets$ coefficients de profondeur de $\mathcal{M}$
 \EndFor
 \State $IC_\alpha \gets [q_{\alpha / 2}^{\widehat{\beta_{E}}}, q_{1 - \alpha / 2}^{\widehat{\beta_{E}}}]$ \Comment{Estimation via les quantiles empiriques}
 \end{algorithmic}
