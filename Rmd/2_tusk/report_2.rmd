@@ -52,7 +52,7 @@ Elle contient des millions de terminaisons nerveuses, ce qui en fait un organe s
 knitr::include_graphics('./img/img.928.png')
 ```
 
-Certains chercheurs danois, comme Eva Garde, s'intéressent plus particulièrement à l'estimation de la durée de des narvals via l’information contenue dans cette dent.
+Certains chercheurs danois, comme Eva Garde, s'intéressent plus particulièrement à l'estimation de la durée de vie des narvals via l’information contenue dans cette dent.
 Pour mener cette étude, plusieurs découpes latérales des dents d'animaux décédés ont été réalisées.
 Comme nous pouvons le voir sur la Figure \@ref(fig:img2), ces découpes se présentent sous la forme d’une séquence de sillons ou de couches comportant des marqueurs saisonniers au cours de la croissance des dents.
 Ces derniers créent des motifs sinusoïdaux.
@@ -65,7 +65,7 @@ knitr::include_graphics('./img/1-thenarwhalst.jpg')
 
 Le premier objectif pour cette problématique est le choix d’un modèle sinusoïdal pouvant représenter l’information contenue dans la dent de l’animal.
 À partir de cette forme de modèle et d’observations, le deuxième objectif sur lequel nous allons nous concentrer est celui de l’estimation des paramètres du modèle sinusoïdal.
-Nous présentons donc dans les parties suivantes, le modèle envisagé ainsi que notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM.
+Nous présentons donc dans les parties suivantes, le modèle envisagé, notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM et les résultats obtenus sur des données simulées.
 
 # Modèle sinusoïdal
 
@@ -211,9 +211,8 @@ Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes,
 $Q(\theta, \theta^{(k)}) \gets E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
-Pour actualiser les paramètres, nous avons besoin des statistiques exhaustives.
-Ces statistiques sont obtenues à partir du théorème de factorisation [?] et contiennent toute l'information de la vraisemblance.
-Leurs définitions sont les suivantes :
+Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
+En remarquant que la vraisemblance complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
 
 \begin{eqnarray*}
 S_1(\xi_i)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f(x_i(\xi_i), \varphi))^2\\
@@ -822,21 +821,27 @@ Nous avons identifié plusieurs raisons à cela :
 
 Il pourrait donc être intéressant de tenter d'améliorer l'implémentation du SMC, et notamment en proposant une autre simulation des particules au temps $i$, ne dépendant pas uniquement des particules au temps $i - 1$ mais également des observations $Y_{1:i}$.
 
-#Conclusion 
+# Conclusion
 
-\qquad Les narvals mâles possèdent une grande dent avec des capacités sensorielles très développées. A travers cette dent, nous avons chercher à estimer la durée de vie des narvals. En effet, leur dent comporte des marqueurs saisonniers au cours de leur croissance créant des motifs saisonniers variant en fonction des saisons. Notre objectif etait donc d'estimer au mieux cette sinusoïde à l'aide d'un modèle SAEM. 
-Le modèle SAEM est basé sur la log-vraisemblance en effectuant k itération en actualisant la valeur au temps t en fonction de celle en t-1. Nous avons effectuer l'algorithme SAEM en implémentant deux algorithmes distincts, MCMC et SMC afin d'estimer une trajectoire $\xi$ à partir des observations $Y$ ainsi que des paramètres $\theta$: 
-\item L'algorithme MCMC (Markov Chain Monte Carlo) est un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire consiste à accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance..
-\item L'algorithme SMC (Sequential Monte Carlo ) propose pour chaque instant $P$ réalisation en fonction des $P$ estimations réalisées à l'instant précédent. A partir de ces $P$ particules est associé un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant associe conditionnellement à la réalisation simulée.
+\qquad Les narvals possèdent une grande dent avec des capacités sensorielles très développées.
+Cette dent comporte des sillons, apparaissant au cours de leur croissance et créant des motifs sinusoïdaux variants avec les saisons.
+Elle pourrait ainsi être utile pour approximer la durée de vie des baleines. \newline
+Notre objectif était donc d'estimer les paramètres $\theta$ d'une sinusoïde $Y$ perturbée par un bruit gaussien et un processus d'Ornstein-Uhlenbeck $\xi_x$ au moyen d'un algorithme SAEM.
+Nous avons proposé deux implémentations de l'algorithme SAEM, l'une estimant le processus $\xi_x$ par une étape MCMC et l'autre par une étape SMC.
 
-\qquad Nous avons donc obtenues deux estimations des paramètres différents via l'algorithme SAEM, menant à des modèlisation différentes. En vu de nos paramètres fixée, nous avons pus comparer nos éstimations obtenues avec la réalite.
+\qquad Nous avons comparé les reconstructions $\hat{\xi_x}$ et $\hat{Y}$ et les estimations des paramètres $\hat{\theta}$ données par les deux versions.
+Visuellement, les reconstructions de $\hat{Y}$ sont très semblables et très satisfaisantes.
+Celle de $\hat{\xi_x}$ proposée par l'algorithme SAEM-SMC est apparu légèrement meilleure que celle de SAEM-MCMC, les deux demeurant tout à fait fidèles à la réalisation originale du processus.
+L'estimation des paramètres $\hat{\theta}$ a donné des résultats assez différents entre les deux approches.
+Certains des paramètres sont mieux approchés par la version SAEM-MCMC, d'autres par la version SAEM-SMC. \newline
+Pour juger plus rigoureusement les estimations des paramètres du modèle sinusoïdal, nous avons répété $1000$ fois chacune des deux procédures SAEM et nous nous sommes intéressés aux distributions des erreurs réalisées ainsi qu'à leurs moyennes.
+L'algorithme SAEM-MCMC s'est alors révélé plus stable que le SAEM-SMC car souffrant d'une moins grande variance dans l'estimation des paramètres. \newline
+Cependant, le SAEM-SMC converge nettement plus rapidement que la version MCMC et son implémentation étant vectorisable, il demande un temps de calcul environ 5 fois moins important.
+Cela suggère qu'il pourrait être intéressant de tenter d'améliorer l'échantillonnage des particules générées par l'étape SMC pour perfectionner l'estimation des paramètres du modèle, tout en bénéficiant du temps de calcul restreint de l'algorithme SAEM-SMC.
 
-\qquad L'estimation des paramètre via les deux méthodes sont différentes. En effet, l'estimation des paramètres pour les deux méthodes semblent être assez bonnes de manières générale, hormis $\hat\gamma$ qui est sous estimé. Nous remarquons que la méthode MCMC permet mieux d'estimer $\hat\psi$, $\hat\gamma$ ainsi que $\hat{a}$, tandis que la l'algorithme SMC permet de mieux estimer $\hat\omega$, $\hat{A}$, $\hat{B}$ et $\hat{b}$. Cependant, via le plan d'éxperience,  nous pouvons voir que l'estimations des paramètres via la mèthode SMC est bien moins stable, et estime parfois des valeurs de parametre abhrérentes nottament pour $\hat\omega$, $\hat\gamma$ ou encore $\hat{b}$. Un point non négligeable favorisant l'algorithme SMC est les temps d'execution : Il est environ cinq fois plus rapide que l'algorithme MCMC.
+\qquad Enfin, nous avons manipulé uniquement des données simulées, il reste donc à confronter les deux versions de l'algorithme à des données réelles, probablement plus bruitées !
 
-\qquad Pour conclure, l'estimation des paramètres via les deux algorithme est bonne et la modèlisation est présice. Chacun des deux algorithme nous apporte des avantages et inconveniant différents. Cependant, malgrès des optimisations à effectuer,l'algorithme SMC semble être l'algorithme le plus adapté pour notre modélisation SAEM, pour son éstimation des paramètres et son gain de temps. 
-
- 
-\newpageléatoire.
+\newpage
 
 \printbibliography[label=references, title={Références}]
 \let\printbibliography\relax
