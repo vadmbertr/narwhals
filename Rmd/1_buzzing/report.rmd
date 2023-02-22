@@ -968,7 +968,23 @@ ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
 
 # Conclusion
 
+\qquad Les narvals sont des animaux très vocaux, ce qui leur permet notamment de trouver leurs proies et de se nourrir.
+Les scientifiques s'interrogent donc sur le potentiel impact de perturbations sonores liées aux activités humaines susceptibles de se développer au Groenland à cause du recul des glaces l'environnant.
 
+\qquad Nous avons donc cherché à évaluer la différence des taux d'émission de buzz, les sons qu'utilisent les narvals pour chasser, entre des conditions "normales" et des conditions où les baleines sont exposées à des perturbations sonores.
+Pour ce faire nous avons utilisé les données de profondeur, de position et sonores collectées pendant plusieurs semaines en équipant 6 narvals d'instruments de mesure.
+Nous avons supposé que les buzz émis par les narvals suivent un processus de Poisson et nous nous sommes placés dans le cadre des modèles linéaires mixtes généralisés afin de modéliser le lien entre le taux d'émission des buzz, la profondeur de plongée des baleines et le niveau d'exposition aux perturbations. \newline
+Afin de quantifier la différence de taux d'émission entre des conditions "normales" et des conditions perturbées nous avons du tenir compte de l'effet de médiation de la profondeur.
+Pour cela nous avons estimé le lien entre le taux d'émission et la profondeur sans perturbation et nous avons injecté cette relation de référence dans le modèle incluant le niveau d'exposition au moyen d'un "offset".
+L'estimation des intervalles de confiance et de prédiction de l'effet des perturbations ne peut alors plus être faite en utilisant uniquement la variance des coefficients du modèle.
+C'est pourquoi nous avons mis en place une approche Monte-Carlo d'estimation des intervalles de confiance et que nous avons utilisé la méthode Delta pour construire des bandes de prédiction.
+
+\qquad Il est apparu que les intervalles de confiance et les bandes de prédiction obtenues mettent en avant une réduction du taux d'émission de buzz par rapport à des conditions normales de plus en plus forte quand les narvals sont proches de la source des perturbations. \newline
+
+\qquad Cependant, plusieurs leviers peuvent être mis en place pour rendre plus fiable la modélisation du lien entre perturbations et émission de buzz :
+
+* estimer l'effet direct, l'effet de médiation causale du triplet taux d'émission, profondeur et exposition aux perturbations,
+* utiliser un type de processus autre que celui de Poisson, comme celui de Hawkes, potentiellement plus adapté.
 
 \newpage
 
