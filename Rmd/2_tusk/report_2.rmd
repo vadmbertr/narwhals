@@ -441,7 +441,7 @@ g2 <- ggplot() +
   labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"))
 
-g1 + g2
+g2 + g1
 ```
 
 La trajectoire de $\xi_x$ obtenue par le MCMC (en rouge) est très proche de celle à l'origine des observations $Y$.
@@ -519,14 +519,13 @@ g2 <- ggplot() +
   labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
   theme(plot.margin = margin(0, 0, 0, 1, "pt"))
 
-g1 + g2
+g2 + g1
 ```
 
 ## Estimation de $\theta$ par SAEM
 
 La validation de l'échantillonnage de $\xi_x$ par MCMC ou SMC n'était qu'une étape, l'objectif global étant l'estimation de l'ensemble des paramètres $\theta$.
 Nous avons donc ensuite observé le comportement de l'algorithme SAEM présenté précédemment.
-Après plusieurs tests et analyses graphiques, le paramètres $\alpha_{min}$ a été fixé à $90$, ce qui correspond à l'ordre de grandeur régulièrement employé dans la littérature.
 Nous présentons dans un premier temps les résultats obtenus pour la reconstruction d'un échantillon simulé avec une étape MCMC ou une étape SMC, puis la synthèse d'un plan d'expérience réalisé avec $1000$ échantillons simulés.
 
 ```{r}
@@ -535,7 +534,7 @@ source("../../R/2_tusk/utils/SAEM.R")
 
 ### Avec une étape MCMC
 
-Pour la version MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et nous avons choisi $M_{max} = 20$.
+Pour la version MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et après plusieurs tests et analyses graphiques, $\alpha_{min}$ a été fixé à $90$ et $M_{max}$ à $20$, ce qui correspond à des ordres de grandeur régulièrement employés dans la littérature.
 La trajectoire de $\widehat{\xi_x}$ obtenue après les $500$ itérations de SAEM ainsi que les observations $\hat{Y}$ correspondantes sont présentés sur la Figure \@ref(fig:result-SAEM-mcmc).
 Nous observons sur cette figure que la reconstruction du processus $\xi_x$ initial est un peu moins bonne que celle réalisée en connaissant les paramètres $\theta$ du modèle sinusoïdal, ce à quoi nous nous attentions.
 L'estimation de $\xi_x$ demeure cependant très correcte et, conjointement à l'estimation des paramètres $\theta$, permet une reconstruction fidèle de $Y$.
@@ -631,6 +630,12 @@ g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 
 ### Avec une étape SMC
 
+Comme nous pouvons le voir sur les Figures \@ref(fig:coef1-SAEM-smc) et \@ref(fig:coef2-SAEM-smc), l'utilisation d'une étape SMC accélère sensiblement la convergence de $\hat{\theta}$, aussi nous avons utilisé seulement $Q = 100$ itérations de l'algorithme SAEM et nous avons diminué $\alpha_{min}$ à 25.
+L'étape SMC implique $P = 500$ particules.
+
+La Figure \@ref(fig:result-SAEM-smc) montre que cette version de SAEM permet une reconstruction de $\xi_x$ légèrement meilleure que la version MCMC, comme lorsque nous estimions $\hat{\xi_x}$ en fixant les paramètres $\theta$.
+Cela conduit à une reconstruction finale $\hat{Y}$ également très proche de $Y$.
+
 ```{r}
 Q <- 100
 P <- 500
@@ -654,6 +659,9 @@ g2 <- ggplot() +
 
 g1 + g2
 ```
+
+En revanche la Figure \@ref(fig:coef1-SAEM-smc) suggère que les estimations $\hat{\psi}$ et $\hat{\gamma}$ sont moins bonnes que précédemment : la convergence se fait vers des valeurs respectivement inférieure et supérieure à celles attendues.
+$\hat{\omega}$ semble elle mieux estimée.
 
 ```{r coef1-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
 g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
@@ -679,6 +687,9 @@ g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 
 (g1 + g2) / g3
 ```
+
+Enfin, la Figure \@ref(fig:coef2-SAEM-smc) indique que les paramètres $\hat{A}, \hat{B}, \hat{b}$ convergent mieux vers les valeurs fixées des paramètres avec la version SMC de l'algorithme.
+Le paramètre $\hat{a}$ ne converge toujours pas réellement et est un peu plus éloigné qu'avec l'utilisation d'une étape MCMC, mais l'estimation reste très bonne.
 
 ```{r coef2-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
 g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
@@ -796,7 +807,13 @@ kable(t(df), "latex",
 La Table \@ref(tab:params-sum-smc) confirme les observations visuelles : la $MAPE$ des paramètres $\psi$ et $\gamma$ augmentent fortement en estimant $\xi_x$ via un SMC par rapport à la méthode MCMC, tandis que celle du paramètre $\omega$ diminue légèrement et que pour les autres paramètres nous n'observons pas de réelle différence.
 
 Au regard de ces résultats, la version MCMC semble être à privilégier par rapport à la SMC.
-Peut-être qu'il serait possible d'améliorer les estimations de la version SMC en jouant sur ses hyper-paramètres, mais cette démarche serait très coûteuse en temps de calcul, et potentiellement sensible aux choix des valeurs fixées des paramètres de la simulation.
+Cependant, nous avons noté que l'implémentation en **R** de l'algorithme avec l'étape SMC est bien plus rapide que celle avec l'étape MCMC : les $1000$ répétitions du plan d'expérience SMC ont été exécutées en un peu moins de 15 minutes, contre plus d'une heure pour le MCMC.
+Nous avons identifié plusieurs raisons à cela :
+
+* la convergence plus rapide de l'algorithme SAEM-SMC permettant de réduire le nombre d'itérations de 500 à 100,
+* la possibilité de vectoriser l'ensemble des opérations sur les $P$ particules de SMC, alors que les répétitions du MCMC doivent être réalisées séquentiellement.
+
+Il pourrait donc être intéressant de tenter d'améliorer l'implémentation du SMC, et notamment en proposant une autre simulation des particules au temps $i$, ne dépendant pas uniquement des particules au temps $i - 1$ mais également des observations $Y_{1:i}$.
 
 \newpage
 
