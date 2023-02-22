@@ -55,7 +55,7 @@ theme_set(theme_light(base_size = 9))
 Le narval peut atteindre 5 mètres de long et un poids de 1600 kilogrammes et possède une longue durée de vie de 50 ans en moyenne.
 Il est surnommé licorne des mers en raison de sa dent ressemblant à une corne pouvant mesurer jusqu'à 3 mètres de long.
 
-\qquad Dans le cadre du projet tutoré de notre 2\textsuperscript{ème} de Master Statistique et Science des Données nous nous sommes intéressés à deux questions impliquant cet animal :
+\qquad Dans le cadre du projet tutoré de notre 2\textsuperscript{ème} de Master Statistique et Science des Données nous nous sommes intéressés à deux questions concernant cet animal :
 
 * l'impact des perturbations humaines sur le comportement des narvals,
 * l'estimation de la durée de vie des narvals à partir des sillons de leur dent.
@@ -1359,7 +1359,7 @@ L'Algorithme \@ref(alg:SAEM) résume l'ensemble de cette procédure SAEM :
 \State $M_{1:M_{max}} \gets 5$ ; $M_{M_{max}+1:Q} \gets 1$ \Comment{Initialisation du nombre d'itérations du MCMC}
 \For{$q \in \{2, ..., Q\}$}
   \State \Comment{Etape E}
-    \State $\xi^{(q)} \gets \xi$ avec $\theta^{(q-1)}$, par $M = M_q$ itérations MCMC (Algorithme \ref{alg:MCMC}), ou par SCM (Algorithme \ref{alg:SMC})
+    \State $\xi^{(q)} \gets \xi$ avec $\theta^{(q-1)}$, par $M_q$ itérations MCMC (Algorithme \ref{alg:MCMC}), ou par SCM (Algorithme \ref{alg:SMC})
 
   \State \Comment{Etape SA}
     \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f(x_i(\xi^{(q)}_i), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
