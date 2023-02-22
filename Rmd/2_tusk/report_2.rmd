@@ -285,7 +285,7 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 
 ### Algorithme SMC
 
-Comme pour l'algorithme MCMC, l'algorithme Sequential Monte-Carlo (SMC) - ou filtre particulaire - a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
+Comme pour l'algorithme MCMC, l'algorithme SMC (Sequential Monte-Carlo) - ou filtre particulaire - a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
 
 Cependant son fonctionnement est assez différent : plutôt que d'accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance comme le fait l'approche MCMC, le SMC propose pour chaque instant $P$ réalisations (les particules) selon les $P$ estimations réalisées à l'instant précédent et associe à chacune des nouvelles réalisations un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant conditionnellement à la réalisation simulée.
 Il est alors possible de tirer avec remise parmi les particules en utilisant les poids normalisés comme probabilités de tirage et de conserver ainsi les particules permettant d'observer avec les plus fortes probabilités $Y$.
@@ -822,7 +822,21 @@ Nous avons identifié plusieurs raisons à cela :
 
 Il pourrait donc être intéressant de tenter d'améliorer l'implémentation du SMC, et notamment en proposant une autre simulation des particules au temps $i$, ne dépendant pas uniquement des particules au temps $i - 1$ mais également des observations $Y_{1:i}$.
 
-\newpage
+#Conclusion 
+
+\qquad Les narvals mâles possèdent une grande dent avec des capacités sensorielles très développées. A travers cette dent, nous avons chercher à estimer la durée de vie des narvals. En effet, leur dent comporte des marqueurs saisonniers au cours de leur croissance créant des motifs saisonniers variant en fonction des saisons. Notre objectif etait donc d'estimer au mieux cette sinusoïde à l'aide d'un modèle SAEM. 
+Le modèle SAEM est basé sur la log-vraisemblance en effectuant k itération en actualisant la valeur au temps t en fonction de celle en t-1. Nous avons effectuer l'algorithme SAEM en implémentant deux algorithmes distincts, MCMC et SMC afin d'estimer une trajectoire $\xi$ à partir des observations $Y$ ainsi que des paramètres $\theta$: 
+\item L'algorithme MCMC (Markov Chain Monte Carlo) est un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire consiste à accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance..
+\item L'algorithme SMC (Sequential Monte Carlo ) propose pour chaque instant $P$ réalisation en fonction des $P$ estimations réalisées à l'instant précédent. A partir de ces $P$ particules est associé un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant associe conditionnellement à la réalisation simulée.
+
+\qquad Nous avons donc obtenues deux estimations des paramètres différents via l'algorithme SAEM, menant à des modèlisation différentes. En vu de nos paramètres fixée, nous avons pus comparer nos éstimations obtenues avec la réalite.
+
+\qquad L'estimation des paramètre via les deux méthodes sont différentes. En effet, l'estimation des paramètres pour les deux méthodes semblent être assez bonnes de manières générale, hormis $\hat\gamma$ qui est sous estimé. Nous remarquons que la méthode MCMC permet mieux d'estimer $\hat\psi$, $\hat\gamma$ ainsi que $\hat{a}$, tandis que la l'algorithme SMC permet de mieux estimer $\hat\omega$, $\hat{A}$, $\hat{B}$ et $\hat{b}$. Cependant, via le plan d'éxperience,  nous pouvons voir que l'estimations des paramètres via la mèthode SMC est bien moins stable, et estime parfois des valeurs de parametre abhrérentes nottament pour $\hat\omega$, $\hat\gamma$ ou encore $\hat{b}$. Un point non négligeable favorisant l'algorithme SMC est les temps d'execution : Il est environ cinq fois plus rapide que l'algorithme MCMC.
+
+\qquad Pour conclure, l'estimation des paramètres via les deux algorithme est bonne et la modèlisation est présice. Chacun des deux algorithme nous apporte des avantages et inconveniant différents. Cependant, malgrès des optimisations à effectuer,l'algorithme SMC semble être l'algorithme le plus adapté pour notre modélisation SAEM, pour son éstimation des paramètres et son gain de temps. 
+
+ 
+\newpageléatoire.
 
 \printbibliography[label=references, title={Références}]
 \let\printbibliography\relax
