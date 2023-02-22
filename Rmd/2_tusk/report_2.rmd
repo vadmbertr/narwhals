@@ -359,10 +359,10 @@ Afin de prendre en compte ce phénomène, nous faisons varier la valeur du param
 $$\alpha_{\alpha_{min}:Q} = \frac{1}{l^{0.8}}\text{, avec }l=1:(Q - \alpha_{min})$$
 \end{itemize}
 Ainsi le paramètre $\alpha$ décroît au fil des itérations à partir de la $\alpha_{min}$\textsuperscript{ième} itération.
-Cette procédure permet de réduire l'importance du terme associé à $\alpha$ et d'augmenter donc l'influence de la valeur précédente pour ces itérations-là.
+Cela permet de réduire l'importance du terme associé à $\alpha$ et d'augmenter donc l'influence de la valeur précédente pour ces itérations-là.
 \end{itemize}
 
-En prenant en compte ces deux paramètres supplémentaires, l'algorithme se présente comme l'Algorithme \@ref(alg:SAEM) :
+L'Algorithme \@ref(alg:SAEM) résume l'ensemble de cette procédure SAEM :
 \begin{algorithm}[H]
 \caption{Algorithme SAEM complet}
 \label{alg:SAEM}
@@ -403,6 +403,14 @@ En prenant en compte ces deux paramètres supplémentaires, l'algorithme se pré
 \EndFor
 \end{algorithmic}
 \end{algorithm}
+
+A chaque itération de l'algorithme, les paramètres $A, B, a, b = \varphi$ sont estimés en minimisant les moindres carrés non linéaires.
+Sous **R**, cela se fait au moyen de la fonction *nls* qui nécessite des valeurs initiales des paramètres à estimer.
+Afin de favoriser la convergence de l'algorithme de Gauss-Newton utilisé pour la résolution du problème des moindres carrées non linéaires, nous avons tenu compte de l'influence des paramètres $A$ et $B$ sur l'amplitude de $Y$ en les initialisant selon une réalisation de loi uniforme $\mathcal{U}(-max(|Y|) - \omega$, $max(|Y|) + \omega)$.
+Dans le même objectif, puisque le paramètre $a$ est lié à la pulsation de la sinusoïde, il est initialisé selon $\hat{a} = 2 * pi * f_{max}$ où $f_{max}$ est la fréquence de $Y$ avec la plus grande densité spectrale.
+Ce choix d'initialisation s'est avéré indispensable pour résoudre le problème des moindres carrées non linéaires.
+Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $\hat{b} = (7 * pi / 8) - x_0 * \hat{a}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul et $\hat{a}$ à la définition précédente.
+Par ailleurs, nous avons fait le choix d'initialiser $\hat{\omega}, \hat{\psi}, \hat{\gamma}$ à $0.5$ pour la première itération.
 
 # Simulation & résultats
 
@@ -491,7 +499,7 @@ Cependant, étant donné que ceux-ci n'impactent pas l'estimation de la distribu
 
 Nous avons repris la trajectoire $\xi_x$ à estimer dans la partie précédente et nous cette fois-ci tenté de la générer par notre algorithme SMC en utilisant $P = 500$ particules.
 
-La Figure \@ref(fig:result-SMC) permet de constater que cette approche semble plus précise que la MCMC, les points aberrants ont disparu et l'allure de $\xi_x$ est bien reconstruite.
+La Figure \@ref(fig:result-SMC) permet de constater que cette approche semble plus précise que la MCMC : les points aberrants ont disparu et l'allure de $\xi_x$ est bien reconstruite.
 
 ```{r result-SMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\widehat{\\xi_x}$ obtenue par l'algorithme SMC et la distribution $\\hat{Y}$ qui l'utilise (en rouge)."}
 source("../../R/2_tusk/utils/SMC.R")
@@ -516,21 +524,28 @@ g1 + g2
 
 ## Estimation de $\theta$ par SAEM
 
-En gardant l'objectif d'estimer optimalement les paramètres utilisés pour obtenir une réalisation des observations $Y$ cibles, nous avons effectué $Q=500$ itérations de l'algorithme SAEM présenté précédemment.
-Les paramètres $\alpha_{min}$ et $M_{max}$ ont été fixés après plusieurs tests et analyses graphiques aux valeurs suivantes : $\alpha_{min}=90$ et $M_{max}=20$, ce qui correspond à des valeurs retrouvées régulièrement dans la littérature.
-La trajectoire de $\xi_x$ obtenue après les itérations ainsi que les observations $Y$ l'utilisant sont présentés sur la Figure \@ref(fig:result-SAEM).
-Nous observons sur cette figure un léger décalage pour les premières positions de la trajectoire de $\xi_x$ estimée.
-Malgré ce décalage, les deux courbes sont assez proches et nous retrouvons ce résultat pour la distribution de $Y$.
+La validation de l'échantillonnage de $\xi_x$ par MCMC ou SMC n'était qu'une étape, l'objectif global étant l'estimation de l'ensemble des paramètres $\theta$.
+Nous avons donc ensuite observé le comportement de l'algorithme SAEM présenté précédemment.
+Après plusieurs tests et analyses graphiques, le paramètres $\alpha_{min}$ a été fixé à $90$, ce qui correspond à l'ordre de grandeur régulièrement employé dans la littérature.
+Nous présentons dans un premier temps les résultats obtenus pour la reconstruction d'un échantillon simulé avec une étape MCMC ou une étape SMC, puis la synthèse d'un plan d'expérience réalisé avec $1000$ échantillons simulés.
 
 ```{r}
 source("../../R/2_tusk/utils/SAEM.R")
+```
 
+### Avec une étape MCMC
+
+Pour la version MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et nous avons choisi $M_{max} = 20$.
+La trajectoire de $\widehat{\xi_x}$ obtenue après les $500$ itérations de SAEM ainsi que les observations $\hat{Y}$ correspondantes sont présentés sur la Figure \@ref(fig:result-SAEM-mcmc).
+Nous observons sur cette figure que la reconstruction du processus $\xi_x$ initial est un peu moins bonne que celle réalisée en connaissant les paramètres $\theta$ du modèle sinusoïdal, ce à quoi nous nous attentions.
+L'estimation de $\xi_x$ demeure cependant très correcte et, conjointement à l'estimation des paramètres $\theta$, permet une reconstruction fidèle de $Y$.
+
+```{r}
 Q <- 500
 saem.obj <- saem.alg(Y, Q)
 ```
 
-```{r result-SAEM, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
-
+```{r result-SAEM-mcmc, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
 g1 <- ggplot() +
   geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
   geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), size = .25, color = "red") +
@@ -548,12 +563,11 @@ g2 <- ggplot() +
 g1 + g2
 ```
 
-Concernant l'estimation des autres paramètres du modèle, l'évolution des valeurs obtenues au fil des itérations pour $\omega, \psi, \gamma$ est présentée sur la Figure \@ref(fig:coef1-SAEM).
-Nous avons fait le choix d'initialiser ces 3 valeurs à $0.5$ pour la première itération.
+La Figure \@ref(fig:coef1-SAEM-mcmc) présente justement les valeurs estimées au fil des itérations pour $\omega, \psi, \gamma$.
 Comme nous pouvons le voir sur cette figure, les paramètres $\omega$ et $\psi$ convergent correctement vers les vraies valeurs des paramètres.
 Cependant, celle du paramètre $\gamma$ ne converge pas exactement vers la valeur attendue et est légèrement surestimée.
 
-```{r coef1-SAEM, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+```{r coef1-SAEM-mcmc, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
 g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
   geom_line(aes(y = saem.obj$omega), color = "blue") +
   geom_hline(yintercept = omega, linetype = "dashed", color = "red") +
@@ -578,7 +592,12 @@ g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 (g1 + g2) / g3
 ```
 
-```{r coef2-SAEM, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+Comme nous pouvons le voir sur la Figure \@ref(fig:coef2-SAEM-mcmc), l'estimation du coefficient $A$ converge assez normalement vers $0.5$.
+Bien qu'elle se rapproche de $-0.25$, celle de $B$ semble avoir du mal à converger réellement et stagne au-dessus de ce que nous souhaiterions.
+Par ailleurs, nous observons, que l'estimation du paramètre $a$ est très proche de la "vraie" valeur, mais nous ne voyons pas de convergence à proprement parler.
+Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne remarquons pas de convergence vers la valeur attendue et l'estimation finale apparaît un peu éloignée de la valeur fixée initialement.
+
+```{r coef2-SAEM-mcmc, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
 g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
   geom_line(aes(y = saem.obj$A), color = "blue") +
   geom_hline(yintercept = A, linetype = "dashed", color = "red") +
@@ -610,15 +629,88 @@ g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 (g1 + g2) / (g3 + g4)
 ```
 
-A chaque itération de l'algorithme, les paramètres $A, B, a, b$ sont estimés en minimisant les moindres carrés non linéaires.
-Sous **R**, cela se fait au moyen de la fonction *nls* qui nécessite des valeurs initiales des paramètres à estimer.
-Afin de favoriser la convergence de l'algorithme Gauss-Newton de résolution du problème des moindres carrées non linéaires, nous avons tenu compte de l'influence des paramètres $A$ et $B$ sur l'amplitude de $Y$ en les initialisant selon une réalisation de loi uniforme $\mathcal{U}(-max(|Y|) - \omega$, $max(|Y|) + \omega)$.
-Dans le même objectif, puisque le paramètre $a$ est lié à la pulsation de la sinusoïde, il est initialisé selon $a_{init} = 2 * pi * f_{max}$ où $f_{max}$ est la fréquence de $Y$ avec la plus grande densité spectrale.
-Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $b_{init} = (7 * pi / 8) - x_0 * a_{init}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul.
-Comme nous pouvons le voir sur la Figure \@ref(fig:coef2-SAEM), l'estimation du coefficient $A$ converge assez normalement vers $0.5$.
-Bien qu'elle se rapproche de $-0.25$, celle de $B$ semble avoir du mal à converger réellement et stagne au-dessus de ce que nous souhaiterions.
-Par ailleurs, nous observons, que l'estimation du paramètre $a$ est très proche de la "vraie" valeur, mais nous ne voyons pas de convergence à proprement parler.
-Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne remarquons pas de convergence vers la valeur attendue et l'estimation finale apparaît un peu éloignée de la valeur fixée initialement.
+### Avec une étape SMC
+
+```{r}
+Q <- 100
+P <- 500
+saem.obj <- saem.alg(Y, n.rep = Q, n.part = P, smc = TRUE, n.alpha = 25)
+```
+
+```{r result-SAEM-smc, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), size = .25, color = "red") +
+  labs(y = TeX("$\\xi_x$"), caption = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, saem.obj$mcmc$xi.c,
+                             A.arg = saem.obj$A.c, B.arg = saem.obj$B.c,
+                             a.arg = saem.obj$a.c, b.arg = saem.obj$b.c)), size = .25, color = "red") +
+  labs(y = TeX("$Y$"), caption = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g1 + g2
+```
+
+```{r coef1-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$omega), color = "blue") +
+  geom_hline(yintercept = omega, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\omega$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$psi), color = "blue") +
+  geom_hline(yintercept = psi, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\psi$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$gamma), color = "blue") +
+  geom_hline(yintercept = gamma, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\gamma$"), y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / g3
+```
+
+```{r coef2-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$A), color = "blue") +
+  geom_hline(yintercept = A, linetype = "dashed", color = "red") +
+  labs(caption = "A", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$B), color = "blue") +
+  geom_hline(yintercept = B, linetype = "dashed", color = "red") +
+  labs(caption = "B", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$a), color = "blue") +
+  geom_hline(yintercept = a, linetype = "dashed", color = "red") +
+  labs(caption = "a", y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$b), color = "blue") +
+  geom_hline(yintercept = b, linetype = "dashed", color = "red") +
+  labs(caption = "b", y = "Estimation", x = "Itérations") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
 
 ### Plan d'expérience
 
