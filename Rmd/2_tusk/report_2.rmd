@@ -33,13 +33,15 @@ library(patchwork)
 library(reshape2)
 
 theme_set(theme_light(base_size = 9))
+```
 
+\newpage
+
+```{r}
 set.seed(15)
 
 source("../../R/2_tusk/utils/simulation.R")
 ```
-
-\newpage
 
 \qquad Comme nous avons pu le voir précédemment, le narval est une espèce de cétacés vivant dans l’océan Arctique.
 Ces animaux d’une durée de vie moyenne de 50 ans possèdent deux dents.
