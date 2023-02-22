@@ -358,6 +358,7 @@ Afin de prendre en compte ce phénomène, nous faisons varier la valeur du param
   \item puis, pour les (Q-$\alpha_{min}$) dernières itérations, les alphas sont calculés de la façon suivante :
 $$\alpha_{\alpha_{min}:Q} = \frac{1}{l^{0.8}}\text{, avec }l=1:(Q - \alpha_{min})$$
 \end{itemize}
+\item La puissance de $\alpha$ est de $0.8$, afin que la suite converge. En effet, si la puissance est trop élevè nottement avec $\alpha^2$, la suite diverge au fur et a mesure ne permettant pas une approximation.
 Ainsi le paramètre $\alpha$ décroît au fil des itérations à partir de la $\alpha_{min}$\textsuperscript{ième} itération.
 Cela permet de réduire l'importance du terme associé à $\alpha$ et d'augmenter donc l'influence de la valeur précédente pour ces itérations-là.
 \end{itemize}
@@ -774,7 +775,8 @@ En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
 Nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes, qui sont elles bien estimées.
 
 En revanche, il semblerait qu'avec la méthode SMC d'estimation de $\xi_x$, l'estimation de $\omega$ est meilleure, mais celles de $\psi$ et $\gamma$ est nettement moins bonne.
-L'erreur réalisée sur l'estimation des paramètres $A, B, a, b$ paraît similaire pour les deux approches d'estimation de $\xi_x$.
+L'erreur réalisée sur l'estimation des paramètres $A, B, a, b$ paraît similaire pour les deux approches d'estimation de $\xi_x$. 
+Cependant, nous remarquons que les estimations des paramètres via la méthode SMC varient bien plus, et sont parfois très éloignées de la valeur réele. En effet, pour $\omega$ et $\gamma$ sont parfois sous estimer de manière excessive sur certaines simulations ainsi que $b$ variant autour de sa valeur.
 
 ```{r params-sum-mcmc}
 df <- data.frame(theta = params.true, est = params.mean.mcmc, mape = params.mape.mcmc, rmse = params.rmse.mcmc)
