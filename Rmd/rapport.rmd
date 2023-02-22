@@ -47,6 +47,18 @@ library(splines)
 
 theme_set(theme_light(base_size = 9))
 ```
+#Introduction
+
+\qquad Le narval est une éspèce de cétacés vivant dans l'ocean artique proche du Groenland. Avec sa petite tête arrondie, ses petites nageoires retroussées et son épaisse couche de graisse vacularisée, le narval peut atteindre 5 mètres de long avec un poids de 1600 kg et une durée de vie moyenne de 50 ans. Le narval est surnomé licorne des mer en raison de sa dent ressemblant à une corne pouvant mesurer jusqu'a 3 mètres de long. Cet organe possède non pas une utilité defensive mais sensorielle permettant à l'animal de percevoir les differences de température et de pression. Les narvals emmettent différents son lors de leurs activité, nottamement des sons appelés clicks lorsqu'ils recherchent de la nourriture et buzz lorsqu'ils sont sur le point de se nourrirent.
+
+\qquad Dans le cadre de notre projet tutorée, nous avons menée une étude sur les narvals. 
+Notre projet se divise en deux parties distinct : 
+\item La première est l'étude de  l'impact de l'activité minières humaines sur le comportement des narvals.
+\item La seconde est l'éstimation de la durée de vie des narvals à partir de leur dent torsadées sur lesquelles un effet saisonnier apparait.
+
+\qquad Notre travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles. Notre tutrice de projet, Madame Adeline LECLERCQ-SAMSON membre du LJK, nous a accompagné et guider tout au long du projet afin d'atteindre au mieux nos objectifs.
+
+
 
 # Effet des perturbations humaines sur l'alimentation des narvals
 
@@ -57,7 +69,6 @@ source("../R/1_buzzing/utils/biexp.R")
 source("../R/1_buzzing/utils/monte_carlo_conf_int.R")
 ```
 
-\qquad Notre travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles.
 
 \qquad Les narvals sont des baleines vivant toute l'année au Groenland.
 Le réchauffement climatique favorise le recul des glaces sur le territoire groenlandais et ses côtes.
