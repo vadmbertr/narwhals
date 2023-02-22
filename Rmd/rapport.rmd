@@ -23,6 +23,7 @@ header-includes:
     \usepackage{geometry}
     \usepackage{graphicx}
     \usepackage{mathtools}
+    \usepackage{titlesec}
     \usepackage{xcolor}
     \makeatletter\renewcommand*{\fps@figure}{H}\makeatother
     \makeatletter\renewcommand{\chaptername}{Partie}\makeatother
@@ -47,18 +48,20 @@ library(splines)
 
 theme_set(theme_light(base_size = 9))
 ```
-#Introduction
 
-\qquad Le narval est une éspèce de cétacés vivant dans l'ocean artique proche du Groenland. Avec sa petite tête arrondie, ses petites nageoires retroussées et son épaisse couche de graisse vacularisée, le narval peut atteindre 5 mètres de long avec un poids de 1600 kg et une durée de vie moyenne de 50 ans. Le narval est surnomé licorne des mer en raison de sa dent ressemblant à une corne pouvant mesurer jusqu'a 3 mètres de long. Cet organe possède non pas une utilité defensive mais sensorielle permettant à l'animal de percevoir les differences de température et de pression. Les narvals emmettent différents son lors de leurs activité, nottamement des sons appelés clicks lorsqu'ils recherchent de la nourriture et buzz lorsqu'ils sont sur le point de se nourrirent.
+# Contexte
 
-\qquad Dans le cadre de notre projet tutorée, nous avons menée une étude sur les narvals. 
-Notre projet se divise en deux parties distinct : 
-\item La première est l'étude de  l'impact de l'activité minières humaines sur le comportement des narvals.
-\item La seconde est l'éstimation de la durée de vie des narvals à partir de leur dent torsadées sur lesquelles un effet saisonnier apparait.
+\qquad Le narval est une espèce de cétacés vivant dans ocean Arctique, autour du Groenland.
+Le narval peut atteindre 5 mètres de long et un poids de 1600 kilogrammes et possède une longue durée de vie de 50 ans en moyenne.
+Il est surnommé licorne des mers en raison de sa dent ressemblant à une corne pouvant mesurer jusqu'à 3 mètres de long.
 
-\qquad Notre travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles. Notre tutrice de projet, Madame Adeline LECLERCQ-SAMSON membre du LJK, nous a accompagné et guider tout au long du projet afin d'atteindre au mieux nos objectifs.
+\qquad Dans le cadre du projet tutoré de notre 2\textsuperscript{ème} de Master Statistique et Science des Données nous nous sommes intéressés à deux questions impliquant cet animal :
 
+* l'impact des perturbations humaines sur le comportement des narvals,
+* l'estimation de la durée de vie des narvals à partir des sillons de leur dent.
 
+\qquad Ce travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles.
+Nous tenons à fortement remercier notre tutrice de projet, Madame Adeline Leclercq Samson, chercheuse au LJK et grandement impliquée dans cette collaboration, de nous avoir accompagnés et guidés tout au long du projet, mais aussi d'avoir fait en sorte qu'il nous soit le plus intéressant possible en nous impliquant sur le choix de certains axes à investiguer.
 
 # Effet des perturbations humaines sur l'alimentation des narvals
 
@@ -68,7 +71,6 @@ set.seed(15)
 source("../R/1_buzzing/utils/biexp.R")
 source("../R/1_buzzing/utils/monte_carlo_conf_int.R")
 ```
-
 
 \qquad Les narvals sont des baleines vivant toute l'année au Groenland.
 Le réchauffement climatique favorise le recul des glaces sur le territoire groenlandais et ses côtes.
@@ -986,8 +988,833 @@ ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
   ylab("Pourcentage du taux normal d'émission")
 ```
 
+## Conclusion
+
+\qquad Les narvals sont des animaux très vocaux, ce qui leur permet notamment de trouver leurs proies et de se nourrir.
+Les scientifiques s'interrogent donc sur le potentiel impact de perturbations sonores liées aux activités humaines susceptibles de se développer au Groenland à cause du recul des glaces l'environnant.
+
+\qquad Nous avons donc cherché à évaluer la différence des taux d'émission de buzz, les sons qu'utilisent les narvals pour chasser, entre des conditions "normales" et des conditions où les baleines sont exposées à des perturbations sonores.
+Pour ce faire nous avons utilisé les données de profondeur, de position et sonores collectées pendant plusieurs semaines en équipant 6 narvals d'instruments de mesure.
+Nous avons supposé que les buzz émis par les narvals suivent un processus de Poisson et nous nous sommes placés dans le cadre des modèles linéaires mixtes généralisés afin de modéliser le lien entre le taux d'émission des buzz, la profondeur de plongée des baleines et le niveau d'exposition aux perturbations. \newline
+Afin de quantifier la différence de taux d'émission entre des conditions "normales" et des conditions perturbées nous avons du tenir compte de l'effet de médiation de la profondeur.
+Pour cela nous avons estimé le lien entre le taux d'émission et la profondeur sans perturbation et nous avons injecté cette relation de référence dans le modèle incluant le niveau d'exposition au moyen d'un "offset".
+L'estimation des intervalles de confiance et de prédiction de l'effet des perturbations ne peut alors plus être faite en utilisant uniquement la variance des coefficients du modèle.
+C'est pourquoi nous avons mis en place une approche Monte-Carlo d'estimation des intervalles de confiance et que nous avons utilisé la méthode Delta pour construire des bandes de prédiction.
+
+\qquad Il est apparu que les intervalles de confiance et les bandes de prédiction obtenues mettent en avant une réduction du taux d'émission de buzz par rapport à des conditions normales de plus en plus forte quand les narvals sont proches de la source des perturbations. \newline
+
+\qquad Cependant, plusieurs leviers peuvent être mis en place pour rendre plus fiable la modélisation du lien entre perturbations et émission de buzz :
+
+* estimer l'effet direct, l'effet de médiation causale du triplet taux d'émission, profondeur et exposition aux perturbations,
+* utiliser un type de processus autre que celui de Poisson, comme celui de Hawkes, potentiellement plus adapté.
+
+# Estimation de la durée de vie des narvals grâce aux sillons de leur dent
+
+```{r}
+set.seed(15)
+
+source("../R/2_tusk/utils/simulation.R")
+```
+
+\qquad Chez les femelles narvals, les deux dents restent à l’intérieur de la boîte crânienne, tandis que pour les mâles, la canine gauche s’allonge et prend la forme d’une corne, comme le montre la Figure \@ref(fig:img1).
+Elle commence à pousser au travers de la lèvre supérieure gauche dès l'âge d’un an lors de la puberté et croît jusqu'à la maturité sexuelle, entre 8 et 9 ans.
+Cette défense torsadée possède des fonctionnalités et propriétés uniques dans la nature.
+Elle contient des millions de terminaisons nerveuses, ce qui en fait un organe sensoriel très développé [@narval].
+
+```{r img1, out.width = "50%", fig.cap = "Vue de face d'un narval et de sa dent. \\cite{narval-img}"}
+knitr::include_graphics("2_tusk/img/img.928.png")
+```
+
+\qquad Certains chercheurs danois, comme Eva Garde, s'intéressent plus particulièrement à l'estimation de la durée de vie des narvals via l’information contenue dans cette dent.
+Pour mener cette étude, plusieurs découpes latérales des dents d'animaux décédés ont été réalisées.
+Comme nous pouvons le voir sur la Figure \@ref(fig:img2), ces découpes se présentent sous la forme d’une séquence de sillons ou de couches comportant des marqueurs saisonniers au cours de la croissance des dents.
+Ces derniers créent des motifs sinusoïdaux.
+La fréquence et la forme de ces sinusoïdes varient d’une année à l'autre selon la variabilité de la durée ou de l'intensité des saisons [@tusk].
+L’information portée par les motifs à l’intérieur des défenses est donc logiquement liée à la durée de vie de l’animal.
+
+```{r img2, fig.cap = "Présentation de l’allure d’une section en longueur d’une dent de narval. \\cite{tusk}"}
+knitr::include_graphics("2_tusk/img/1-thenarwhalst.jpg")
+```
+
+\qquad Le premier objectif pour cette problématique est le choix d’un modèle sinusoïdal pouvant représenter l’information contenue dans la dent de l’animal.
+À partir de cette forme de modèle et d’observations, le deuxième objectif sur lequel nous allons nous concentrer est celui de l’estimation des paramètres du modèle sinusoïdal.
+Nous présentons donc dans les parties suivantes, le modèle envisagé, notre démarche d’estimation de ces paramètres à partir d’un algorithme SAEM et les résultats obtenus sur des données simulées.
+
+## Modèle sinusoïdal
+
+\qquad Comme nous l’avons évoqué précédemment, les motifs sinusoïdaux observés sont le reflet de la variabilité des saisons, ainsi ce motif n’est pas répété identiquement en fonction du temps.
+Ces variations complexifient donc la modélisation de cette information.
+
+\qquad Les observations le long de la défense sont notées $Y_i$ pour $i=1, \ldots, n$, avec la position correspondante sur la dent notée $x_i$.
+Le modèle est le suivant :
+$$Y_i = f(x_i, \varphi) + \varepsilon_i$$
+avec $\varepsilon_i$ un bruit aléatoire suivant une loi normale de moyenne $0$ et de variance $\omega^2$.
+
+La fonction de régression $f(x, \varphi)$ est une fonction périodique sinusoïdale telle que :
+$$f(x, \varphi) = A \sin(g(x) + b) + B \sin(2g(x) + 2b + \frac{\pi}{2})$$
+avec $$g(x) = ax + \xi_x$$
+et  finalement $\xi_x$, un processus aléatoire d'Ornstein-Uhlenbeck, tel que :
+$$d\xi_x = -\beta \xi_xdx + \sigma dW_x$$
+Dont la solution est donnée par :
+$$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+de sorte que la densité de transition est :
+$$p(\xi_{x + \delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - \psi^2))$$
+
+\qquad Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
+
+- $\varphi = (A, B, a, b)$,
+- $\omega$,
+- $\psi = e^{-\beta \Delta}$, où $\Delta$ est l'intervalle de temps entre deux observations,
+- $\gamma^2 = \frac{\sigma^2}{2\beta}(1 - \psi^2)$.
+
+Une réalisation de ce modèle est présentée sur la Figure \@ref(fig:mdl).
+
+```{r mdl, fig.cap = "Simulation des observations $Y$, avec les paramètres suivants : $A=0.5$, $B=-0.25$, $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$."}
+ggplot() +
+  geom_line(aes(x = x, y = Y))
+```
+
+### Identifiabilité
+
+\qquad Afin de justifier l'intérêt de l'estimation des paramètres du modèle, nous nous sommes intéressé à son identifiabilité.
+Nous pouvons observer sur la Figure \@ref(fig:sim-xis) une trajectoire du processus $\xi_x$ cible ainsi que trois autres simulations de trajectoire du processus $\xi_x$ pour des valeurs de paramètres $\psi$ et $\gamma$ variant, obtenues selon le procédé suivant :
+
+\begin{algorithmic}
+\State $\xi_{1:n} \gets 0$ \Comment{Initialisation de la première valeur}
+\For{$i \in \{1, ..., n\}$}
+  \State$\xi_i = \xi_{i-1}*\psi + \epsilon_{\xi}$, avec $\epsilon_{\xi} \sim N(0,\gamma^2)$
+\EndFor
+\end{algorithmic}
+
+\qquad Nous observons sur la Figure \@ref(fig:sim-xis) que les différentes réalisations du processus $\xi_x$ conduisent à des trajectoires différentes.
+Comme attendu au regard de l'expression du processus, la modification de $\psi$ impacte la valeurs moyenne de $\xi_x$, et $\gamma$ sa variance.
+
+```{r sim-xis, fig.cap = "Présentation d'une trajectoire du processus $\\xi_x$ cible (en noir) et de trois autres trajectoires de ce processus simulées à partir de valeurs différentes de $\\psi$ et $\\gamma$ (en vert, bleu et rouge)."}
+p1 <- rxi(psi.arg = 1 )
+p2 <- rxi(gamma.arg = .12)
+p3 <- rxi(psi.arg = 1, gamma.arg = .12)
+
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = xi)) +
+  labs(caption = TeX("Référence, $\\xi_x$ : $\\psi \\approx 0.95, \\gamma \\approx 0.1$"), y = TeX("$\\xi_x$")) +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = xi)) +
+  geom_line(aes(x = x, y = p1), color = "green") +
+  labs(caption = TeX("$\\xi_x^{(1)}$ : $\\psi = 1, \\gamma \\approx 0.1$")) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot() +
+  geom_line(aes(x = x, y = xi)) +
+  geom_line(aes(x = x, y = p2), color = "blue") +
+  labs(caption = TeX("$\\xi_x^{(2)}$ : \\psi \\approx 0.95, \\gamma = 0.12$"), y = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g4 <- ggplot() +
+  geom_line(aes(x = x, y = xi)) +
+  geom_line(aes(x = x, y = p3), color = "red") +
+  labs(caption = TeX("$\\xi_x^{(3)}$ : \\psi = 1, \\gamma = 0.12$")) +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+\qquad Ce résultat a un impact direct sur les observations $Y$ puisque, comme nous pouvons le voir sur la Figure \@ref(fig:sim-ys), les observations $Y$ correspondant à des réalisations $\xi_x$ pour des valeurs de $\psi$ et $\gamma$ différentes ne collent pas du tout à la distribution cible.
+De plus, une variation des paramètres $A$, $B$, $a$, et $b$ entraine une différence encore plus forte : $A$ et $B$ jouant sur l'amplitude de la sinusoïde, $a$ sur sa pulsation et $b$ sur son décalage de phase.
+
+```{r sim-ys, fig.cap = "Distributions $Y$ pour différentes trajectoires de $\\xi_x$ et différentes valeurs de $A, B, a, b$ (en vert, bleu et rouge)."}
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = Y)) +
+  labs(caption = TeX("Référence - $\\xi_x, A = 0.5, B = -0.25, a = 0.1, b = 1$"), y = TeX("$Y$")) +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = Y)) +
+  geom_line(aes(x = x, y = f(x, p3)), color = "green") +
+  labs(caption = TeX("$\\xi_x^{(3)}, A = 0.5, B = -0.25, a = 0.1, b = 1$")) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot() +
+  geom_line(aes(x = x, y = Y)) +
+  geom_line(aes(x = x, y = f(x, xi, A.arg = .6, B.arg = -.3, a.arg = 0.075, b.arg = 1.1)), color = "blue") +
+  labs(caption = TeX("$\\xi_x, A = 0.6, B = -0.3, a = 0.075, b = 1.1$"), y = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+g4 <- ggplot() +
+  geom_line(aes(x = x, y = Y)) +
+  geom_line(aes(x = x, y = f(x, p3, A.arg = .6, B.arg = -.3, a.arg = 0.075, b.arg = 1.1)), color = "red") +
+  labs(caption = TeX("$\\xi_x^{(3)}, A = 0.6, B = -0.3, a = 0.075, b = 1.1$")) +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+\qquad Les observations de $Y$ sont sensibles à la trajectoire du processus $\xi_x$ associé, ainsi qu'aux paramètres $A, B, a, b$.
+Le modèle sinusoïdal semble donc identifiable.
+
+## Estimation des paramètres à partir d'un algorithme SAEM
+
+\qquad Afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente, nous avons implémenté une procedure reposant sur l'algorithme SAEM.
+Nous allons d'abord présenter le principe d'un algorithme EM (Espérance-Maximisation) [@EM], puis celui de son approximation stochastique : l'algorithme SAEM (Stochastic Approximation EM) [@SAEM].
+Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@SMC] (Sequential Monte Carlo) avant de présenter l'algorithme complet.
+
+### Algorithme EM
+
+\qquad L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'écrit de la manière suivante :
+\begin{eqnarray*}
+\log L(Y, \xi_x, \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
+&&- \sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{\frac{\sigma^2}{\beta}(1 - \psi^2)} - \frac{n}{2} \log(\frac{\sigma^2}{2\beta}(1 - \psi^2)) \\
+&=& -\sum_{i=1}^n \frac{(Y_i - f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2} \log(\omega^2) \\
+&& -\sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
+\end{eqnarray*}
+
+Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k)}$.
+
+- étape E : calcul de $Q(\theta, \theta^{(k)})$, l'espérance conditionnelle de la log-vraisemblance du modèle :
+$Q(\theta, \theta^{(k)}) \gets E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
+- étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
+
+Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
+En remarquant que la vraisemblance complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
+
+\begin{eqnarray*}
+S_1(\xi_i)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f(x_i(\xi_i), \varphi))^2\\
+S_2(\xi_i) &=& \sum_{i=1}^n \xi_{i-1} \xi_i\\
+S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
+S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
+\end{eqnarray*}
+
+L'actualisation des paramètres dépend directement de ces statistiques.
+
+### Simulation de $\xi_x$
+
+\qquad Dans notre cas, la distribution conditionnelle $p(\xi_x | Y; \theta^{(k)})$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
+Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler selon cette distribution.
+
+#### Algorithme MCMC
+
+\qquad L'objectif de cet algorithme MCMC est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y$ ainsi que des paramètres $\theta$.
+L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire.
+
+Effectivement, après l'initialisation d'une trajectoire $\xi^{(0)} = (\xi^{(0)}_1,...,\xi^{(0)}_n)$, l'algorithme procède à $M$ itérations.
+La trajectoire du processus simulée peut donc s'écrire $\xi^{(M)} = (\xi^{(M)}_1,...,\xi^{(M)}_n)$.
+
+\qquad Plus précisément, pour chaque itération $k$, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_c$ avec une marche aléatoire : $\xi^{(c)}_i = \xi^{(k-1)}_i + N(0, \delta_i^2)$.
+Cela introduit un nouveau paramètre $\delta = (\delta_1,....,\delta_n)$ contrôlant la variance de la marche aléatoire.
+Pour chacun de ses candidats, une log-probabilité d'acceptation est calculée de la façon suivante :
+$$\log(\alpha) = min(\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}), 1)$$
+avec :
+\begin{eqnarray*}
+\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}) &=& \log(L(Y, \xi^{(c)})) - \log(L(Y, \xi^{(k-1)})) \\
+&=& -\frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(c)}))^2 - \frac{1}{2 \frac{\gamma^2}{2}} \sum_{i=1}^{n} (\xi^{(c)} - \xi^{(k-1)} \psi)^2 \\
+&& + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(k-1)}))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi^{(k-1)} - \xi^{(k-2)} \psi)^2\\
+\end{eqnarray*}
+
+À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit rejeté, soit accepté, auquel cas, il remplace la valeur considérée à l'itération $k - 1$.
+
+\qquad De plus, nous avons choisi de rendre le paramètre $\delta$ adaptatif en fonction du taux d'acceptation $acc\_rate_i$ pour chaque point au fil des itérations $k$.
+Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui donne finalement l'Algorithme \@ref(alg:MCMC) :
+
+\begin{algorithm}[H]
+\caption{Algorithme MCMC de simulation d'une trajectoire du processus $\xi_x$.}
+\label{alg:MCMC}
+\begin{algorithmic}
+\State $\xi_{1:n} \gets 0$ \Comment{Initialisation du processus}
+\State $\delta_{1:n} \gets 0.05$ \Comment{Initialisation du delta adaptatif}
+\State $\delta_{AR} \gets 0.1$ \Comment{Pas d'évolution du delta adaptatif}
+\State $acc\_rate_{1:n} \gets 0$ \Comment{Initialisation du vecteur de taux d'acceptation}
+\State $acc\_rate_{target} \gets 0.23$ \Comment{Taux d'acceptation visé}
+\For{$k \in \{1, ..., M\}$}
+  \For{$i \in \{1, ..., n\}$}
+    \State$\xi^{(c)} \gets \xi$
+    \State$\xi^{(c)}_i \sim \xi_i + \mathcal{N}(0, \delta_i^2)$ \Comment{Simulation du candidat pour $\xi_i$}
+    \State$\alpha_{\log} \gets min(\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi)}), 1)$\Comment{Calcul de la probabilité d'acceptation}
+    \State$u \sim \mathcal{U}(0, 1)$\Comment {Tirage d'une réalisation de loi uniforme}
+    \If{$\log{u} \leq \alpha_{\log}$}
+      \State$\xi \gets \xi^{(c)}$
+    \EndIf
+    \State $acc\_rate_i \gets$ mise à jour du taux d'acceptation
+    \If{$acc\_rate_i < acc\_rate_{target} * (1 - 0.1)$}
+      \State $ \delta_i \gets \delta_i * (1 - \delta_{AR})$ \Comment{Réduction du delta adaptatif}
+    \ElsIf {$acc\_rate_i > acc\_rate_{target} * (1 + 0.1)$}
+      \State $ \delta_i \gets \delta_i * (1 + \delta_{AR})$  \Comment{Augmentation du delta adaptatif}
+    \EndIf
+  \EndFor
+\EndFor
+\State $\widehat{\xi_x} \gets \xi$
+\end{algorithmic}
+\end{algorithm}
+
+#### Algorithme SMC
+
+\qquad Comme l'algorithme MCMC, l'algorithme SMC (ou filtre particulaire) a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
+
+Cependant son fonctionnement est assez différent : plutôt que d'accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance comme le fait l'approche MCMC, le SMC propose pour chaque instant $P$ réalisations (les particules) selon les $P$ estimations réalisées à l'instant précédent et associe à chacune des nouvelles réalisations un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant conditionnellement à la réalisation simulée.
+Il est alors possible de tirer avec remise parmi les particules en utilisant les poids normalisés comme probabilités de tirage et de conserver ainsi les particules permettant d'observer avec les plus fortes probabilités $Y$.
+Une fois que le dernier instant du processus est atteint, il suffit de tirer un index selon les derniers poids calculés pour obtenir une trajectoire du processus. L'Algorithme \@ref(alg:SMC) détaille chacune de ces étapes :
+
+\begin{algorithm}[H]
+\caption{Algorithme SMC pour la simulation d'une trajectoire du processus $\xi_x$.}
+\label{alg:SMC}
+\begin{algorithmic}
+\State $w_{1:P} \gets 1/P$ \Comment{Initialisation des poids associés aux particules}
+\State $\xi_c^{(1:P)} \gets 0$ \Comment{Initialisation des particules au premier instant du processus}
+\State $\xi_{1:n} \gets \xi_c$ \Comment{Initialisation des trajectoires du processus}
+\For{$i \in \{2, ..., n\}$}
+    \For{$j \in \{1, ..., P\}$}
+      \State $\xi_c^{(j)} \sim \xi^{(j)}_{i-1} * \psi + \mathcal{N}(0, \gamma^2)$ \Comment{Simulation d'une valeur courante selon $\xi_{i-1}^{(j)}$}
+      \State $w_j \gets P(Y_i | f(i, \xi_c^{(j)}))$
+      \Comment{Poids égale à la probabilité de $Y_i$ conditionnellement à $\xi_c^{(j)}$}
+    \EndFor
+    \For{$j \in \{1, ..., P\}$}
+      \State $w_j \gets \frac{w_j}{\sum_{k=1}^P w_k}$ \Comment{Normalisation}
+    \EndFor
+    \For{$j \in \{1, ..., P\}$}
+      \State $idx \gets$ tirage probabiliste d'une particule en fonction des poids $w$
+      \State $\xi^{(j)}_i \gets \xi_c^{(idx)}$ \Comment{Conservation de la particule $idx$}
+    \EndFor
+\EndFor
+\State $idx \gets$ tirage probabiliste d'une trajectoire en fonction des poids $w$
+\State $\widehat{\xi_x} \gets \xi^{(idx)}$
+\end{algorithmic}
+\end{algorithm}
+
+### Algorithme SAEM
+
+\qquad L'introduction d'une étape MCMC ou SMC conduit à la version stochastique de l'algorithme EM, à savoir l'algorithme SAEM.
+Cet algorithme utilise les étapes de l’algorithme EM auxquelles s'ajoute une étape d'approximation stochastique.
+
+Effectivement, pour chaque itération $k$, les étapes sont les suivantes :
+
+- étape E : simulation d'une nouvelle trajectoire de $\xi^{(k)}$ à l'aide d'un algorithme MCMC considérant $p(\xi|Y; \theta^{(k)})$ comme une distribution stationnaire,
+- étape SA : approximation stochastique des statistiques exhaustives :
+
+\begin{eqnarray*}
+s_1^{(k)} &=& s_1^{(k-1)} + \alpha_k(S_1(\xi^{(k)}) - s_1^{(k-1)}) \\
+s_2^{(k)} &=& s_2^{(k-1)} + \alpha_k(S_2(\xi^{(k)}) - s_2^{(k-1)}) \\
+s_3^{(k)} &=& s_3^{(k-1)} + \alpha_k(S_3(\xi^{(k)}) - s_3^{(k-1)}) \\
+s_4^{(k)} &=& s_4^{(k-1)} + \alpha_k(S_4(\xi^{(k)}) - s_4^{(k-1)}) \\
+\end{eqnarray*}
+
+- étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^{(k)}$ :
+
+\begin{eqnarray*}
+\widehat{\varphi}^{(k)} &=& \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(k)}), \varphi)\right)^2
+\\
+\widehat{\psi}^{(k)} &=& \frac{s_2^{(k)}}{s_3^{(k)}}\\
+\widehat{\omega^{2}}^{(k)} &=& s_1^{(k)}\\
+\widehat{\gamma^{2}}^{(k)} &=& \frac{1}{n}(\widehat{\psi^2}^{(k)}s_3^{(k)}-2\widehat{\psi}^{(k)}s_2^{(k)}+s_4^{(k)})
+\end{eqnarray*}
+
+\qquad Au principe général d'un algorithme SAEM à $Q$ itérations, nous avons ajouté deux hyper-paramètres $M_{max}$ & $\alpha_{min}$ :
+\begin{itemize}
+\item Pour chaque itération $q$ de l'algorithme SAEM, au moins une itération de l'algorithme MCMC ou SMC est effectuée.
+Dans le cas de l'utilisation d'une étape MCMC, afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis l'algorithme n'accomplit plus qu'une seule itération du MCMC.
+Le paramètre $M_{max}$ est donc un hyper-paramètre de l'algorithme SAEM à choisir au préalable.
+\item Le deuxième paramètre concerne l'approximation stochastique effectuée pour chacune des itérations $q$.
+Effectivement, durant les premières itérations les approximations sont relativement éloignées de la valeur cible et donc sensiblement différentes entre elles.
+Au contraire, dans les dernières itérations, étant donné le phénomène de convergence que nous devons observer, les approximations sont censées être plus proches de la valeur cible et également entre elles.
+Afin de prendre en compte ce phénomène, nous faisons varier la valeur du paramètre de mémoire $\alpha$ permettant de tenir compte des valeurs précédemment estimées au fil des itérations à partir du paramètre $\alpha_{min}$ de la façon suivante :
+\begin{itemize}
+  \item dans un premier temps $\alpha = 1$ pour les $\alpha_{min}$ premières itérations, ce qui permet, d'appliquer la formule complète d'approximation,
+  \item puis, pour les (Q-$\alpha_{min}$) dernières itérations, les alphas sont calculés de la façon suivante :
+$$\alpha_{\alpha_{min}:Q} = \frac{1}{l^{0.8}}\text{, avec }l=1:(Q - \alpha_{min})$$
+\end{itemize}
+Ainsi le paramètre $\alpha$ décroît au fil des itérations à partir de la $\alpha_{min}$\textsuperscript{ième} itération.
+Cela permet de réduire l'importance du terme associé à $\alpha$ et d'augmenter donc l'influence de la valeur précédente pour ces itérations-là.
+Le choix de la puissance au dénominateur dans l'expression des $\alpha_{\alpha_{min}:Q}$ n'est pas complétement anodin.
+Les résultats théoriques sur la convergence de l'algorithme SAEM vers un optimum local reposent en partie sur les 2 hypothèses suivantes :
+$$\sum_{i=1}^{\infty} \alpha_i = \sum_{n=1}^{\infty} \frac{1}{n^p} = \infty$$
+$$\sum_{n=1}^{\infty} \alpha_n^2 = \sum_{n=1}^{\infty} \frac{1}{n^{2p}} < \infty$$
+Cela implique $0.5 < p \leq 1$, d'où notre choix de $p = 0.8$.
+\end{itemize}
+
+L'Algorithme \@ref(alg:SAEM) résume l'ensemble de cette procédure SAEM :
+\begin{algorithm}[H]
+\caption{Algorithme SAEM complet}
+\label{alg:SAEM}
+\begin{algorithmic}
+\State $s_1 \gets (s_1^{(1)}, ..., s_1^{(Q)})$
+\State $s_2 \gets (s_2^{(1)}, ..., s_2^{(Q)})$
+\State $s_3 \gets (s_3^{(1)}, ..., s_3^{(Q)})$
+\State $s_4 \gets (s_4^{(1)}, ..., s_4^{(Q)})$
+
+\State $\widehat{\varphi} \gets (\widehat{\varphi}^{(1)}, ..., \widehat{\varphi}^{(Q)})$
+\State $\widehat{\psi} \gets (\widehat{\psi}^{(1)}, ..., \widehat{\psi}^{(Q)})$
+\State $\widehat{\omega^2} \gets (\widehat{\omega^2}^{(1)}, ..., \widehat{\omega^2}^{(Q)})$
+\State $\widehat{\gamma^2} \gets (\widehat{\gamma^2}^{(1)}, ..., \widehat{\gamma^2}^{(Q)})$
+
+\State $\alpha_{1:\alpha_{min} - 1} \gets 1$ ; $\alpha_{\alpha_{min}:Q} \gets \frac{1}{l^{0.8}}$ avec $l=1:(Q - \alpha_{min} + 1)$ \Comment{Initialisation du paramètre mémoire}
+
+\State $M_{1:M_{max}} \gets 5$ ; $M_{M_{max}+1:Q} \gets 1$ \Comment{Initialisation du nombre d'itérations du MCMC}
+\For{$q \in \{2, ..., Q\}$}
+  \State \Comment{Etape E}
+    \State $\xi^{(q)} \gets \xi$ avec $\theta^{(q-1)}$, par $M = M_q$ itérations MCMC (Algorithme \ref{alg:MCMC}), ou par SCM (Algorithme \ref{alg:SMC})
+
+  \State \Comment{Etape SA}
+    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f(x_i(\xi^{(q)}_i), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
+    \State $S_2 \gets \sum_{i=1}^n \xi_{i-1}^{(q)}\xi_i^{(q)}$
+    \State $S_3 \gets \sum_{i=1}^n (\xi_{i-1}^{(q)})^2$
+    \State $S_4 \gets \sum_{i=1}^n (\xi_i^{(q)})^2$
+    \State \Comment{Mise à jour des approximations stochastiques}
+    \State $s_1^{(q)} \gets s_1^{(q-1)} + \alpha_q(S_1(\xi^{(q)}) - s_1^{(q-1)})$
+    \State $s_2^{(q)} \gets s_2^{(q-1)} + \alpha_q(S_2(\xi^{(q)}) - s_2^{(q-1)})$
+    \State $s_3^{(q)} \gets s_3^{(q-1)} + \alpha_q(S_3(\xi^{(q)}) - s_3^{(q-1)})$
+    \State $s_4^{(q)} \gets s_4^{(q-1)} + \alpha_q(S_4(\xi^{(q)}) - s_4^{(q-1)})$
+
+  \State \Comment{Etape M}
+    \State $\widehat{\varphi}^{(q)} \gets \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(q)}), \varphi)\right)^2$\Comment{Actualisation de $\theta^{(q)}$}
+    \State $\widehat{\psi}^{(q)} \gets \frac{s_2^{(q)}}{s_3^{(q)}}$
+    \State $\widehat{\omega^{2}}^{(q)} \gets s_1^{(q)}$
+    \State $\widehat{\gamma^{2}}^{(q)} \gets \frac{1}{n}(\widehat{\psi^2}^{(q)} s_3^{(q)} - 2\widehat{\psi}^{(q)} s_2^{(q)} + s_4^{(q)})$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\qquad A chaque itération de l'algorithme, les paramètres $A, B, a, b = \varphi$ sont estimés en minimisant les moindres carrés non linéaires.
+Sous **R**, cela se fait au moyen de la fonction *nls* qui nécessite des valeurs initiales des paramètres à estimer.
+Afin de favoriser la convergence de l'algorithme de Gauss-Newton utilisé pour la résolution du problème des moindres carrées non linéaires, nous avons tenu compte de l'influence des paramètres $A$ et $B$ sur l'amplitude de $Y$ en les initialisant selon une réalisation de loi uniforme $\mathcal{U}(-max(|Y|) - \omega$, $max(|Y|) + \omega)$.
+Dans le même objectif, puisque le paramètre $a$ est lié à la pulsation de la sinusoïde, il est initialisé selon $\hat{a} = 2 * pi * f_{max}$ où $f_{max}$ est la fréquence de $Y$ avec la plus grande densité spectrale.
+Ce choix d'initialisation s'est avéré indispensable pour résoudre le problème des moindres carrées non linéaires.
+Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $\hat{b} = (7 * pi / 8) - x_0 * \hat{a}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul et $\hat{a}$ à la définition précédente. \newline
+Par ailleurs, nous avons fait le choix d'initialiser $\hat{\omega}, \hat{\psi}, \hat{\gamma}$ à $0.5$ pour la première itération.
+
+## Simulation & résultats
+
+\qquad Dans cette dernière partie, nous présentons les résultats d'estimation de $\xi_x$ par les algorithmes MCMC et SMC ; et plus largement de l'ensemble de coefficients $\theta$ par l'algorithme SAEM, ainsi que du plan d'expérience mis en place pour les valider.
+
+### Estimation de $\xi_x$ par MCMC
+
+\qquad Nous avons, dans un premier temps, testé l'efficacité de l'algorithme MCMC programmé indépendamment de l'algorithme SAEM.
+Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0.25$,  $b = 1$, $a = 0.1$, $\beta = 0.05$, $\sigma = 0.1$, $\omega = 0.01$ et $\delta = 1$.
+Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution $Y$ associée selon le modèle sinusoïdal.
+L'algorithme MCMC a été réalisé avec $M = 150$ itérations et obtient, à partir de ces mêmes valeurs de paramètres et des observations $Y$, les résultats présentés sur la Figure \@ref(fig:result-MCMC).
+
+```{r result-MCMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\widehat{\\xi_x}$ obtenue par l'algorithme MCMC et la distribution $\\hat{Y}$ qui l'utilise (en rouge)."}
+source("../R/2_tusk/utils/MCMC.R")
+
+M <- 150
+mcmc.obj <- mcmc.alg(Y, M)
+
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, mcmc.obj$xi.c)), size = .25, color = "red") +
+  labs(caption = TeX("$Y$"), y = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = mcmc.obj$xi.c), size = .25, color = "red") +
+  labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g2 + g1
+```
+
+\qquad La trajectoire de $\xi_x$ obtenue par le MCMC (en rouge) est très proche de celle à l'origine des observations $Y$.
+Nous remarquons cependant que quelques points de $\xi_x$ sont très mal approchés par l'algorithme.
+Effectivement pour plusieurs positions $x_i$, la distance entre la valeur originelle de $\xi_i$ et la valeur estimée par l'algorithme semble grande.
+Cependant, ces différences n'influencent que très peu l'allure du signal $Y$, qui reste très satisfaisant.
+Afin de comprendre la raison de ces erreurs, nous nous sommes intéressés au comportement du $\delta_i$ au fil des itérations, relativement à celui du taux d'acceptation $acc\_rate_i$ pour un des points concernés.
+Nous avons comparé leur évolution pour la position $x_i$ où l'erreur est maximale et celle où elle est minimale.
+
+```{r errors, fig.cap = "Distributions du taux d'acceptation et du delta adaptatif au fil des itérations pour deux positions différentes : celle pour laquelle l'erreur d'estimation est maximale et celle où elle est minimale."}
+worst.idx <- which.max(abs(xi - mcmc.obj$xi.c))
+best.idx <- which.min(abs(xi - mcmc.obj$xi.c))
+
+coeff1 <- max(mcmc.obj$acceptance.rate[, worst.idx]) / max(mcmc.obj$delta[, worst.idx])
+g1 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, worst.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, worst.idx] * coeff1), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "Taux d'acceptation", sec.axis = sec_axis(~. / coeff1, name = "")) +
+  labs(caption = "Erreur maximale", x = "Itérations") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"),
+        axis.title.y.left = element_text(colour="red"),
+        axis.text.y.left = element_text(colour="red"),
+        axis.title.y.right = element_blank(),
+        axis.text.y.right = element_text(colour="blue"))
+
+coeff <- max(mcmc.obj$acceptance.rate[, best.idx]) / max(mcmc.obj$delta[, best.idx])
+g2 <- ggplot(data = data.frame(x = 1:M), aes(x = x)) +
+  geom_line(aes(y = mcmc.obj$acceptance.rate[, best.idx]), color = "red") +
+  geom_line(aes(y = mcmc.obj$delta[, best.idx] * coeff), color = "blue") +
+  geom_hline(aes(yintercept = acceptance.target * 1.1), linetype = 2, color = "red") +
+  geom_hline(aes(yintercept = acceptance.target * .9), linetype = 2, color = "red") +
+  scale_y_continuous(name = "", sec.axis = sec_axis(~. / coeff, name = "Delta")) +
+  labs(caption = "Erreur minimale", x = "Itérations") +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"),
+        axis.title.y.left = element_blank(),
+        axis.text.y.left = element_text(colour="red"),
+        axis.title.y.right = element_text(colour="blue"),
+        axis.text.y.right = element_text(colour="blue"))
+
+g1 + g2
+```
+
+\qquad Nous pouvons voir sur la Figure \@ref(fig:errors), que dans les deux cas, le delta adaptif évolue correctement.
+Effectivement le taux d'acceptation est premièrement supérieur à la borne supérieure de notre seuil ce qui entraine l'augmentation de $\delta$.
+Cette augmentation permet alors au taux de diminuer et donc de rentrer dans nos deux bornes de seuil, et $\delta$ stagne durant cette période.
+Le taux d'acceptation devient ensuite trop bas, et alors la valeur de $\delta$ diminue afin de le faire augmenter à nouveau.
+Nous remarquons seulement que, dans le cas concernant l'erreur maximale, l'évolution du taux d'acceptation est moins rapide que dans le cas de l'erreur minimale, par exemple il atteint l'intervalle de seuil environ vers la 40\textsuperscript{ième} itération contre environ la 20\textsuperscript{ième} pour le point où l'erreur est minimale.
+Cela entraine une valeur maximale de $\delta$ bien plus élevée, d'environ $3$ contre $0.4$.
+Malgré cette observation, nous n'identifions pas la source de ces points aberrants.
+Cependant, étant donné que ceux-ci n'impactent pas l'estimation de la distribution des observations $Y$, l'algorithme MCMC programmé reste selon nous satisfaisant.
+
+### Estimation de $\xi_x$ par SMC
+
+\qquad Nous avons repris la trajectoire $\xi_x$ à estimer dans la partie précédente et nous cette fois-ci tenté de la générer par notre algorithme SMC en utilisant $P = 500$ particules.
+
+La Figure \@ref(fig:result-SMC) permet de constater que cette approche semble plus précise que la MCMC : les points aberrants ont disparu et l'allure de $\xi_x$ est bien reconstruite.
+
+```{r result-SMC, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\widehat{\\xi_x}$ obtenue par l'algorithme SMC et la distribution $\\hat{Y}$ qui l'utilise (en rouge)."}
+source("../R/2_tusk/utils/SMC.R")
+
+P <- 500
+smc.obj <- smc.alg(Y, n.part = P)
+
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, smc.obj$xi.c)), size = .25, color = "red") +
+  labs(caption = TeX("$Y$"), y = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = smc.obj$xi.c), size = .25, color = "red") +
+  labs(caption = TeX("$\\xi_x$"), y = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g2 + g1
+```
+
+### Estimation de $\theta$ par SAEM
+
+\qquad La validation de l'échantillonnage de $\xi_x$ par MCMC ou SMC n'était qu'une étape, l'objectif global étant l'estimation de l'ensemble des paramètres $\theta$.
+Nous avons donc ensuite observé le comportement de l'algorithme SAEM présenté précédemment.
+Nous présentons dans un premier temps les résultats obtenus pour la reconstruction d'un échantillon simulé avec une étape MCMC ou une étape SMC, puis la synthèse d'un plan d'expérience réalisé avec $1000$ échantillons simulés.
+
+```{r}
+source("../R/2_tusk/utils/SAEM.R")
+```
+
+#### Avec une étape MCMC
+
+\qquad Pour la version SAEM-MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et après plusieurs tests et analyses graphiques, $\alpha_{min}$ a été fixé à $90$ et $M_{max}$ à $20$, ce qui correspond à des ordres de grandeur régulièrement employés dans la littérature.
+La trajectoire de $\widehat{\xi_x}$ obtenue après les $500$ itérations de SAEM ainsi que les observations $\hat{Y}$ correspondantes sont présentés sur la Figure \@ref(fig:result-SAEM-mcmc).
+Nous observons sur cette figure que la reconstruction du processus $\xi_x$ initial est un peu moins bonne que celle réalisée en connaissant les paramètres $\theta$ du modèle sinusoïdal, ce à quoi nous nous attentions.
+L'estimation de $\xi_x$ demeure cependant très correcte et, conjointement à l'estimation des paramètres $\theta$, permet une reconstruction fidèle de $Y$.
+
+```{r}
+Q <- 500
+saem.obj <- saem.alg(Y, Q)
+```
+
+```{r result-SAEM-mcmc, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), size = .25, color = "red") +
+  labs(y = TeX("$\\xi_x$"), caption = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, saem.obj$mcmc$xi.c,
+                             A.arg = saem.obj$A.c, B.arg = saem.obj$B.c,
+                             a.arg = saem.obj$a.c, b.arg = saem.obj$b.c)), size = .25, color = "red") +
+  labs(y = TeX("$Y$"), caption = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g1 + g2
+```
+
+\qquad La Figure \@ref(fig:coef1-SAEM-mcmc) présente justement les valeurs estimées au fil des itérations pour $\omega, \psi, \gamma$.
+Comme nous pouvons le voir sur cette figure, les paramètres $\omega$ et $\psi$ convergent correctement vers les vraies valeurs des paramètres.
+Cependant, celle du paramètre $\gamma$ ne converge pas exactement vers la valeur attendue et est légèrement surestimée.
+
+```{r coef1-SAEM-mcmc, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$omega), color = "blue") +
+  geom_hline(yintercept = omega, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\omega$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$psi), color = "blue") +
+  geom_hline(yintercept = psi, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\psi$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$gamma), color = "blue") +
+  geom_hline(yintercept = gamma, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\gamma$"), y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / g3
+```
+
+\qquad Comme nous pouvons le voir sur la Figure \@ref(fig:coef2-SAEM-mcmc), l'estimation du coefficient $A$ converge assez normalement vers $0.5$.
+Bien qu'elle se rapproche de $-0.25$, celle de $B$ semble avoir du mal à converger réellement et stagne au-dessus de ce que nous souhaiterions.
+Par ailleurs, nous observons, que l'estimation du paramètre $a$ est très proche de la "vraie" valeur, mais nous ne voyons pas de convergence à proprement parler.
+Pour finir, l'estimation de $b$ semble plus difficile à accomplir : nous ne remarquons pas de convergence vers la valeur attendue et l'estimation finale apparaît un peu éloignée de la valeur fixée initialement.
+
+```{r coef2-SAEM-mcmc, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$A), color = "blue") +
+  geom_hline(yintercept = A, linetype = "dashed", color = "red") +
+  labs(caption = "A", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$B), color = "blue") +
+  geom_hline(yintercept = B, linetype = "dashed", color = "red") +
+  labs(caption = "B", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$a), color = "blue") +
+  geom_hline(yintercept = a, linetype = "dashed", color = "red") +
+  labs(caption = "a", y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$b), color = "blue") +
+  geom_hline(yintercept = b, linetype = "dashed", color = "red") +
+  labs(caption = "b", y = "Estimation", x = "Itérations") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+#### Avec une étape SMC
+
+\qquad Comme nous pouvons le voir sur les Figures \@ref(fig:coef1-SAEM-smc) et \@ref(fig:coef2-SAEM-smc), l'utilisation d'une étape SMC accélère sensiblement la convergence de $\hat{\theta}$, aussi nous avons utilisé seulement $Q = 100$ itérations de l'algorithme SAEM et nous avons diminué $\alpha_{min}$ à 25.
+L'étape SMC implique $P = 500$ particules.
+
+\qquad La Figure \@ref(fig:result-SAEM-smc) montre que cette version de SAEM-SMC permet une reconstruction de $\xi_x$ légèrement meilleure que la version SAEM-MCMC, comme lorsque nous estimions $\hat{\xi_x}$ en fixant les paramètres $\theta$.
+Cela conduit à une reconstruction finale $\hat{Y}$ également très proche de $Y$.
+
+```{r}
+Q <- 100
+P <- 500
+saem.obj <- saem.alg(Y, n.rep = Q, n.part = P, smc = TRUE, n.alpha = 25)
+```
+
+```{r result-SAEM-smc, fig.cap = "Superposition de la distribution $Y$ cible et de la trajectoire $\\xi_x$ réellement utilisée (en bleu) ainsi que de la trajectoire de $\\xi_x$ obtenue par l'algorithme SAEM et la distribution $Y$ qui l'utilise (en rouge)."}
+g1 <- ggplot() +
+  geom_line(aes(x = x, y = xi), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = saem.obj$mcmc$xi.c), size = .25, color = "red") +
+  labs(y = TeX("$\\xi_x$"), caption = TeX("$\\xi_x$")) +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g2 <- ggplot() +
+  geom_line(aes(x = x, y = Y), size = .25, color = "blue") +
+  geom_line(aes(x = x, y = f(x, saem.obj$mcmc$xi.c,
+                             A.arg = saem.obj$A.c, B.arg = saem.obj$B.c,
+                             a.arg = saem.obj$a.c, b.arg = saem.obj$b.c)), size = .25, color = "red") +
+  labs(y = TeX("$Y$"), caption = TeX("$Y$")) +
+  theme(plot.margin = margin(0, 0, 0, 1, "pt"))
+
+g1 + g2
+```
+
+\qquad En revanche la Figure \@ref(fig:coef1-SAEM-smc) suggère que les estimations $\hat{\psi}$ et $\hat{\gamma}$ sont moins bonnes que précédemment : la convergence se fait vers des valeurs respectivement inférieure et supérieure à celles attendues.
+$\hat{\omega}$ semble elle mieux estimée.
+
+```{r coef1-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $\\omega$, $\\psi$ et $\\gamma$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$omega), color = "blue") +
+  geom_hline(yintercept = omega, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\omega$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$psi), color = "blue") +
+  geom_hline(yintercept = psi, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\psi$"), y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$gamma), color = "blue") +
+  geom_hline(yintercept = gamma, linetype = "dashed", color = "red") +
+  labs(caption = TeX("$\\gamma$"), y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / g3
+```
+
+\qquad Enfin, la Figure \@ref(fig:coef2-SAEM-smc) indique que les paramètres $\hat{A}, \hat{B}, \hat{b}$ convergent mieux vers les valeurs fixées des paramètres avec la version SMC de l'algorithme.
+Le paramètre $\hat{a}$ ne converge toujours pas réellement et est un peu plus éloigné qu'avec l'utilisation d'une étape MCMC, mais l'estimation reste très bonne.
+
+```{r coef2-SAEM-smc, fig.cap = "Présentation de l'estimation des coefficients $A$, $B$, $a$ et $b$ par l'algorithme SAEM, ainsi que des droites représentant la valeur cible de ces paramètres (en rouge)."}
+g1 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$A), color = "blue") +
+  geom_hline(yintercept = A, linetype = "dashed", color = "red") +
+  labs(caption = "A", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "pt"))
+
+g2 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$B), color = "blue") +
+  geom_hline(yintercept = B, linetype = "dashed", color = "red") +
+  labs(caption = "B", y = "Estimation", x = "Itérations") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 1, 0, "pt"))
+
+g3 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$a), color = "blue") +
+  geom_hline(yintercept = a, linetype = "dashed", color = "red") +
+  labs(caption = "a", y = "Estimation", x = "Itérations") +
+  theme(plot.margin = margin(0, 1, 0, 0, "pt"))
+
+g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
+  geom_line(aes(y = saem.obj$b), color = "blue") +
+  geom_hline(yintercept = b, linetype = "dashed", color = "red") +
+  labs(caption = "b", y = "Estimation", x = "Itérations") +
+  theme(axis.title.y = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "pt"))
+
+(g1 + g2) / (g3 + g4)
+```
+
+#### Plan d'expérience
+
+\qquad Les estimations de $\theta$ et $\xi_x$ comportent une part d'aléatoire, ainsi afin d'évaluer les performances de notre algorithme SAEM il convient de répéter un grand nombre de fois ces estimations à partir de réalisations de $\xi_x$ différentes. En effet, notre objectif est d'estimer nos paramètres sur un grand nombre d'itérations, afin d'analyser leurs variations autour des valeurs fixées.
+Nous avons choisi d'effectuer $M = 1000$ estimations de chacun des paramètres $\gamma, \psi, \omega, A, B, a, b$, et de calculer la racine carrée de l'erreur quadratique moyenne ($RMSE$), l'erreur en pourcentage ($PE$) et sa moyenne en valeur absolue ($MAPE$), à partir des formules suivantes :
+$$RMSE = \sqrt{\frac{\sum^M_{i=1} (\hat{\theta}_i - \theta)^{2}}{M}}$$
+$$MAPE = \frac{\sum^M_{i=1} \vert PE_i \vert}{M}$$
+$$PE_i = \frac{\hat{\theta}_i - \theta}{\theta}$$
+Avec $\hat{\theta}$ les paramètres estimés et $\theta$ les paramètres initiaux. \newline
+Nous avons également utilisé ce plan d'expérience pour comparer les résultats obtenus en utilisant une étape MCMC ou une étape SMC pour estimer $\xi_x$.
+
+\qquad Puisque l'estimation de chacun de nos paramètres doit se rapprocher de notre valeur initiale, nous devrions avoir des estimations $\hat{\theta}$ autour de nos $\theta$, soit des $PE$ relativement proches de $0$.
+À partir des résultats obtenus pour les 1000 itérations, nous avons représenté sur la Figure \@ref(fig:params-ape) les boxplots des PE pour chacun des 7 paramètres et pour les deux méthodes de simulation de $\xi_x$.
+
+```{r}
+params.true <- c(omega = omega, psi = psi, gamma = gamma, A = A, B = B, a = a, b = b)
+params.est.mcmc <- readRDS("../data/2_tusk/params.est.mcmc.rds")
+params.est.smc <- readRDS("../data/2_tusk/params.est.smc.rds")
+```
+
+```{r}
+params.mean.mcmc <- apply(params.est.mcmc, 2, mean)
+params.pe.mcmc <- t(apply(params.est.mcmc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.mcmc <- apply(abs(params.pe.mcmc), 2, mean)
+params.se.mcmc <- apply(params.est.mcmc, 1, function (row) (params.true - row)^2)
+params.rmse.mcmc <- sqrt(apply(params.se.mcmc, 1, mean))
+
+params.mean.smc <- apply(params.est.smc, 2, mean)
+params.pe.smc <- t(apply(params.est.smc, 1, function (row) (params.true - row) / params.true) * 100)
+params.mape.smc <- apply(abs(params.pe.smc), 2, mean)
+params.se.smc <- apply(params.est.smc, 1, function (row) (params.true - row)^2)
+params.rmse.smc <- sqrt(apply(params.se.smc, 1, mean))
+```
+
+```{r params-ape, fig.cap = "Boxplot des $PE$ des 1000 estimations de chacun des paramètres."}
+df.mcmc <- melt(params.pe.mcmc, varnames = c("it", "param"))
+df.mcmc$method <- "MCMC"
+
+df.smc <- melt(params.pe.smc, varnames = c("it", "param"))
+df.smc$method <- "SMC"
+
+ggplot(data = rbind(df.mcmc, df.smc)) +
+  geom_boxplot(aes(x = param, y = value, color = as.factor(method))) +
+  labs(x = "Paramètres", y = "PE", color = "Algorithme")
+```
+
+\qquad Nous pouvons remarquer qu'avec la version SAEM-MCMC les $PE$ de l'ensemble des paramètres, hormis $\omega$, varient autour de $0$.
+En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
+Nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes, qui sont elles bien estimées.
+
+\qquad En revanche, il semblerait qu'avec la méthode SAEM-SMC, l'estimation de $\omega$ est meilleure, mais celles de $\psi$ et $\gamma$ sont nettement moins bonnes.
+L'erreur réalisée sur l'estimation des paramètres $A, B, a, b$ paraît similaire pour les deux approches d'estimation de $\xi_x$.
+Cependant, nous remarquons que les estimations des paramètres via la méthode SAEM-SMC varient plus et sont parfois très éloignées de la valeur réelle.
+En effet, $\omega$ et $\gamma$ sont parfois sous-estimés de manière excessive sur certaines simulations, tandis que $b$ est parfois fortement sur-estimé ou sous-estimé.
+
+```{r params-sum-mcmc}
+df <- data.frame(theta = params.true, est = params.mean.mcmc, mape = params.mape.mcmc, rmse = params.rmse.mcmc)
+colnames(df) <- c("$\\theta$", "$\\hat{\\theta}$", "MAPE", "RMSE")
+rownames(df) <- c("$\\omega$", "$\\psi$", "$\\gamma$", "A", "B", "a", "b")
+kable(t(df), "latex",
+      label = "params-sum-mcmc",
+      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres, en utilisant une étape MCMC dans l'algorithme SAEM.",
+      digits = 3,
+      escape = FALSE) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+\qquad Au regard de la Table \@ref(tab:params-sum-mcmc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ avec la méthode SAEM-MCMC : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.smc[[1]], 3)`.
+La $MAPE$ peut sembler élevée, mais encore une fois, il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme l'indique la $RMSE$.
+Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
+
+```{r params-sum-smc}
+df <- data.frame(theta = params.true, est = params.mean.smc, mape = params.mape.smc, rmse = params.rmse.smc)
+colnames(df) <- c("$\\theta$", "$\\hat{\\theta}$", "MAPE", "RMSE")
+rownames(df) <- c("$\\omega$", "$\\psi$", "$\\gamma$", "A", "B", "a", "b")
+kable(t(df), "latex",
+      label = "params-sum-smc",
+      caption = "Valeurs attendues, estimées en moyenne et erreurs associées de chacun des paramètres, en utilisant une étape SMC dans l'algorithme SAEM.",
+      digits = 3,
+      escape = FALSE) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+\qquad La Table \@ref(tab:params-sum-smc) confirme les observations visuelles : la $MAPE$ des paramètres $\psi$ et $\gamma$ augmentent fortement en estimant $\xi_x$ via un SMC par rapport à la méthode SAEM-MCMC, tandis que celle du paramètre $\omega$ diminue légèrement et que pour les autres paramètres nous n'observons pas de réelle différence.
+
+\qquad Au regard de ces résultats, la version SAEM-MCMC semble être à privilégier par rapport à la SAEM-SMC.
+Cependant, nous avons noté que l'implémentation en **R** de l'algorithme avec l'étape SMC est bien plus rapide que celle avec l'étape MCMC : les $1000$ répétitions du plan d'expérience SAEM-SMC ont été exécutées en un peu moins de 15 minutes, contre plus d'une heure pour le SAEM-MCMC.
+Nous avons identifié plusieurs raisons à cela :
+
+* la convergence plus rapide de l'algorithme SAEM-SMC permettant de réduire le nombre d'itérations de 500 à 100,
+* la possibilité de vectoriser l'ensemble des opérations sur les $P$ particules de SMC, alors que les répétitions du MCMC doivent être réalisées séquentiellement.
+
+Il pourrait donc être intéressant de tenter d'améliorer l'implémentation du SMC, et notamment en proposant une autre simulation des particules au temps $i$, ne dépendant pas uniquement des particules au temps $i - 1$ mais également des observations $Y_{1:i}$.
+
+## Conclusion
+
+\qquad Les narvals possèdent une grande dent avec des capacités sensorielles très développées.
+Cette dent comporte des sillons, apparaissant au cours de leur croissance et créant des motifs sinusoïdaux variants avec les saisons.
+Elle pourrait ainsi être utile pour approximer la durée de vie des baleines. \newline
+Notre objectif était donc d'estimer les paramètres $\theta$ d'une sinusoïde $Y$ perturbée par un bruit gaussien et un processus d'Ornstein-Uhlenbeck $\xi_x$ au moyen d'un algorithme SAEM.
+Nous avons proposé deux implémentations de l'algorithme SAEM, l'une estimant le processus $\xi_x$ par une étape MCMC et l'autre par une étape SMC.
+
+\qquad Nous avons comparé les reconstructions $\hat{\xi_x}$ et $\hat{Y}$ et les estimations des paramètres $\hat{\theta}$ données par les deux versions.
+Visuellement, les reconstructions $\hat{Y}$ sont très semblables et très satisfaisantes.
+Celle de $\xi_x$ proposée par l'algorithme SAEM-SMC est apparu légèrement meilleure que celle de SAEM-MCMC, les deux demeurant tout à fait fidèles à la réalisation originale du processus.
+L'estimation $\hat{\theta}$ des paramètres a donné des résultats assez différents entre les deux approches.
+Certains des paramètres sont mieux approchés par la version SAEM-MCMC, d'autres par la version SAEM-SMC. \newline
+Pour juger plus rigoureusement les estimations des paramètres du modèle sinusoïdal, nous avons répété $1000$ fois chacune des deux procédures SAEM et nous nous sommes intéressés aux distributions des erreurs réalisées, ainsi qu'à leurs moyennes.
+L'algorithme SAEM-MCMC s'est alors révélé plus stable que le SAEM-SMC car souffrant d'une moins grande variance dans l'estimation des paramètres. \newline
+Cependant, le SAEM-SMC converge nettement plus rapidement que la version MCMC et son implémentation étant vectorisable, il demande un temps de calcul environ 5 fois moins important.
+Cela suggère qu'il pourrait être intéressant de tenter d'améliorer l'échantillonnage des particules générées par l'étape SMC pour perfectionner l'estimation des paramètres du modèle, tout en bénéficiant du temps de calcul restreint de l'algorithme SAEM-SMC.
+
+\qquad Enfin, nous avons manipulé uniquement des données simulées, il reste donc à confronter les deux versions de l'algorithme à des données réelles, probablement plus bruitées !
+
 \newpage
 
 \printbibliography[label=references, title={Références}]
 \let\printbibliography\relax
-\addcontentsline{toc}{section}{Références}
+\addcontentsline{toc}{chapter}{Références}
