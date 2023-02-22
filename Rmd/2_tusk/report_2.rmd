@@ -191,8 +191,8 @@ Le modèle sinusoïdal semble donc identifiable.
 # Estimation des paramètres à partir d'un algorithme SAEM 
 
 Afin d'estimer les paramètres $\theta$ du modèle présenté dans la partie précédente, nous avons implémenté une procedure reposant sur l'algorithme SAEM.
-Nous allons d'abord présenter le principe d'un algorithme EM [@EM], puis celui de son approximation stochastique : l'algorithme SAEM [@SAEM].
-Nous détaillerons les étapes MCMC [@MCMC] et SMC [@SMC] avant de présenter l'algorithme complet.
+Nous allons d'abord présenter le principe d'un algorithme EM (Espérance-Maximisation) [@EM], puis celui de son approximation stochastique : l'algorithme SAEM (Stochastic Approximation EM) [@SAEM].
+Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@SMC] (Sequential Monte Carlo) avant de présenter l'algorithme complet.
 
 ## Algorithme EM
 
@@ -230,7 +230,7 @@ Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler 
 
 ### Algorithme MCMC
 
-L'objectif de cet algorithme MCMC (Markov Chain Monte Carlo) est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y$ ainsi que des paramètres $\theta$.
+L'objectif de cet algorithme MCMC est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y$ ainsi que des paramètres $\theta$.
 L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire.
 
 Effectivement, après l'initialisation d'une trajectoire $\xi^{(0)} = (\xi^{(0)}_1,...,\xi^{(0)}_n)$, l'algorithme procède à $M$ itérations.
@@ -284,7 +284,7 @@ Cela ajoute donc une étape d'actualisation à l'algorithme précédent, ce qui 
 
 ### Algorithme SMC
 
-Comme pour l'algorithme MCMC, l'algorithme SMC (Sequential Monte-Carlo) - ou filtre particulaire - a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
+Comme l'algorithme MCMC, l'algorithme SMC (ou filtre particulaire) a pour objectif de simuler une trajectoire de $\xi_x$ à partir des observations $Y$ et des paramètres $\theta$.
 
 Cependant son fonctionnement est assez différent : plutôt que d'accepter ou de rejeter un candidat pour chaque instant du processus selon un rapport de vraisemblance comme le fait l'approche MCMC, le SMC propose pour chaque instant $P$ réalisations (les particules) selon les $P$ estimations réalisées à l'instant précédent et associe à chacune des nouvelles réalisations un poids égale à la probabilité d'observer la valeur de $Y$ à l'instant courant conditionnellement à la réalisation simulée.
 Il est alors possible de tirer avec remise parmi les particules en utilisant les poids normalisés comme probabilités de tirage et de conserver ainsi les particules permettant d'observer avec les plus fortes probabilités $Y$.
@@ -346,7 +346,7 @@ s_4^{(k)} &=& s_4^{(k-1)} + \alpha_k(S_4(\xi^{(k)}) - s_4^{(k-1)}) \\
 Au principe général d'un algorithme SAEM à $Q$ itérations, nous avons ajouté deux hyper-paramètres $M_{max}$ & $\alpha_{min}$ :
 \begin{itemize}
 \item Pour chaque itération $q$ de l'algorithme SAEM, au moins une itération de l'algorithme MCMC ou SMC est effectuée.
-Dans le cas de l'utilisation d'une étape MCMC, afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis ensuite l'algorithme n'accomplit plus qu'une seule itération du MCMC.
+Dans le cas de l'utilisation d'une étape MCMC, afin de pouvoir améliorer les performances au début de notre algorithme, nous avons décidé de fixer ce nombre d'itérations à 5 pour les $M_{max}$ premières itérations du SAEM, puis l'algorithme n'accomplit plus qu'une seule itération du MCMC.
 Le paramètre $M_{max}$ est donc un hyper-paramètre de l'algorithme SAEM à choisir au préalable.
 \item Le deuxième paramètre concerne l'approximation stochastique effectuée pour chacune des itérations $q$.
 Effectivement, durant les premières itérations les approximations sont relativement éloignées de la valeur cible et donc sensiblement différentes entre elles.
@@ -538,7 +538,7 @@ source("../../R/2_tusk/utils/SAEM.R")
 
 ### Avec une étape MCMC
 
-Pour la version MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et après plusieurs tests et analyses graphiques, $\alpha_{min}$ a été fixé à $90$ et $M_{max}$ à $20$, ce qui correspond à des ordres de grandeur régulièrement employés dans la littérature.
+Pour la version SAEM-MCMC nous avons réalisé $Q = 500$ itérations de l'algorithme SAEM et après plusieurs tests et analyses graphiques, $\alpha_{min}$ a été fixé à $90$ et $M_{max}$ à $20$, ce qui correspond à des ordres de grandeur régulièrement employés dans la littérature.
 La trajectoire de $\widehat{\xi_x}$ obtenue après les $500$ itérations de SAEM ainsi que les observations $\hat{Y}$ correspondantes sont présentés sur la Figure \@ref(fig:result-SAEM-mcmc).
 Nous observons sur cette figure que la reconstruction du processus $\xi_x$ initial est un peu moins bonne que celle réalisée en connaissant les paramètres $\theta$ du modèle sinusoïdal, ce à quoi nous nous attentions.
 L'estimation de $\xi_x$ demeure cependant très correcte et, conjointement à l'estimation des paramètres $\theta$, permet une reconstruction fidèle de $Y$.
@@ -637,7 +637,7 @@ g4 <- ggplot(data = data.frame(x = 1:Q), aes(x = x)) +
 Comme nous pouvons le voir sur les Figures \@ref(fig:coef1-SAEM-smc) et \@ref(fig:coef2-SAEM-smc), l'utilisation d'une étape SMC accélère sensiblement la convergence de $\hat{\theta}$, aussi nous avons utilisé seulement $Q = 100$ itérations de l'algorithme SAEM et nous avons diminué $\alpha_{min}$ à 25.
 L'étape SMC implique $P = 500$ particules.
 
-La Figure \@ref(fig:result-SAEM-smc) montre que cette version de SAEM permet une reconstruction de $\xi_x$ légèrement meilleure que la version MCMC, comme lorsque nous estimions $\hat{\xi_x}$ en fixant les paramètres $\theta$.
+La Figure \@ref(fig:result-SAEM-smc) montre que cette version de SAEM-SMC permet une reconstruction de $\xi_x$ légèrement meilleure que la version SAEM-MCMC, comme lorsque nous estimions $\hat{\xi_x}$ en fixant les paramètres $\theta$.
 Cela conduit à une reconstruction finale $\hat{Y}$ également très proche de $Y$.
 
 ```{r}
@@ -773,13 +773,13 @@ ggplot(data = rbind(df.mcmc, df.smc)) +
   labs(x = "Paramètres", y = "PE", color = "Algorithme")
 ```
 
-Nous pouvons remarquer qu'avec la version MCMC d'estimation de $\xi_x$, hormis $\omega$, les $PE$ de l'ensemble des paramètres varient autour de $0$.
+Nous pouvons remarquer qu'avec la version SAEM-MCMC les $PE$ de l'ensemble des paramètres, hormis $\omega$, varient autour de $0$.
 En effet, $\omega$ semble être sous-estimé et avoir une variation plus grande.
 Nous pouvons penser que cette variation est due au fait que la valeur de $\omega$ initiale de $0.01$ est faible, ce qui rend sa source de bruit difficile à distinguer des autres, plus importantes, qui sont elles bien estimées.
 
-En revanche, il semblerait qu'avec la méthode SMC d'estimation de $\xi_x$, l'estimation de $\omega$ est meilleure, mais celles de $\psi$ et $\gamma$ est nettement moins bonne.
+En revanche, il semblerait qu'avec la méthode SAEM-SMC, l'estimation de $\omega$ est meilleure, mais celles de $\psi$ et $\gamma$ sont nettement moins bonnes.
 L'erreur réalisée sur l'estimation des paramètres $A, B, a, b$ paraît similaire pour les deux approches d'estimation de $\xi_x$. 
-Cependant, nous remarquons que les estimations des paramètres via la méthode SMC varient plus et sont parfois très éloignées de la valeur réelle.
+Cependant, nous remarquons que les estimations des paramètres via la méthode SAEM-SMC varient plus et sont parfois très éloignées de la valeur réelle.
 En effet, $\omega$ et $\gamma$ sont parfois sous-estimés de manière excessive sur certaines simulations, tandis que $b$ est parfois fortement sur-estimé ou sous-estimé.
 
 ```{r params-sum-mcmc}
@@ -794,7 +794,7 @@ kable(t(df), "latex",
   kable_styling(latex_options = "HOLD_position")
 ```
 
-Au regard de la Table \@ref(tab:params-sum-mcmc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ avec la méthode MCMC : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.smc[[1]], 3)`.
+Au regard de la Table \@ref(tab:params-sum-mcmc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ avec la méthode SAEM-MCMC : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.smc[[1]], 3)`.
 La $MAPE$ peut sembler élevée, mais encore une fois, il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme l'indique la $RMSE$.
 Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
 
@@ -810,10 +810,10 @@ kable(t(df), "latex",
   kable_styling(latex_options = "HOLD_position")
 ```
 
-La Table \@ref(tab:params-sum-smc) confirme les observations visuelles : la $MAPE$ des paramètres $\psi$ et $\gamma$ augmentent fortement en estimant $\xi_x$ via un SMC par rapport à la méthode MCMC, tandis que celle du paramètre $\omega$ diminue légèrement et que pour les autres paramètres nous n'observons pas de réelle différence.
+La Table \@ref(tab:params-sum-smc) confirme les observations visuelles : la $MAPE$ des paramètres $\psi$ et $\gamma$ augmentent fortement en estimant $\xi_x$ via un SMC par rapport à la méthode SAEM-MCMC, tandis que celle du paramètre $\omega$ diminue légèrement et que pour les autres paramètres nous n'observons pas de réelle différence.
 
-Au regard de ces résultats, la version MCMC semble être à privilégier par rapport à la SMC.
-Cependant, nous avons noté que l'implémentation en **R** de l'algorithme avec l'étape SMC est bien plus rapide que celle avec l'étape MCMC : les $1000$ répétitions du plan d'expérience SMC ont été exécutées en un peu moins de 15 minutes, contre plus d'une heure pour le MCMC.
+Au regard de ces résultats, la version SAEM-MCMC semble être à privilégier par rapport à la SAEM-SMC.
+Cependant, nous avons noté que l'implémentation en **R** de l'algorithme avec l'étape SMC est bien plus rapide que celle avec l'étape MCMC : les $1000$ répétitions du plan d'expérience SAEM-SMC ont été exécutées en un peu moins de 15 minutes, contre plus d'une heure pour le SAEM-MCMC.
 Nous avons identifié plusieurs raisons à cela :
 
 * la convergence plus rapide de l'algorithme SAEM-SMC permettant de réduire le nombre d'itérations de 500 à 100,
@@ -830,11 +830,11 @@ Notre objectif était donc d'estimer les paramètres $\theta$ d'une sinusoïde $
 Nous avons proposé deux implémentations de l'algorithme SAEM, l'une estimant le processus $\xi_x$ par une étape MCMC et l'autre par une étape SMC.
 
 \qquad Nous avons comparé les reconstructions $\hat{\xi_x}$ et $\hat{Y}$ et les estimations des paramètres $\hat{\theta}$ données par les deux versions.
-Visuellement, les reconstructions de $\hat{Y}$ sont très semblables et très satisfaisantes.
-Celle de $\hat{\xi_x}$ proposée par l'algorithme SAEM-SMC est apparu légèrement meilleure que celle de SAEM-MCMC, les deux demeurant tout à fait fidèles à la réalisation originale du processus.
-L'estimation des paramètres $\hat{\theta}$ a donné des résultats assez différents entre les deux approches.
+Visuellement, les reconstructions $\hat{Y}$ sont très semblables et très satisfaisantes.
+Celle de $\xi_x$ proposée par l'algorithme SAEM-SMC est apparu légèrement meilleure que celle de SAEM-MCMC, les deux demeurant tout à fait fidèles à la réalisation originale du processus.
+L'estimation $\hat{\theta}$ des paramètres a donné des résultats assez différents entre les deux approches.
 Certains des paramètres sont mieux approchés par la version SAEM-MCMC, d'autres par la version SAEM-SMC. \newline
-Pour juger plus rigoureusement les estimations des paramètres du modèle sinusoïdal, nous avons répété $1000$ fois chacune des deux procédures SAEM et nous nous sommes intéressés aux distributions des erreurs réalisées ainsi qu'à leurs moyennes.
+Pour juger plus rigoureusement les estimations des paramètres du modèle sinusoïdal, nous avons répété $1000$ fois chacune des deux procédures SAEM et nous nous sommes intéressés aux distributions des erreurs réalisées, ainsi qu'à leurs moyennes.
 L'algorithme SAEM-MCMC s'est alors révélé plus stable que le SAEM-SMC car souffrant d'une moins grande variance dans l'estimation des paramètres. \newline
 Cependant, le SAEM-SMC converge nettement plus rapidement que la version MCMC et son implémentation étant vectorisable, il demande un temps de calcul environ 5 fois moins important.
 Cela suggère qu'il pourrait être intéressant de tenter d'améliorer l'échantillonnage des particules générées par l'étape SMC pour perfectionner l'estimation des paramètres du modèle, tout en bénéficiant du temps de calcul restreint de l'algorithme SAEM-SMC.
