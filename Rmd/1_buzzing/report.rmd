@@ -966,6 +966,10 @@ ggplot(data = ChangePop, aes(x = 1 / X, y = change)) +
   ylab("Pourcentage du taux normal d'émission")
 ```
 
+# Conclusion
+
+
+
 \newpage
 
 \printbibliography[label=references, title={Références}]
