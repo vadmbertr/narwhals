@@ -85,9 +85,9 @@ avec $$g(x) = ax + \xi_x$$
 et  finalement $\xi_x$, un processus aléatoire d'Ornstein-Uhlenbeck, tel que :
 $$d\xi_x = -\beta \xi_xdx + \sigma dW_x$$
 Dont la solution est donnée par :
-$$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
+$$\xi_{x+\Delta} = \xi_x e^{-\beta \Delta} + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
 de sorte que la densité de transition est :
-$$p(\xi_{x + \Delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - e^{-2 \beta \Delta}))$$
+$$p(\xi_{x + \Delta} | \xi_x) = \mathcal{N}(\xi_x e^{-\beta \Delta}, \frac{\sigma^2}{2\beta}(1 - e^{-2 \beta \Delta}))$$
 où $\Delta$ est l’intervalle de temps entre deux observations.
 
 \qquad Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
