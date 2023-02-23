@@ -87,18 +87,19 @@ $$d\xi_x = -\beta \xi_xdx + \sigma dW_x$$
 Dont la solution est donnée par :
 $$\xi_{x+\Delta} = \xi_x \psi + \int_{x}^{x+\Delta} \sigma e^{\beta(s-x)}dW_s $$
 de sorte que la densité de transition est :
-$$p(\xi_{x + \delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - \psi^2))$$
+$$p(\xi_{x + \Delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \frac{\sigma^2}{2\beta}(1 - e^{-2 \beta \Delta}))$$
+où $\Delta$ est l’intervalle de temps entre deux observations.
 
 \qquad Dans ce cadre, l'objectif est donc d'estimer les paramètres $\theta$ :
 
 - $\varphi = (A, B, a, b)$,
 - $\omega$,
-- $\psi = e^{-\beta \Delta}$, où $\Delta$ est l'intervalle de temps entre deux observations,
+- $\psi = e^{-\beta \Delta}$,
 - $\gamma^2 = \frac{\sigma^2}{2\beta}(1 - \psi^2)$.
 
 Une réalisation de ce modèle est présentée sur la Figure \@ref(fig:mdl). 
 
-```{r mdl, fig.cap = "Simulation des observations $Y$, avec les paramètres suivants : $A=0.5$, $B=-0.25$, $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\delta=1$."}
+```{r mdl, fig.cap = "Simulation des observations $Y$, avec les paramètres suivants : $A=0.5$, $B=-0.25$, $b=1$, $a=0.1$, $\\beta=0.05$, $\\sigma=0.1$, $\\omega=0.01$ et $\\Delta=1$."}
 ggplot() +
   geom_line(aes(x = x, y = Y))
 ```
@@ -425,7 +426,7 @@ Par ailleurs, nous avons fait le choix d'initialiser $\hat{\omega}, \hat{\psi}, 
 ## Estimation de $\xi_x$ par MCMC
 
 \qquad Nous avons, dans un premier temps, testé l'efficacité de l'algorithme MCMC programmé indépendamment de l'algorithme SAEM.
-Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0.25$,  $b = 1$, $a = 0.1$, $\beta = 0.05$, $\sigma = 0.1$, $\omega = 0.01$ et $\delta = 1$.
+Pour ce faire, nous avons fixé les valeurs des paramètres : $A = 0.5$, $B = -0.25$,  $b = 1$, $a = 0.1$, $\beta = 0.05$, $\sigma = 0.1$, $\omega = 0.01$ et $\Delta = 1$.
 Ces valeurs ont été utilisées pour simuler une trajectoire de $\xi_x$ cible avec une distribution $Y$ associée selon le modèle sinusoïdal.
 L'algorithme MCMC a été réalisé avec $M = 150$ itérations et obtient, à partir de ces mêmes valeurs de paramètres et des observations $Y$, les résultats présentés sur la Figure \@ref(fig:result-MCMC).
 
