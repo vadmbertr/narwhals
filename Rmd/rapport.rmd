@@ -1274,7 +1274,7 @@ Une fois que le dernier instant du processus est atteint, il suffit de tirer un 
 \For{$i \in \{2, ..., n\}$}
     \For{$j \in \{1, ..., P\}$}
       \State $\xi_c^{(j)} \sim \xi^{(j)}_{i-1} * \psi + \mathcal{N}(0, \gamma^2)$ \Comment{Simulation d'une valeur courante selon $\xi_{i-1}^{(j)}$}
-      \State $w_j \gets P(Y_i | f(i, \xi_c^{(j)}))$
+      \State $w_j \gets p(Y_i | \xi_c^{(j)})$
       \Comment{Poids égale à la probabilité de $Y_i$ conditionnellement à $\xi_c^{(j)}$}
     \EndFor
     \For{$j \in \{1, ..., P\}$}
