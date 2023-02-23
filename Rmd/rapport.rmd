@@ -1767,9 +1767,9 @@ kable(t(df), "latex",
   kable_styling(latex_options = "HOLD_position")
 ```
 
-\qquad Au regard de la Table \@ref(tab:params-sum-mcmc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ avec la méthode SAEM-MCMC : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.smc[[1]], 3)`.
+\qquad Au regard de la Table \@ref(tab:params-sum-mcmc), il convient de relativiser l'erreur réalisée sur le paramètre $\omega$ avec la méthode SAEM-MCMC : la valeur attendue est `r round(omega, 3)` et celle estimée en moyenne est égale à `r round(params.mean.mcmc[[1]], 3)`.
 La $MAPE$ peut sembler élevée, mais encore une fois, il faut observer qu'en valeur absolue les estimations sont proches de la valeur à estimer, comme l'indique la $RMSE$.
-Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM) et \@ref(fig:coef2-SAEM).
+Nous pouvons noter que c'est bien le paramètre $b$ dont l'estimation est la plus éloignée de la valeur attendue, ce qui rejoint les observations faites à partir des Figures \@ref(fig:coef1-SAEM-mcmc) et \@ref(fig:coef2-SAEM-mcmc).
 
 ```{r params-sum-smc}
 df <- data.frame(theta = params.true, est = params.mean.smc, mape = params.mape.smc, rmse = params.rmse.smc)
