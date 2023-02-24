@@ -1172,7 +1172,7 @@ Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@
 ### Algorithme EM
 
 \qquad L'algorithme EM est basé sur la log-vraisemblance du modèle $\log L(Y, \xi_x | \theta)$.
-Etant donné que $p(Y | \xi_x) = \mathcal{N}(f_{\xi_x}(x, \varphi), \omega^2)$ et $p(\xi_{x + \Delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \gamma^2)$, celle-ci s'écrit de la manière suivante :
+Etant donné que $p(Y_i | \xi_i) = \mathcal{N}(f_{\xi_i}(x_i, \varphi), \omega^2)$ et $p(\xi_i | \xi_{i-1}) = \mathcal{N}(\xi_{i-1} \psi, \gamma^2)$, celle-ci s'écrit de la manière suivante :
 \begin{eqnarray*}
 \log L(Y, \xi_x | \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
 &=& -\sum_{i=1}^n \frac{(Y_i-f_{\xi_i}(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
