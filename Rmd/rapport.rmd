@@ -1183,7 +1183,7 @@ Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k)}$.
 
 - étape E : calcul de $Q(\theta, \theta^{(k)})$, l'espérance conditionnelle de la log-vraisemblance du modèle :
-$Q(\theta, \theta^{(k)}) = E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
+$Q(\theta, \theta^{(k)}) = \mathbb{E}[\log L(Y, \xi_x, \theta) | Y;\theta^{(k)}]$
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
 Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
