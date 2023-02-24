@@ -1,5 +1,5 @@
 ---
-title: "Modélisation de l'information contenue dans les défenses des narvals dans le but d'estimer leur durée de vie"
+title: "Modélisation des motifs sinusoïdaux observés sur la dent des narvals"
 author: "Yanis BEN BELGACEM, Vadim BERTRAND, Angélique SAILLET"
 output:
   bookdown::pdf_document2:
@@ -211,7 +211,7 @@ Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k)}$.
 
 - étape E : calcul de $Q(\theta, \theta^{(k)})$, l'espérance conditionnelle de la log-vraisemblance du modèle :
-$Q(\theta, \theta^{(k)}) \gets E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
+$Q(\theta, \theta^{(k)}) = E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
 Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
@@ -419,7 +419,7 @@ Ce choix d'initialisation s'est avéré indispensable pour résoudre le problèm
 Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $\hat{b} = (7 * pi / 8) - x_0 * \hat{a}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul et $\hat{a}$ à la définition précédente. \newline
 Par ailleurs, nous avons fait le choix d'initialiser $\hat{\omega}, \hat{\psi}, \hat{\gamma}$ à $0.5$ pour la première itération.
 
-# Simulation & résultats
+# Résultats
 
 \qquad Dans cette dernière partie, nous présentons les résultats d'estimation de $\xi_x$ par les algorithmes MCMC et SMC ; et plus largement de l'ensemble de coefficients $\theta$ par l'algorithme SAEM, ainsi que du plan d'expérience mis en place pour les valider.
 

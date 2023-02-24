@@ -58,7 +58,7 @@ Il est surnommé licorne des mers en raison de sa dent ressemblant à une corne 
 \qquad Dans le cadre du projet tutoré de notre 2\textsuperscript{ème} de Master Statistique et Science des Données nous nous sommes intéressés à deux questions concernant cet animal :
 
 * l'impact des perturbations humaines sur le comportement des narvals,
-* l'estimation de la durée de vie des narvals à partir des sillons de leur dent.
+* la modélisation des motifs sinusoïdaux observés sur leur dent.
 
 \qquad Ce travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles.
 Nous tenons à fortement remercier notre tutrice de projet, Madame Adeline Leclercq Samson, chercheuse au LJK et grandement impliquée dans cette collaboration, de nous avoir accompagnés et guidés tout au long du projet, mais aussi d'avoir fait en sorte qu'il nous soit le plus intéressant possible en nous impliquant sur le choix de certains axes à investiguer.
@@ -1008,7 +1008,7 @@ C'est pourquoi nous avons mis en place une approche Monte-Carlo d'estimation des
 * estimer l'effet direct, l'effet de médiation causale du triplet taux d'émission, profondeur et exposition aux perturbations,
 * utiliser un type de processus autre que celui de Poisson, comme celui de Hawkes, potentiellement plus adapté.
 
-# Estimation de la durée de vie des narvals grâce aux sillons de leur dent
+# Modélisation des motifs sinusoïdaux observés sur la dent des narvals
 
 ```{r}
 set.seed(15)
@@ -1182,7 +1182,7 @@ Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k)}$.
 
 - étape E : calcul de $Q(\theta, \theta^{(k)})$, l'espérance conditionnelle de la log-vraisemblance du modèle :
-$Q(\theta, \theta^{(k)}) \gets E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
+$Q(\theta, \theta^{(k)}) = E[\log L(Y, \xi, \theta) | Y;\theta_{(k)}]$
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
 Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
@@ -1390,7 +1390,7 @@ Ce choix d'initialisation s'est avéré indispensable pour résoudre le problèm
 Le paramètre $b$ influe lui sur le décalage de phase de la sinusoïde, nous pouvons donc aider l'algorithme en l'initialisant par $\hat{b} = (7 * pi / 8) - x_0 * \hat{a}$ où $x_0$ correspond au plus petit $x_i$ pour lequel $Y$ est nul et $\hat{a}$ à la définition précédente. \newline
 Par ailleurs, nous avons fait le choix d'initialiser $\hat{\omega}, \hat{\psi}, \hat{\gamma}$ à $0.5$ pour la première itération.
 
-## Simulation & résultats
+## Résultats
 
 \qquad Dans cette dernière partie, nous présentons les résultats d'estimation de $\xi_x$ par les algorithmes MCMC et SMC ; et plus largement de l'ensemble de coefficients $\theta$ par l'algorithme SAEM, ainsi que du plan d'expérience mis en place pour les valider.
 
