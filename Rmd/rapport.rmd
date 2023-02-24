@@ -62,6 +62,7 @@ Il est surnommé licorne des mers en raison de sa dent ressemblant à une corne 
 
 \qquad Ce travail s'inscrit dans une collaboration du Laboratoire Jean Kuntzmann (LJK) de Grenoble avec l'Université de Copenhague et l'Institut groenlandais des ressources naturelles.
 Nous tenons à fortement remercier notre tutrice de projet, Madame Adeline Leclercq Samson, chercheuse au LJK et grandement impliquée dans cette collaboration, de nous avoir accompagnés et guidés tout au long du projet, mais aussi d'avoir fait en sorte qu'il nous soit le plus intéressant possible en nous impliquant sur le choix de certains axes à investiguer.
+Merci également à Monsieur Frédéric Audra pour son aide quant à l'utilisation des plateformes de calcul du GRICAD.
 
 # Effet des perturbations humaines sur l'alimentation des narvals
 
