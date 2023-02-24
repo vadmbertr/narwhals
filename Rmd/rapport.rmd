@@ -1171,26 +1171,27 @@ Nous détaillerons les étapes MCMC [@MCMC] (Markov Chain Monte Carlo) et SMC [@
 
 ### Algorithme EM
 
-\qquad L'algorithme EM est basé sur la log-vraisemblance complète du modèle qui s'écrit de la manière suivante :
+\qquad L'algorithme EM est basé sur la log-vraisemblance du modèle $\log L(Y, \xi_x | \theta)$.
+Etant donné que $p(Y | \xi_x) = \mathcal{N}(f_{\xi_x}(x, \varphi), \omega^2)$ et $p(\xi_{x + \Delta} | \xi_x) = \mathcal{N}(\xi_x \psi, \gamma^2)$, celle-ci s'écrit de la manière suivante :
 \begin{eqnarray*}
-\log L(Y, \xi_x, \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
-&=& -\sum_{i=1}^n \frac{(Y_i-f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
+\log L(Y, \xi_x | \theta) &=& \sum_{i=1}^n \log p(Y_i | \xi_i) + \sum_{i=1}^n \log p(\xi_i | \xi_{i-1}) + \log p(\xi_1) \\
+&=& -\sum_{i=1}^n \frac{(Y_i-f_{\xi_i}(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2}\log(\omega^2) \\
 &&- \sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{\frac{\sigma^2}{\beta}(1 - \psi^2)} - \frac{n}{2} \log(\frac{\sigma^2}{2\beta}(1 - \psi^2)) \\
-&=& -\sum_{i=1}^n \frac{(Y_i - f(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2} \log(\omega^2) \\
+&=& -\sum_{i=1}^n \frac{(Y_i - f_{\xi_i}(x_i, \varphi))^2}{2\omega^2} - \frac{n}{2} \log(\omega^2) \\
 && -\sum_{i=1}^n \frac{(\xi_i - \xi_{i-1} \psi)^2}{2\gamma^2} - \frac{n}{2}\log(\gamma^2)
 \end{eqnarray*}
 
 Pour chaque itération $k$, l'algorithme EM procède aux deux étapes suivantes, étant donné la valeur courante des paramètres $\theta^{(k)}$.
 
 - étape E : calcul de $Q(\theta, \theta^{(k)})$, l'espérance conditionnelle de la log-vraisemblance du modèle :
-$Q(\theta, \theta^{(k)}) = \mathbb{E}[\log L(Y, \xi_x, \theta) | Y;\theta^{(k)}]$
+$Q(\theta, \theta^{(k)}) = \mathbb{E}[\log L(Y, \xi_x | \theta) | Y, \theta^{(k)}]$
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
 Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
 En remarquant que la vraisemblance complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
 
 \begin{eqnarray*}
-S_1(\xi_x)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f(x_i(\xi_i), \varphi))^2\\
+S_1(\xi_x)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f_{\xi_i}(x_i, \varphi))^2\\
 S_2(\xi_x) &=& \sum_{i=1}^n \xi_{i-1} \xi_i\\
 S_3(\xi_x) &=& \sum_{i=1}^n \xi_{i-1}^2\\
 S_4(\xi_x) &=& \sum_{i=1}^n \xi_i^2
@@ -1200,7 +1201,7 @@ L'actualisation des paramètres dépend directement de ces statistiques.
 
 ### Simulation de $\xi_x$
 
-\qquad Dans notre cas, la distribution conditionnelle $p(\xi_x | Y; \theta^{(k)})$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
+\qquad Dans notre cas, la distribution conditionnelle $p(\xi_x | Y, \theta^{(k)})$ n'est pas explicite en raison de la non-linéarité de notre fonction de régression $f(x, \varphi)$.
 Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler selon cette distribution.
 
 #### Algorithme MCMC
@@ -1208,18 +1209,18 @@ Nous pouvons donc utiliser un algorithme MCMC ou un algorithme SMC pour simuler 
 \qquad L'objectif de cet algorithme MCMC est de simuler une trajectoire du processus $\xi_x$ à partir des observations $Y$ ainsi que des paramètres $\theta$.
 L'algorithme programmé est plus précisément un algorithme de Gibbs - Metropolis Hasting avec marche aléatoire.
 
-Effectivement, après l'initialisation d'une trajectoire $\xi^{(0)} = (\xi^{(0)}_1,...,\xi^{(0)}_n)$, l'algorithme procède à $M$ itérations.
-La trajectoire du processus simulée peut donc s'écrire $\xi^{(M)} = (\xi^{(M)}_1,...,\xi^{(M)}_n)$.
+Effectivement, après l'initialisation d'une trajectoire $\xi_x^{(0)} = (\xi^{(0)}_1,...,\xi^{(0)}_n)$, l'algorithme procède à $M$ itérations.
+La trajectoire du processus simulée peut donc s'écrire $\xi_x^{(M)} = (\xi^{(M)}_1,...,\xi^{(M)}_n)$.
 
-\qquad Plus précisément, pour chaque itération $k$, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_c$ avec une marche aléatoire : $\xi^{(c)}_i = \xi^{(k-1)}_i + N(0, \delta_i^2)$.
+\qquad Plus précisément, pour chaque itération $k$, on calcule pour chaque position $x_i$, une valeur courante candidate $\xi_i^{(c)}$ avec une marche aléatoire : $\xi^{(c)}_i = \xi^{(k-1)}_i + N(0, \delta_i^2)$.
 Cela introduit un nouveau paramètre $\delta = (\delta_1,....,\delta_n)$ contrôlant la variance de la marche aléatoire.
 Pour chacun de ses candidats, une log-probabilité d'acceptation est calculée de la façon suivante :
-$$\log(\alpha) = min(\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}), 1)$$
+$$\log(\alpha) = min(\log(\frac{L(Y, \xi_x^{(c)})}{L(Y, \xi_x^{(k-1)})}), 1)$$
 avec :
 \begin{eqnarray*}
-\log(\frac{L(Y, \xi^{(c)})}{L(Y, \xi^{(k-1)})}) &=& \log(L(Y, \xi^{(c)})) - \log(L(Y, \xi^{(k-1)})) \\
-&=& -\frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(c)}))^2 - \frac{1}{2 \frac{\gamma^2}{2}} \sum_{i=1}^{n} (\xi^{(c)} - \xi^{(k-1)} \psi)^2 \\
-&& + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_\varphi(\xi^{(k-1)}))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi^{(k-1)} - \xi^{(k-2)} \psi)^2\\
+\log(\frac{L(Y, \xi_x^{(c)})}{L(Y, \xi_x^{(k-1)})}) &=& \log(L(Y, \xi_x^{(c)})) - \log(L(Y, \xi_x^{(k-1)})) \\
+&=& -\frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_{\xi_i^{(c)}}(x_i, \varphi))^2 - \frac{1}{2 \frac{\gamma^2}{2}} \sum_{i=1}^{n} (\xi_i^{(c)} - \xi_i^{(k-1)} \psi)^2 \\
+&& + \frac{1}{2 \omega^2} \sum_{i=1}^{n} (Y_i - f_{\xi_i^{(k-1)}}(x_i, \varphi))^2 + \frac{1}{2 \frac{\gamma^2}{2}}\sum_{i=1}^{n} (\xi_i^{(k-1)} - \xi_i^{(k-2)} \psi)^2\\
 \end{eqnarray*}
 
 À partir de la valeur de cette log-probabilité ainsi que d'une réalisation d'une loi uniforme prenant ses valeurs entre 0 et 1, le candidat est soit rejeté, soit accepté, auquel cas, il remplace la valeur considérée à l'itération $k - 1$.
@@ -1311,7 +1312,7 @@ s_4^{(k)} &=& s_4^{(k-1)} + \alpha_k(S_4(\xi^{(k)}) - s_4^{(k-1)}) \\
 - étape M : actualisation de $\theta^{k}$, à partir des formules suivantes qui utilisent les statistiques exhaustives $s^{(k)}$ :
 
 \begin{eqnarray*}
-\widehat{\varphi}^{(k)} &=& \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(k)}), \varphi)\right)^2
+\widehat{\varphi}^{(k)} &=& \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f_{\xi_i^{(k)}}(x_i, \varphi)\right)^2
 \\
 \widehat{\psi}^{(k)} &=& \frac{s_2^{(k)}}{s_3^{(k)}}\\
 \widehat{\omega^{2}}^{(k)} &=& s_1^{(k)}\\
@@ -1364,7 +1365,7 @@ L'Algorithme \@ref(alg:SAEM) résume l'ensemble de cette procédure SAEM :
     \State $\xi^{(q)} \gets \xi$ avec $\theta^{(q-1)}$, par $M_q$ itérations MCMC (Algorithme \ref{alg:MCMC}), ou par SCM (Algorithme \ref{alg:SMC})
 
   \State \Comment{Etape SA}
-    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f(x_i(\xi^{(q)}_i), \varphi))^2$\Comment{Calcul des statistiques exhaustives}
+    \State $S_1 \gets \frac{1}{n}\sum_{i=1}^n (Y_i - f_{\xi^{(q)}_i}(x_i, \varphi))^2$\Comment{Calcul des statistiques exhaustives}
     \State $S_2 \gets \sum_{i=1}^n \xi_{i-1}^{(q)}\xi_i^{(q)}$
     \State $S_3 \gets \sum_{i=1}^n (\xi_{i-1}^{(q)})^2$
     \State $S_4 \gets \sum_{i=1}^n (\xi_i^{(q)})^2$
@@ -1375,7 +1376,7 @@ L'Algorithme \@ref(alg:SAEM) résume l'ensemble de cette procédure SAEM :
     \State $s_4^{(q)} \gets s_4^{(q-1)} + \alpha_q(S_4(\xi^{(q)}) - s_4^{(q-1)})$
 
   \State \Comment{Etape M}
-    \State $\widehat{\varphi}^{(q)} \gets \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f(x_i(\xi_i^{(q)}), \varphi)\right)^2$\Comment{Actualisation de $\theta^{(q)}$}
+    \State $\widehat{\varphi}^{(q)} \gets \arg\min_\varphi \sum_{i=1}^n \left(Y_i - f_{\xi_i^{(q)}}(x_i), \varphi)\right)^2$\Comment{Actualisation de $\theta^{(q)}$}
     \State $\widehat{\psi}^{(q)} \gets \frac{s_2^{(q)}}{s_3^{(q)}}$
     \State $\widehat{\omega^{2}}^{(q)} \gets s_1^{(q)}$
     \State $\widehat{\gamma^{2}}^{(q)} \gets \frac{1}{n}(\widehat{\psi^2}^{(q)} s_3^{(q)} - 2\widehat{\psi}^{(q)} s_2^{(q)} + s_4^{(q)})$
