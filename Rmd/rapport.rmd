@@ -1190,10 +1190,10 @@ Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaust
 En remarquant que la vraisemblance complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
 
 \begin{eqnarray*}
-S_1(\xi_i)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f(x_i(\xi_i), \varphi))^2\\
-S_2(\xi_i) &=& \sum_{i=1}^n \xi_{i-1} \xi_i\\
-S_3(\xi_i) &=& \sum_{i=1}^n \xi_{i-1}^2\\
-S_4(\xi_i) &=& \sum_{i=1}^n \xi_i^2
+S_1(\xi_x)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f(x_i(\xi_i), \varphi))^2\\
+S_2(\xi_x) &=& \sum_{i=1}^n \xi_{i-1} \xi_i\\
+S_3(\xi_x) &=& \sum_{i=1}^n \xi_{i-1}^2\\
+S_4(\xi_x) &=& \sum_{i=1}^n \xi_i^2
 \end{eqnarray*}
 
 L'actualisation des paramètres dépend directement de ces statistiques.
