@@ -1188,7 +1188,7 @@ $Q(\theta, \theta^{(k)}) = \mathbb{E}[\log L(Y, \xi_x | \theta) | Y, \theta^{(k)
 - étape M : actualisation des paramètres $\theta^{(k+1)} = \arg\max_\theta Q(\theta, \theta^{(k)})$.
 
 Pour actualiser les paramètres, nous avons besoin de leurs statistiques exhaustives contenant toute l'information de la vraisemblance.
-En remarquant que la vraisemblance complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
+En remarquant que la densité complète du modèle appartient à la famille exponentielle, nous obtenons les définitions suivantes :
 
 \begin{eqnarray*}
 S_1(\xi_x)& =& \frac{1}{n} \sum_{i=1}^n (Y_i - f_{\xi_i}(x_i, \varphi))^2\\
